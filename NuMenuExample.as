@@ -1,4 +1,4 @@
-#include "HelpfulMenuCommon.as";
+#include "NuMenuCommon.as";
 
 array<NuMenu::FancyMenu@> menus();
 array<int> namehashes;
