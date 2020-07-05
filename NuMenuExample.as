@@ -98,17 +98,20 @@ void onTick( CRules@ this )
     if(player != null)
     {
         CControls@ controls = player.getControls();
-        if(controls.isKeyPressed(KEY_LBUTTON))
+        if(controls.isKeyPressed(KEY_LCONTROL))
         {
-            menus[0].setUpperLeft(controls.getMouseScreenPos());
-        }
-        if(controls.isKeyPressed(KEY_RBUTTON))
-        {
-            menus[0].setLowerRight(controls.getMouseScreenPos());
-        }
-        if(controls.isKeyJustPressed(KEY_KEY_X))
-        {
-            menus[0].setInterpolation(!menus[0].getInterpolation());
+            if(controls.isKeyPressed(KEY_LBUTTON))
+            {
+                menus[0].setUpperLeft(controls.getMouseScreenPos());
+            }
+            if(controls.isKeyPressed(KEY_RBUTTON))
+            {
+                menus[0].setLowerRight(controls.getMouseScreenPos());
+            }
+            if(controls.isKeyJustPressed(KEY_KEY_X))
+            {
+                menus[0].setInterpolation(!menus[0].getInterpolation());
+            }
         }
     }
 
