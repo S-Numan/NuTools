@@ -74,6 +74,7 @@ Optional send command option. Adding it will have it send a command to either ev
         Vec2f getLowerRightInterpolated();
         Vec2f getLowerRight();
         void setLowerRight(Vec2f value);
+        bool didButtonJustMove();
         Vec2f getMenuSize();
         void setSize(Vec2f value);
         Vec2f getMenuMiddle();
@@ -176,7 +177,7 @@ Optional send command option. Adding it will have it send a command to either ev
             return button_state;
         }
 
-        private bool render_background = true;
+        private bool render_background = true;//If this is true, the menu will draw a background for the menu button by default.
         bool getRenderBackground()
         {
             return render_background;
@@ -428,7 +429,7 @@ Optional send command option. Adding it will have it send a command to either ev
         
         void Render()//Overwrite this method if you want a different look.
         {
-            InterpolatePositions();
+            InterpolatePositions();//Don't forget this if you do this ^
 
             if(render_background)
             {
@@ -925,8 +926,7 @@ Optional send command option. Adding it will have it send a command to either ev
             if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
             {
                 IMenu@ _menu = @optional_menus[option_menu];
-                _menu.setUpperLeftRelation(value);
-                _menu.setRelationSize();
+                _menu.setRelationPos(value);
                 return true;
             }
             
