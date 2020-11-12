@@ -1,11 +1,11 @@
 #include "NuMenuCommon.as";
 
-array<NuMenu::FancyMenu@> menus();
+array<NuMenu::IMenu@> menus();
 array<int> namehashes;
 
 void onInit( CRules@ this )
 {
-    array<NuMenu::FancyMenu@> _menus();
+    array<NuMenu::IMenu@> _menus();
         /*NuMenu::FancyMenu(
         Vec2f(200, 200),//Top left
         Vec2f(600, 260),//Bottom right
@@ -40,23 +40,32 @@ void onInit( CRules@ this )
         "|Middle text|")//Middle text
         */
 
-    NuMenu::FancyMenu button1 = NuMenu::FancyMenu(
-        Vec2f(300, 300),//Top left
-        Vec2f(700, 360),//Bottom right
-        "TestMenu",//Menu name
-        NuMenu::CheckBox);//Menu type
+    {
+        NuMenu::MenuHolder random_menu = NuMenu::MenuHolder(
+            Vec2f(300, 300),//Top left
+            Vec2f(700, 360),//Bottom right
+            "TestMenu",//Menu name
+            NuMenu::CheckBox);//Menu type
 
-    button1.setMiddleText("|Middle text|");
-    //Fancy lower
-    button1.setLeftText("|Left text|");
-    button1.setRightText("|Right text|");
-    button1.setImage("GUI/AccoladeBadges.png",//Image name
-        19,//Image frame
-        18,//Image frame while pressed
-        Vec2f(16, 16),//Image frame size
-        Vec2f(0.0f, 0.0f));//button1.getMenuSize().y/2 - 16/2));
+        random_menu.setMiddleText("|Middle text|");
+        //Fancy lower
+        random_menu.setLeftText("|Left text|");
+        random_menu.setRightText("|Right text|");
+        random_menu.setImage("GUI/AccoladeBadges.png",//Image name
+            19,//Image frame
+            18,//Image frame while pressed
+            Vec2f(16, 16),//Image frame size
+            Vec2f(0.0f, 0.0f));//button1.getMenuSize().y/2 - 16/2));
 
-    _menus.push_back(button1);
+        random_menu.setTitlebarHeight(16.0f);
+        //random_menu.setTitlebarWidth(random_menu.getMenuSize().x - 16.0f);
+
+        NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
+        option1.setRelationPos(Vec2f(random_menu.getMenuSize().x/2, random_menu.getMenuSize().y - option1.getMenuSize().y));
+        random_menu.moveMenuAttachments();
+
+        _menus.push_back(random_menu);
+    }
 
     for(u16 i = 0; i < _menus.size(); i++)
     {
@@ -68,30 +77,24 @@ void onInit( CRules@ this )
 void onTick( CRules@ this )
 {
     u16 i;
-    array<NuMenu::FancyMenu@> gotmenus();
+    //array<NuMenu::FancyMenu@> gotmenus();
     for(i = 0; i < menus.size(); i++)
     {
         menus[i].Tick();
-        if(menus[i].getButtonState() == NuMenu::Released)
+        if(menus[i].getMenuState() == NuMenu::Released)//Menu itself checking.
         {
-            gotmenus.push_back(menus[i]);
+            print("release in " + menus[i].getName());
         }
-        else if(menus[i].getButtonState() == NuMenu::FalseRelease)
-        {
-            //print("false release");
-        }
-    }
-
-    for(i = 0; i < gotmenus.size(); i++)
-    {
-        if(gotmenus[i].getNameHash() == "TestMenu".getHash())//namehashes[0])
-        {
-            print("release in " + gotmenus[i].getName());
-        }
-        else if(gotmenus[i].getNameHash() == "TestMenu2".getHash())//namehashes[1])
-        {
-            print("release in " + gotmenus[i].getName());
-        }
+        
+        //if(menus[i].getNameHash() == "TestMenu".getHash())//Option checking.
+        //{
+            NuMenu::MenuHolder@ menubase = cast<NuMenu::MenuHolder@>(menus[i]);
+            NuMenu::IMenu@ _menu = menubase.getOptionalMenu();
+            if(_menu.getMenuState() == NuMenu::Released)
+            {
+                print("option checked " + _menu.getName());
+            }
+        //}
     }
 
     CPlayer@ player = getLocalPlayer();
@@ -110,7 +113,7 @@ void onTick( CRules@ this )
             }
             if(controls.isKeyJustPressed(KEY_KEY_X))
             {
-                menus[0].setInterpolation(!menus[0].getInterpolation());
+                menus[0].setInterpolated(!menus[0].getInterpolated());
             }
         }
     }
