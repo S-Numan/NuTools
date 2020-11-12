@@ -61,6 +61,9 @@ Optional send command option. Adding it will have it send a command to either ev
 
         u8 getMenuState();
 
+        bool isWorldPos();
+        void setIsWorldPos(bool value);
+
         bool getRenderBackground();
         void setRenderBackground(bool value);
 
@@ -99,7 +102,7 @@ Optional send command option. Adding it will have it send a command to either ev
 
     class MenuBase : IMenu
     {
-        MenuBase(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option)
+        MenuBase(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option)// add default option for world pos/screen pos? - Todo numan
         {
             if(!isClient())
             {
@@ -122,8 +125,20 @@ Optional send command option. Adding it will have it send a command to either ev
         //TODO
         //
 
-        bool isWorldPos = false;//If this is true, this works on worldpos. If this is false, this works like normal gui (on ScreenPos). I.E move with camera or not. TODO
+        private bool is_world_pos = false;//If this is true, this works on worldpos. If this is false, this works like normal gui (on ScreenPos). I.E move with camera or not. TODO
 
+        bool isWorldPos()
+        {
+            return is_world_pos;
+        }
+
+        void setIsWorldPos(bool value)
+        {
+            is_world_pos = value;
+            setUpperLeft(upper_left);
+            setLowerRight(lower_right);
+        }
+        
         //
         //TODO
         //
@@ -196,10 +211,10 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             if(value)
             {
-                upper_left_interpolated = upper_left;
-                lower_right_interpolated = lower_right;
-                upper_left_old = upper_left;
-                lower_right_old = lower_right;
+                upper_left_interpolated = getUpperLeft();
+                lower_right_interpolated = getLowerRight();
+                upper_left_old = upper_left_interpolated;
+                lower_right_old = lower_right_interpolated;
             }
             button_interpolation = value;
         }
@@ -213,17 +228,19 @@ Optional send command option. Adding it will have it send a command to either ev
         //Positions
         //
 
-        private Vec2f upper_left_old;
-        private Vec2f upper_left_interpolated;
 
-        Vec2f getUpperLeftInterpolated()
-        {
-            return upper_left_interpolated;
-        }
+        //Normal Positions
+        //
 
+        private Vec2f upper_left_world_to_screen;//Only used if isWorldPos is true.
         private Vec2f upper_left;//Upper left of menu
         Vec2f getUpperLeft()
         {
+            if(isWorldPos())
+            {
+                return upper_left_world_to_screen;
+            }
+            
             return upper_left;
         }
         void setUpperLeft(Vec2f value)
@@ -231,6 +248,13 @@ Optional send command option. Adding it will have it send a command to either ev
             upper_left = value;
             menu_size = Vec2f(lower_right.x - upper_left.x, lower_right.y - upper_left.y);
             menu_middle = upper_left + menu_size / 2;
+        
+            if(isWorldPos())
+            {
+                Driver@ driver = getDriver();
+                upper_left_world_to_screen = driver.getScreenPosFromWorldPos(upper_left);
+                menu_middle_world_to_screen = driver.getScreenPosFromWorldPos(menu_middle);
+            }
         }
 
         //Changes the upper left position and lower right at the same time. No changes to the size of the menu.
@@ -239,19 +263,25 @@ Optional send command option. Adding it will have it send a command to either ev
             upper_left = value;
             lower_right = upper_left + menu_size;
             menu_middle = upper_left + menu_size / 2;
+        
+            if(isWorldPos())
+            {
+                Driver@ driver = getDriver();
+                upper_left_world_to_screen = driver.getScreenPosFromWorldPos(upper_left);
+                lower_right_world_to_screen = driver.getScreenPosFromWorldPos(lower_right);
+                menu_middle_world_to_screen = driver.getScreenPosFromWorldPos(menu_middle);
+            }
         }
 
-
-        private Vec2f lower_right_old;
-        private Vec2f lower_right_interpolated;
-        Vec2f getLowerRightInterpolated()
-        {
-            return lower_right_interpolated;
-        }
-
+        private Vec2f lower_right_world_to_screen;//Only used if isWorldPos is true.
         private Vec2f lower_right;//Lower right of menu
         Vec2f getLowerRight()
         {
+            if(isWorldPos())
+            {
+                return lower_right_world_to_screen;
+            }
+
             return lower_right;
         }
         void setLowerRight(Vec2f value)
@@ -259,13 +289,16 @@ Optional send command option. Adding it will have it send a command to either ev
             lower_right = value;
             menu_size = Vec2f(lower_right.x - upper_left.x, lower_right.y - upper_left.y);
             menu_middle = upper_left + menu_size / 2;
+
+            if(isWorldPos())
+            {
+                Driver@ driver = getDriver();
+                lower_right_world_to_screen = driver.getScreenPosFromWorldPos(lower_right);
+                menu_middle_world_to_screen = driver.getScreenPosFromWorldPos(menu_middle);
+            }
         }
 
-        //Checks if the button just moved. If the old position is not equal to the new position, the button just moved. The button growing counts as moving.
-        bool didButtonJustMove()
-        {
-            return (upper_left_old != upper_left || lower_right_old != lower_right);
-        }
+        
 
         private Vec2f menu_size;//The size of the menu. How far it takes for top_left to get to lower_right.
         Vec2f getMenuSize()
@@ -274,18 +307,44 @@ Optional send command option. Adding it will have it send a command to either ev
         }
         void setSize(Vec2f value)//Changes the length of the lower_right pos to make it the correct size.
         {
-            lower_right = upper_left + value;
-            menu_size = value;
-            menu_middle = upper_left + menu_size / 2;
+            setLowerRight(upper_left + value);
         }
 
+        private Vec2f menu_middle_world_to_screen;
         private Vec2f menu_middle;//The point on screen the middle of the menu is.
         Vec2f getMenuMiddle()
         {
+            if(isWorldPos())
+            {
+                return menu_middle_world_to_screen;
+            }
+
             return menu_middle;
         }
 
-        ///Relation stuff
+        //
+        //Normal Positions
+
+
+        //Old Positions
+        //
+
+        private Vec2f upper_left_old;
+        private Vec2f lower_right_old;
+
+        //Checks if the button just moved. If the old position is not equal to the new position, the button just moved. The button growing counts as moving.
+        bool didButtonJustMove()
+        {
+            return (upper_left_old != upper_left || lower_right_old != lower_right);
+        }
+
+    
+
+        //
+        //Old Positions
+
+        //Relation positions
+        //
 
         private Vec2f upper_left_relation;//For the inherited classes for less pain.
         Vec2f getUpperLeftRelation()
@@ -317,7 +376,8 @@ Optional send command option. Adding it will have it send a command to either ev
             lower_right_relation = upper_left_relation + menu_size;
         }
 
-        ///Relation stuff
+        //
+        //Relation positions
 
         //
         //Positions
@@ -330,8 +390,8 @@ Optional send command option. Adding it will have it send a command to either ev
 
         bool isPointInMenu(Vec2f value)//Is the vec2f value within the menu?
         {
-            if(value.x <= lower_right.x && value.y <= lower_right.y
-            && value.x >= upper_left.x && value.y >= upper_left.y)
+            if(value.x <= getLowerRight().x && value.y <= getLowerRight().y
+            && value.x >= getUpperLeft().x && value.y >= getUpperLeft().y)
             {
                 return true;//Yes
             }
@@ -357,11 +417,11 @@ Optional send command option. Adding it will have it send a command to either ev
             }
 
             //Set the interpolated values to the positions.
-            upper_left_interpolated = upper_left;
-            lower_right_interpolated = lower_right;
+            upper_left_interpolated = getUpperLeft();
+            lower_right_interpolated = getLowerRight();
             //And make the old be equal to the new.
-            upper_left_old = upper_left;
-            lower_right_old = lower_right;
+            upper_left_old = getUpperLeft();
+            lower_right_old = getLowerRight();
 
             CPlayer@ player = getLocalPlayer();
             if(player == null)//The player must exist to get the CControls. (and maybe some other stuff)
@@ -388,6 +448,23 @@ Optional send command option. Adding it will have it send a command to either ev
         //Interpolation
         //
 
+        //Interpolated Positions
+        //
+        private Vec2f upper_left_interpolated;
+
+        Vec2f getUpperLeftInterpolated()
+        {
+            return upper_left_interpolated;
+        }
+
+        private Vec2f lower_right_interpolated;
+        Vec2f getLowerRightInterpolated()
+        {
+            return lower_right_interpolated;
+        }
+        //
+        //Interpolated Positions
+
         //Put in onRender
         void InterpolatePositions()
         {
@@ -402,17 +479,17 @@ Optional send command option. Adding it will have it send a command to either ev
                     //print("upper_left_interpolated = " + upper_left_interpolated.x);
                     //print("interpolation factor = " + interpolation_factor);
 
-                    upper_left_interpolated = Vec2f_lerp(upper_left_old, upper_left, interpolation_factor);
+                    upper_left_interpolated = Vec2f_lerp(upper_left_old, getUpperLeft(), interpolation_factor);
 
-                    lower_right_interpolated = Vec2f_lerp(lower_right_old, lower_right, interpolation_factor);
+                    lower_right_interpolated = Vec2f_lerp(lower_right_old, getLowerRight(), interpolation_factor);
                 
                     menu_size = lower_right_interpolated - upper_left_interpolated;
                 }
             }
             else
             {
-                upper_left_interpolated = upper_left;
-                lower_right_interpolated = lower_right;
+                upper_left_interpolated = getUpperLeft();
+                lower_right_interpolated = getLowerRight();
             
                 menu_size = lower_right - upper_left;
             }
@@ -429,7 +506,7 @@ Optional send command option. Adding it will have it send a command to either ev
         
         void Render()//Overwrite this method if you want a different look.
         {
-            InterpolatePositions();//Don't forget this if you do this ^
+            InterpolatePositions();//Don't forget this if you want interpolation.
 
             if(render_background)
             {
@@ -640,8 +717,8 @@ Optional send command option. Adding it will have it send a command to either ev
 
         bool isPointInTitlebar(Vec2f value)//Is the vec2f value within the titlebar?
         {
-            if(value.x <= lower_right.x - (menu_size.x - titlebar_size.x)&& value.y <= upper_left.y + titlebar_size.y
-            && value.x >= upper_left.x && value.y >= upper_left.y)
+            if(value.x <= getLowerRight().x - (menu_size.x - titlebar_size.x)&& value.y <= getUpperLeft().y + titlebar_size.y
+            && value.x >= getUpperLeft().x && value.y >= getUpperLeft().y)
             {
                 return true;//Yes
             }
@@ -745,7 +822,8 @@ Optional send command option. Adding it will have it send a command to either ev
                     
                     if(titlebar_press_pos != Vec2f_zero)
                     {
-                        setPosition(upper_left - (titlebar_press_pos - mouse_pos));
+                        setPosition(getUpperLeft() - //Current menu position subtracted by
+                         (titlebar_press_pos - mouse_pos));//The positioned the titlebar was pressed minus the current mouse position. (The difference.)
                         titlebar_press_pos = mouse_pos;
                     }
                 }
@@ -1055,16 +1133,25 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             optional_menus.clear();
         }
-        //                      Type                Size of type            
-        IMenu@ addMenuOption(u8 value, Vec2f optional_menu_size = Vec2f(32, 32))
+
+        u16 optional_menu_id_count = 0;//Goes up every time an optional menu is made. This is better than using optional_menus.size(), as an element can be removed from that array.
+        //                      Type                Size of type                  Button name
+        IMenu@ addMenuOption(u8 value, Vec2f optional_menu_size = Vec2f(32, 32), string _name = "")
         {
+            //by default the button name is ((Holder button's name) + ("_" + ID of button) + ("_" + Button type())) Note that the (Button type) will always be at the end even with a name.
+            //Button = "but"; CheckBox = "chk";
+            if(_name == "")
+            {
+                _name = getName() + "_" + optional_menu_id_count;
+            }
+
             switch(value)
             {
                 case Button:
                 {
                     MenuButton@ _menu = MenuButton(Vec2f(0,0),
                         Vec2f(0,0),
-                        getName() + "_but_" + optional_menus.size());
+                        _name + "_but");
 
                     _menu.setSize(optional_menu_size);
                     _menu.setInterpolated(false);//Done manually
@@ -1078,7 +1165,7 @@ Optional send command option. Adding it will have it send a command to either ev
                 {
                     MenuCheckBox@ _menu = MenuCheckBox(Vec2f(0,0),
                         Vec2f(0,0),
-                        getName() + "_chk_" + optional_menus.size());
+                        _name + "_chk");
 
                     _menu.setSize(optional_menu_size);
                     _menu.setInterpolated(false);//Done manually
@@ -1093,6 +1180,7 @@ Optional send command option. Adding it will have it send a command to either ev
             }
 
             moveMenuAttachments();
+            optional_menu_id_count++;
 
 
             if(optional_menus.size() != 0 && optional_menus[optional_menus.size() - 1] != null)
@@ -1116,7 +1204,7 @@ Optional send command option. Adding it will have it send a command to either ev
                 //switch(optional_menus[i].getMenuOption())
                 //{
                     //case CheckBox:
-                optional_menus[i].setPosition((useInterpolatedValue ? upper_left_interpolated : upper_left) + optional_menus[i].getUpperLeftRelation());
+                optional_menus[i].setPosition((useInterpolatedValue ? upper_left_interpolated : getUpperLeft()) + optional_menus[i].getUpperLeftRelation());
                         //break;
                     //default:
                         //break;
@@ -1131,6 +1219,8 @@ Optional send command option. Adding it will have it send a command to either ev
 
         bool Tick() override
         {
+            bool button_just_move_old = didButtonJustMove();
+            
             if(!MenuBasePlus::Tick())
             {
                 return false;
@@ -1141,6 +1231,12 @@ Optional send command option. Adding it will have it send a command to either ev
                 if(optional_menus[i] != null)
                 {
                     optional_menus[i].Tick();
+                    
+                    //As with interpolation, on the next tick after the movement didButtonJustMove becomes false. In the Render() it uses that to judge if any menu attachments should move.
+                    if(getInterpolated() && button_just_move_old)//Without this every button would become one render call away from where it should actually be.
+                    {
+                        optional_menus[i].setPosition(getUpperLeft() + optional_menus[i].getUpperLeftRelation());
+                    }
                 }
             }
             return true;
@@ -1183,6 +1279,7 @@ Optional send command option. Adding it will have it send a command to either ev
                 }*/
                 optional_menus[i].Render();
             }
+
 
         }
     }
