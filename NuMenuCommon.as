@@ -608,6 +608,50 @@ Optional send command option. Adding it will have it send a command to either ev
         //Text stuff
         //
 
+        //
+        //Titlebar
+        //
+        
+        private Vec2f titlebar_size;
+        Vec2f getTitlebarSize()
+        {
+            return titlebar_size;
+        }
+        void setTitlebarHeight(float value)
+        {
+            titlebar_size.y = value;
+            if(titlebar_size.x == 0)
+            {
+                titlebar_size.x = menu_size.x;
+            }
+        }
+        bool titlebar_width_is_menu = true;//When this is true the titlebar width will move with the menu
+        void setTitlebarWidth(float value)
+        {
+            titlebar_size.x = value;
+            titlebar_width_is_menu = false;
+        }
+
+        private Vec2f titlebar_press_pos;//Do not edit, this is for the moving menu part of the code.
+
+        bool titlebar_ignore_press = false;//When this is true the titlebar cannot move the menu.
+
+        bool titlebar_draw = true;//If this is false the titlebar will not be drawn (but will still function)
+
+        bool isPointInTitlebar(Vec2f value)//Is the vec2f value within the titlebar?
+        {
+            if(value.x <= lower_right.x - (menu_size.x - titlebar_size.x)&& value.y <= upper_left.y + titlebar_size.y
+            && value.x >= upper_left.x && value.y >= upper_left.y)
+            {
+                return true;//Yes
+            }
+            return false;//No
+        }
+
+        //
+        //Titlebar
+        //
+
 
         //
         //Logic
@@ -674,6 +718,44 @@ Optional send command option. Adding it will have it send a command to either ev
                 return false;
             }
 
+            CControls@ controls = getLocalPlayer().getControls();//This can be done safely as the code to check if client&player&controls is null/false was done in the inherited class.
+
+            Vec2f mouse_pos = controls.getMouseScreenPos();
+            bool left_button = controls.mousePressed1;
+            bool left_button_release = controls.isKeyJustReleased(KEY_LBUTTON);
+            bool left_button_just = controls.isKeyJustPressed(KEY_LBUTTON);
+            //bool right_button = controls.mousePressed2;
+            //bool right_button_release = controls.isKeyJustReleased(KEY_RBUTTON);
+            //bool scroll_up = controls.mouseScrollUp;
+            //bool scroll_down = controls.mouseScrollDown;
+
+            if(titlebar_width_is_menu)
+            {
+                titlebar_size.x = menu_size.x;
+            }
+
+            if(!titlebar_ignore_press && titlebar_size.y != 0.0f)
+            {
+                if(left_button)
+                {
+                    if(left_button_just && isPointInTitlebar(mouse_pos))
+                    {
+                        titlebar_press_pos = mouse_pos;
+                    }
+                    
+                    if(titlebar_press_pos != Vec2f_zero)
+                    {
+                        setPosition(upper_left - (titlebar_press_pos - mouse_pos));
+                        titlebar_press_pos = mouse_pos;
+                    }
+                }
+
+                if(!left_button && titlebar_press_pos != Vec2f_zero)
+                {
+                    titlebar_press_pos = Vec2f_zero;
+                }
+            }
+
             return true;//Everything worked out correctly.
         }
 
@@ -714,12 +796,30 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             MenuBase::Render();
 
+            //Titlebar
+            //
+            if(titlebar_draw && titlebar_size.y != 0.0f)
+            {
+                if(titlebar_width_is_menu)
+                {
+                    titlebar_size.x = menu_size.x;
+                }
+
+                GUI::DrawRectangle(upper_left_interpolated,//Upper left to
+                upper_left_interpolated +//Upper left plus 
+                titlebar_size);//Titlebar size
+            }
+            //
+            //Titlebar
+
+            //Text Stuff
+            //
             GUI::SetFont(font);
 
             if(middle_text.size() != 0)
             {
                 GUI::DrawText(middle_text, upper_left_interpolated + middle_text_pos,
-                    text_color);
+                text_color);
             }
             
             if(left_text.size() != 0)
@@ -733,6 +833,9 @@ Optional send command option. Adding it will have it send a command to either ev
                 GUI::DrawText(right_text, upper_left_interpolated + right_text_pos,
                 text_color);//Right text
             }
+            //
+            //Text stuff
+
         }
 
         void RenderImage()
@@ -1030,51 +1133,6 @@ Optional send command option. Adding it will have it send a command to either ev
         //
 
 
-        //
-        //Titlebar
-        //
-        
-        private Vec2f titlebar_size;
-        Vec2f getTitlebarSize()
-        {
-            return titlebar_size;
-        }
-        void setTitlebarHeight(float value)
-        {
-            titlebar_size.y = value;
-            if(titlebar_size.x == 0)
-            {
-                titlebar_size.x = menu_size.x;
-            }
-        }
-        bool titlebar_width_is_menu = true;//When this is true the titlebar width will move with the menu
-        void setTitlebarWidth(float value)
-        {
-            titlebar_size.x = value;
-            titlebar_width_is_menu = false;
-        }
-
-        private Vec2f titlebar_press_pos;//Do not edit, this is for the moving menu part of the code.
-
-        bool titlebar_ignore_press = false;//When this is true the titlebar cannot move the menu.
-
-        bool titlebar_draw = true;//If this is false the titlebar will not be drawn (but will still function)
-
-        bool isPointInTitlebar(Vec2f value)//Is the vec2f value within the titlebar?
-        {
-            if(value.x <= lower_right.x - (menu_size.x - titlebar_size.x)&& value.y <= upper_left.y + titlebar_size.y
-            && value.x >= upper_left.x && value.y >= upper_left.y)
-            {
-                return true;//Yes
-            }
-            return false;//No
-        }
-
-        //
-        //Titlebar
-        //
-
-
         bool Tick() override
         {
             if(!MenuBasePlus::Tick())
@@ -1089,44 +1147,6 @@ Optional send command option. Adding it will have it send a command to either ev
                     optional_menus[i].Tick();
                 }
             }
-
-            CControls@ controls = getLocalPlayer().getControls();//This can be done safely as the code to check if client&player&controls is null/false was done in the inherited class.
-
-            Vec2f mouse_pos = controls.getMouseScreenPos();
-            bool left_button = controls.mousePressed1;
-            bool left_button_release = controls.isKeyJustReleased(KEY_LBUTTON);
-            bool left_button_just = controls.isKeyJustPressed(KEY_LBUTTON);
-            //bool right_button = controls.mousePressed2;
-            //bool right_button_release = controls.isKeyJustReleased(KEY_RBUTTON);
-            //bool scroll_up = controls.mouseScrollUp;
-            //bool scroll_down = controls.mouseScrollDown;
-
-            if(titlebar_width_is_menu)
-            {
-                titlebar_size.x = menu_size.x;
-            }
-
-            if(!titlebar_ignore_press && titlebar_size.y != 0.0f)
-            {
-                if(left_button)
-                {
-                    if(left_button_just && isPointInTitlebar(mouse_pos))
-                    {
-                        titlebar_press_pos = mouse_pos;
-                    }
-                    
-                    if(titlebar_press_pos != Vec2f_zero)
-                    {
-                        setPosition(upper_left - (titlebar_press_pos - mouse_pos));
-                        titlebar_press_pos = mouse_pos;
-                    }
-                }
-
-                if(!left_button && titlebar_press_pos != Vec2f_zero)
-                {
-                    titlebar_press_pos = Vec2f_zero;
-                }
-            }
             return true;
         }
 
@@ -1139,18 +1159,6 @@ Optional send command option. Adding it will have it send a command to either ev
                 error("Font " + font + " is not loaded.");
                 return;
             }*/
-
-            if(titlebar_draw && titlebar_size.y != 0.0f)
-            {
-                if(titlebar_width_is_menu)
-                {
-                    titlebar_size.x = menu_size.x;
-                }
-
-                GUI::DrawRectangle(upper_left_interpolated,//Upper left to
-                upper_left_interpolated +//Upper left plus 
-                titlebar_size);//Titlebar size
-            }
 
             RenderImage();
 
