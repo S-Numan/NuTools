@@ -46,7 +46,7 @@ void onInit( CRules@ this )
             Vec2f(700, 360),//Bottom right
             "TestMenu");//Menu name
 
-        random_menu.addMenuOption(NuMenu::CheckBox)
+        random_menu.addMenuOption(NuMenu::CheckBox);
 
         random_menu.setMiddleText("|Middle text|");
         //Fancy lower
