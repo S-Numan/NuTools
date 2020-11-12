@@ -962,17 +962,13 @@ Optional send command option. Adding it will have it send a command to either ev
 
     class MenuHolder : MenuBasePlus
     {
-        MenuHolder(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option)
+        MenuHolder(Vec2f _upper_left, Vec2f _lower_right, string _name)
         {
             if(!isClient())
             {
                 return;
             }
-            super(_upper_left, _lower_right, _name, _menu_option);
-
-            setMenuOption(MenuOptionHolder + _menu_option);
-
-            addMenuOption(_menu_option);
+            super(_upper_left, _lower_right, _name, MenuOptionHolder);
         }
 
 
@@ -1059,7 +1055,7 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             optional_menus.clear();
         }
-
+        //                      Type                Size of type            
         IMenu@ addMenuOption(u8 value, Vec2f optional_menu_size = Vec2f(32, 32))
         {
             switch(value)

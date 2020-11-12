@@ -44,8 +44,9 @@ void onInit( CRules@ this )
         NuMenu::MenuHolder random_menu = NuMenu::MenuHolder(
             Vec2f(300, 300),//Top left
             Vec2f(700, 360),//Bottom right
-            "TestMenu",//Menu name
-            NuMenu::CheckBox);//Menu type
+            "TestMenu");//Menu name
+
+        random_menu.addMenuOption(NuMenu::CheckBox)
 
         random_menu.setMiddleText("|Middle text|");
         //Fancy lower
