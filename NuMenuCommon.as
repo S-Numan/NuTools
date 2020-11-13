@@ -1018,7 +1018,7 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             if(image_name != "")
             {
-                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, upper_left_interpolated + image_pos, isWorldPos() ? camera.targetDistance : 1);
+                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, upper_left_interpolated + image_pos, isWorldPos() ? camera.targetDistance : 0.5);
             }
         }
 

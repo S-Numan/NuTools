@@ -49,7 +49,8 @@ void onInit( CRules@ this )
         random_menu.setIsWorldPos(false);
 
         random_menu.addMenuOption(NuMenu::CheckBox);
-
+        random_menu.setOptionalMenuPos(Vec2f(0, 32), 0);
+        
         //random_menu.setFont("AveriaSerif-Bold.ttf", 8);
 
         random_menu.setMiddleText("|Middle text|");
