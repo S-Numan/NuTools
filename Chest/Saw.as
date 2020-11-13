@@ -58,7 +58,6 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
             Vec2f(0.0f, 0.0f));//Image position
 
     button.image_pos = -(button.getSize() / 2) - button.image_frame_size / 4;
-    //button.image_pos = -button.image_frame_size / 2;
 
 
     button.command_string = toggle_id;
