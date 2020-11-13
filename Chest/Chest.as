@@ -2,6 +2,8 @@
 
 #include "LootCommon.as";
 #include "GenericButtonCommon.as";
+#include "CustomButton.as";
+#include "NuMenuCommon.as";
 
 void onInit(CBlob@ this)
 {
@@ -55,22 +57,34 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
 
 	if (!canSeeButtons(this, caller)) { return; }
 
-	const f32 DISTANCE_MAX = this.getRadius() + caller.getRadius() + 8.0f;
-	if (this.getDistanceTo(caller) > DISTANCE_MAX) { return; }
+	//const f32 DISTANCE_MAX = this.getRadius() + caller.getRadius() + 8.0f;
+	//if (this.getDistanceTo(caller) > DISTANCE_MAX) { return; }//???
 
 	CBitStream params;
 	params.write_u16(caller.getNetworkID());
 
-	CButton@ button = caller.CreateGenericButton(
-	"$chest_open$",                             // icon token
-	Vec2f_zero,                                 // button offset
-	this,                                       // button attachment
-	this.getCommandID("activate"),              // command id
-	getTranslatedString("Open"),                                     // description
-	params);                                    // cbitstream parameters
+	NuMenu::MenuButton@ button = NuMenu::MenuButton("");
+    
+    button.setOwnerBlob(this);
+    button.setRelationPos(Vec2f(this.getWidth()/2, this.getHeight()/2) - button.getSize() / 2);
+    
+    button.setImage("GUI/AccoladeBadges.png",//Image name
+            19,//Image frame
+            18,//Image frame while pressed
+            Vec2f(16, 16),//Image frame size
+            Vec2f(0.0f, 0.0f));//Image position
+
+    button.image_pos = button.getSize() / 2 - button.image_frame_size / 2;
+
+    button.command_string = "activate";
+    button.params = params;
+            
+	//getTranslatedString("Open"),                                     // description
 
 	button.radius = 8.0f;
 	button.enableRadius = 20.0f;
+
+    buttons.push_back(button);
 }
 
 void onCommand(CBlob@ this, u8 cmd, CBitStream @params)

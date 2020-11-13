@@ -36,6 +36,7 @@ Optional send command option. Adding it will have it send a command to either ev
     enum MenuOptions
     {
         Blank,
+        Custom,
         Button,
         Slider,
         LeftAndRight,
@@ -62,6 +63,8 @@ Optional send command option. Adding it will have it send a command to either ev
 
         IMenu@ getOwnerMenu();
         bool setOwnerMenu(IMenu@ _menu);
+        CBlob@ getOwnerBlob();
+        bool setOwnerBlob(CBlob@ _blob);
         bool getMoveToOwner();
         void setMoveToOwner(bool value);
 
@@ -107,7 +110,24 @@ Optional send command option. Adding it will have it send a command to either ev
     //Base of all menus.
     class MenuBase : IMenu
     {
-        MenuBase(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option)// add default option for world pos/screen pos? - Todo numan
+        MenuBase(string _name, u8 _menu_option = Custom)// add default option for world pos/screen pos? - Todo numan
+        {
+            if(!isClient())
+            {
+                return;
+            }
+            
+            setMenuOption(_menu_option);
+
+            setUpperLeft(Vec2f_zero);
+            setLowerRight(Vec2f_zero);
+
+            setInterpolated(true);
+
+            setName(_name);
+        }
+        
+        MenuBase(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option = Custom)// add default option for world pos/screen pos? - Todo numan
         {
             if(!isClient())
             {
@@ -222,7 +242,7 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             return owner_blob;
         }
-        bool setOwnerMenu(CBlob@ _blob)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setRelation. As in relation to it's owner.
+        bool setOwnerBlob(CBlob@ _blob)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setRelation. As in relation to it's owner.
         {
             if(getOwnerMenu() != null)
             {
@@ -532,19 +552,12 @@ Optional send command option. Adding it will have it send a command to either ev
                 if(didMenuJustMove())
                 {
                     float interpolation_factor = getInterpolationFactor();
-                    
-                    //print("upper_left = " + getUpperLeft().x);
-                    //print("upper_left_old = " + getUpperLeftOld().x);
-                    //print("upper_left_interpolated = " + upper_left_interpolated.x);
-                    //print("interpolation factor = " + interpolation_factor);
 
                     upper_left_interpolated = Vec2f_lerp(getUpperLeftOld(), getUpperLeft(), interpolation_factor);
 
                     lower_right_interpolated = Vec2f_lerp(getLowerRightOld(), getLowerRight(), interpolation_factor);
-                
-                    //menu_size = lower_right_interpolated - upper_left_interpolated;
                 }
-                else if(isWorldPos())//Basically if the camera moved. Move the menu too.
+                else if(isWorldPos())//Basically if the camera moved, Move the menu too.
                 {
                     upper_left_interpolated = getUpperLeft();
                     lower_right_interpolated = getLowerRight();
@@ -554,8 +567,6 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 upper_left_interpolated = getUpperLeft();
                 lower_right_interpolated = getLowerRight();
-            
-                //menu_size = lower_right_interpolated - upper_left_interpolated;
             }
         }
 
@@ -615,7 +626,21 @@ Optional send command option. Adding it will have it send a command to either ev
     //Base of all menus + more stuff. Stuff includes text, a titlebar (can be hidden and simply used for dragging the menu.) And a method that allows you to check if this was pressed and the states it can be in. Allows a single icon as well
     class MenuBasePlus : MenuBase
     {
-        MenuBasePlus(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option)
+        MenuBasePlus(string _name, u8 _menu_option = Custom)
+        {
+            if(!isClient())
+            {
+                return;
+            }
+
+            super(_name, _menu_option);
+            
+            setTextColor(SColor(255, 0, 0, 0));
+
+            setFont("AveriaSerif-Bold.ttf", 8);
+        }
+
+        MenuBasePlus(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option = Custom)
         {
             if(!isClient())
             {
@@ -1073,6 +1098,16 @@ Optional send command option. Adding it will have it send a command to either ev
     //Menu set up to function like a button.
     class MenuButton : MenuBasePlus
     {
+        MenuButton(string _name)
+        {
+            if(!isClient())
+            {
+                return;
+            }
+
+            super(_name, Button);
+        }
+
         MenuButton(Vec2f _upper_left, Vec2f _lower_right, string _name)
         {
             if(!isClient())
@@ -1083,7 +1118,27 @@ Optional send command option. Adding it will have it send a command to either ev
             super(_upper_left, _lower_right, _name, Button);
         }
 
+
+        string command_string;//The command id sent out upon being pressed.
+        bool send_to_rules = false;//If this is false, it will attempt to send the command_string to the owner blob. Otherwise it will send it to CRules.
+        CBitStream params;//The params to accompany above
+
+
+
+        bool hidden = true;//If this is true the button will not draw. Works with the radius variable.
+        bool instant_press = false;//If this is true, the button will trigger upon being just pressed.
+
+        float enableRadius = 0.0f;//The radius at which the button can be pressed
+        float radius = 0.0f;//The radius at which the button can be seen
+
+
         bool Tick() override
+        {
+            return Tick(Vec2f_zero);
+        }
+
+        //          the position parameter is for judging if this is within the enableRadius. 
+        bool Tick(Vec2f position)
         {
             if(!MenuBasePlus::Tick())
             {
@@ -1100,20 +1155,90 @@ Optional send command option. Adding it will have it send a command to either ev
             bool left_button_release = controls.isKeyJustReleased(KEY_LBUTTON);//Just released
             bool left_button_just = controls.isKeyJustPressed(KEY_LBUTTON);//Just pressed
 
-            button_state = getPressingState(mouse_pos, button_state, left_button, left_button_release, left_button_just);
+            float distance_from_button = getDistance(position, getPos() + getSize() / 2);
+
+            if(radius == 0.0f || position == Vec2f_zero ||
+            distance_from_button < radius)//Is within the vison radius
+            {
+                hidden = false;
+            }
+            else
+            {
+                hidden = true;
+            }
+
+            
+            if(enableRadius == 0.0f || position == Vec2f_zero ||
+            distance_from_button < enableRadius)
+            {
+                button_state = getPressingState(mouse_pos, button_state, left_button, left_button_release, left_button_just);
+            }
+            else
+            {
+                button_state = Disabled;
+            }
+
+            bool button_pressed = false;
+
+            if(instant_press)
+            {
+                if(button_state == JustPressed)
+                {
+                    button_pressed = true;
+                }
+            }
+            else if(button_state == Released)
+            {
+                button_pressed = true;
+            }
+
+            if(button_pressed)
+            {
+                if(send_to_rules)
+                {
+                    CRules@ _rules = getRules();
+
+                    _rules.SendCommand(_rules.getCommandID(command_string), params);
+                }
+                else if(getOwnerBlob() != null)
+                {
+                    CBlob@ _owner = getOwnerBlob();
+
+                    _owner.SendCommand(_owner.getCommandID(command_string), params);
+                }
+            }
 
             return true;
         }
 
         void Render() override
         {
+            if(hidden)
+            {
+                return;
+            }
+            
             MenuBasePlus::Render();
+        }
+
+        float getDistance(Vec2f point1, Vec2f point2)
+        {
+            return ((point1.x-point2.x)*(point1.x-point2.x)+(point1.y-point2.y)*(point1.y-point2.y));
         }
     }
 
     //Menu setup to function like an check box. Click once and it's state changes.
     class MenuCheckBox : MenuBasePlus
     {
+        MenuCheckBox(string _name)
+        {
+            if(!isClient())
+            {
+                return;
+            }
+
+            super(_name, CheckBox);
+        }
         MenuCheckBox(Vec2f _upper_left, Vec2f _lower_right, string _name)
         {
             if(!isClient())
@@ -1182,6 +1307,15 @@ Optional send command option. Adding it will have it send a command to either ev
     //This menu is designed to hold other menu's and keep them attached to it.
     class MenuHolder : MenuBasePlus
     {
+        MenuHolder(string _name)
+        {
+            if(!isClient())
+            {
+                return;
+            }
+            super(_name, MenuOptionHolder);
+        }
+
         MenuHolder(Vec2f _upper_left, Vec2f _lower_right, string _name)
         {
             if(!isClient())
@@ -1323,9 +1457,7 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 case Button:
                 {
-                    MenuButton@ _menu = MenuButton(Vec2f(0,0),
-                        Vec2f(0,0),
-                        _name + "_but");
+                    MenuButton@ _menu = MenuButton(_name + "_but");
 
 
                     optional_menus.push_back(@_menu);
@@ -1333,9 +1465,7 @@ Optional send command option. Adding it will have it send a command to either ev
                 }
                 case CheckBox:
                 {
-                    MenuCheckBox@ _menu = MenuCheckBox(Vec2f(0,0),
-                        Vec2f(0,0),
-                        _name + "_chk");
+                    MenuCheckBox@ _menu = MenuCheckBox(_name + "_chk");
 
 
                     optional_menus.push_back(@_menu);
