@@ -2,7 +2,6 @@
 
 #include "LootCommon.as";
 #include "GenericButtonCommon.as";
-#include "CustomButton.as";
 #include "NuMenuCommon.as";
 
 void onInit(CBlob@ this)
@@ -57,33 +56,42 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
 
 	if (!canSeeButtons(this, caller)) { return; }
 
-	//const f32 DISTANCE_MAX = this.getRadius() + caller.getRadius() + 8.0f;
-	//if (this.getDistanceTo(caller) > DISTANCE_MAX) { return; }//???
+	const f32 DISTANCE_MAX = this.getRadius() + caller.getRadius() + 8.0f;
+    if (this.getDistanceTo(caller) > DISTANCE_MAX) { return; }
 
 	CBitStream params;
 	params.write_u16(caller.getNetworkID());
 
 	NuMenu::MenuButton@ button = NuMenu::MenuButton("");
     
+    button.setIsWorldPos(true);
     button.setOwnerBlob(this);
-    button.setRelationPos(Vec2f(this.getWidth()/2, this.getHeight()/2) - button.getSize() / 2);
+    button.kill_on_press = true;
+    button.instant_press = true;
+
+    button.setSize(Vec2f(8, 8));
+    button.setRelationPos(-(button.getSize() / 2));
     
-    button.setImage("GUI/AccoladeBadges.png",//Image name
-            19,//Image frame
-            18,//Image frame while pressed
+    button.setImage("GUI/PartyIndicator.png",//Image name
+            4,//Image frame
+            5,//Image frame while pressed
             Vec2f(16, 16),//Image frame size
             Vec2f(0.0f, 0.0f));//Image position
 
-    button.image_pos = button.getSize() / 2 - button.image_frame_size / 2;
+    //button.image_pos = -button.image_frame_size - button.getSize() / 2;
+    button.image_pos = -(button.getSize() / 2) - button.image_frame_size / 4;
 
     button.command_string = "activate";
     button.params = params;
             
 	//getTranslatedString("Open"),                                     // description
 
-	button.radius = 8.0f;
-	button.enableRadius = 20.0f;
+	button.enableRadius = 200.0f;
 
+    array<NuMenu::MenuButton@>@ buttons;
+    getRules().get("CustomButtons", @buttons);
+ 
+    button.Tick(caller.getPosition());
     buttons.push_back(button);
 }
 

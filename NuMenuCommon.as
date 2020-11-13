@@ -1,3 +1,7 @@
+f32 FRAME_TIME = 0.0f; // last frame time
+const float MARGIN = 255.0f; 
+
+
 namespace NuMenu
 {
 
@@ -26,8 +30,10 @@ Check mark option on right
 Optional send command option. Adding it will have it send a command to either everything or just the server upon the button being pressed*/
     
 //TODO add params to Tick? such as Tick(CControls controls)
-//TODO fix text/font size changing
+//TODO fix text/font size changing//Copy and paste several font files and fix text
 //TODO don't draw when out of range
+//TODO fix things attached to blobs being a tick delayed
+
 
 
 
@@ -103,7 +109,7 @@ Optional send command option. Adding it will have it send a command to either ev
 
         void InterpolatePositions();
         
-        void Render();
+        bool Render();
 
     }
 
@@ -288,7 +294,7 @@ Optional send command option. Adding it will have it send a command to either ev
         }
 
 
-        private u8 button_state = Idle;//State of button (being pressed? mouse is hovered over?)
+        u8 button_state = Idle;//State of button (being pressed? mouse is hovered over?)
         u8 getMenuState()
         {
             return button_state;
@@ -551,11 +557,24 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 if(didMenuJustMove())
                 {
-                    float interpolation_factor = getInterpolationFactor();
+                    if(getOwnerBlob() != null && getMoveToOwner())
+                    {
+                        CCamera@ camera = getCamera();
+                        Driver@ driver = getDriver();//This might be even slower. - Todo numan
+                        CBlob@ _blob = getOwnerBlob();
 
-                    upper_left_interpolated = Vec2f_lerp(getUpperLeftOld(), getUpperLeft(), interpolation_factor);
+                        upper_left_interpolated = driver.getScreenPosFromWorldPos(_blob.getInterpolatedPosition()) + getRelationPos() * (camera.targetDistance * 2);
 
-                    lower_right_interpolated = Vec2f_lerp(getLowerRightOld(), getLowerRight(), interpolation_factor);
+                        lower_right_interpolated = upper_left_interpolated + getSize() * (camera.targetDistance * 2);
+                    }
+                    else//*/
+                    {
+                        upper_left_interpolated = Vec2f_lerp(getUpperLeftOld(), getUpperLeft(), FRAME_TIME);
+
+                        lower_right_interpolated = Vec2f_lerp(getLowerRightOld(), getLowerRight(), FRAME_TIME);
+                    }
+                    //print(FRAME_TIME+'');
+                
                 }
                 else if(isWorldPos())//Basically if the camera moved, Move the menu too.
                 {
@@ -578,9 +597,20 @@ Optional send command option. Adding it will have it send a command to either ev
         //
         //Rendering
         //
-        
-        void Render()//Overwrite this method if you want a different look.
+       
+        bool Render()//Overwrite this method if you want a different look.
         {
+            Driver@ driver = getDriver();
+
+            //If this cannot be seen.
+            if(getUpperLeft().x  - MARGIN > driver.getScreenWidth()
+            || getUpperLeft().y  - MARGIN > driver.getScreenHeight()
+            || getLowerRight().x + MARGIN < 0
+            || getLowerRight().y + MARGIN < 0 )
+            {
+                return false;//Don't draw it then.
+            }
+
             InterpolatePositions();//Don't forget this if you want interpolation.
 
             if(render_background)
@@ -616,6 +646,8 @@ Optional send command option. Adding it will have it send a command to either ev
                 
                 GUI::DrawRectangle(upper_left_interpolated, lower_right_interpolated, rec_color);
             }
+
+            return true;
         }
 
         //
@@ -870,8 +902,15 @@ Optional send command option. Adding it will have it send a command to either ev
                 }
                 else if(left_button_just)//Mouse button just pressed?
                 {
-                    initial_press = true;//This button was initially pressed.
-                    _button_state = JustPressed;//It was also just pressed.
+                    if(left_button_release)//Same tick press and release.
+                    {
+                        _button_state = Released;//Button was released
+                    }
+                    else//Normal behavior
+                    {
+                        initial_press = true;//This button was initially pressed.
+                        _button_state = JustPressed;//It was also just pressed.
+                    }
                 }//Only buttons with "initial_press" equal to true will have their button logic working.
                 
                 else if(!left_button)//If the button was not initially pressed and left mouse button is not being held
@@ -997,9 +1036,12 @@ Optional send command option. Adding it will have it send a command to either ev
         //Rendering
         //
         
-        void Render() override
+        bool Render() override
         {
-            MenuBase::Render();
+            if(!MenuBase::Render())
+            {
+                return false;
+            }
 
             CCamera@ camera;
             if(isWorldPos())
@@ -1080,19 +1122,21 @@ Optional send command option. Adding it will have it send a command to either ev
             //
             //Text stuff
 
+            return true;
         }
 
         void RenderImage(CCamera@ camera)
         {
             if(image_name != "")
             {
-                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, upper_left_interpolated + image_pos, isWorldPos() ? camera.targetDistance : 0.5);
+                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, upper_left_interpolated + image_pos * camera.targetDistance, isWorldPos() ? camera.targetDistance : 0.5);
             }
         }
 
         //
         //Rendering
         //
+
     }
 
     //Menu set up to function like a button.
@@ -1119,26 +1163,40 @@ Optional send command option. Adding it will have it send a command to either ev
         }
 
 
-        string command_string;//The command id sent out upon being pressed.
+        string command_string = "";//The command id sent out upon being pressed.
         bool send_to_rules = false;//If this is false, it will attempt to send the command_string to the owner blob. Otherwise it will send it to CRules.
         CBitStream params;//The params to accompany above
 
 
+        bool kill_on_press = false;
 
-        bool hidden = true;//If this is true the button will not draw. Works with the radius variable.
         bool instant_press = false;//If this is true, the button will trigger upon being just pressed.
 
         float enableRadius = 0.0f;//The radius at which the button can be pressed
-        float radius = 0.0f;//The radius at which the button can be seen
 
 
         bool Tick() override
         {
-            return Tick(Vec2f_zero);
+            CPlayer@ player = getLocalPlayer();
+            if(player == null){return false;}
+            CControls@ controls = player.getControls();
+            if(controls == null){return false;}
+            
+            return Tick(KEY_LBUTTON, controls.getMouseScreenPos());
         }
 
-        //          the position parameter is for judging if this is within the enableRadius. 
         bool Tick(Vec2f position)
+        {
+            CPlayer@ player = getLocalPlayer();
+            if(player == null){return false;}
+            CControls@ controls = player.getControls();
+            if(controls == null){return false;}
+            
+            return Tick(KEY_LBUTTON, controls.getMouseScreenPos(), position);
+        }
+
+        //Examples: point parameter for the mouse position, the position parameter is for the blob. position parameter only really useful when it comes to radius stuff.
+        bool Tick(u16 key_code, Vec2f point, Vec2f position = Vec2f_zero)
         {
             if(!MenuBasePlus::Tick())
             {
@@ -1148,51 +1206,58 @@ Optional send command option. Adding it will have it send a command to either ev
             CPlayer@ player = getLocalPlayer();
 
             CControls@ controls = player.getControls();
-
-            Vec2f mouse_pos = controls.getMouseScreenPos();
             
-            bool left_button = controls.mousePressed1;//Pressing
-            bool left_button_release = controls.isKeyJustReleased(KEY_LBUTTON);//Just released
-            bool left_button_just = controls.isKeyJustPressed(KEY_LBUTTON);//Just pressed
+            bool key_button = controls.isKeyPressed(key_code);//Pressing
+            bool key_button_release = controls.isKeyJustReleased(key_code);//Just released
+            bool key_button_just = controls.isKeyJustPressed(key_code);//Just pressed
 
-            float distance_from_button = getDistance(position, getPos() + getSize() / 2);
 
-            if(radius == 0.0f || position == Vec2f_zero ||
-            distance_from_button < radius)//Is within the vison radius
-            {
-                hidden = false;
-            }
-            else
-            {
-                hidden = true;
-            }
-
+            float distance_from_button = getDistance(position, getPos(true) + getSize() / 2);
             
             if(enableRadius == 0.0f || position == Vec2f_zero ||
-            distance_from_button < enableRadius)
+            distance_from_button < enableRadius)//Is within enable(interact) distance
             {
-                button_state = getPressingState(mouse_pos, button_state, left_button, left_button_release, left_button_just);
+                button_state = getPressingState(point, button_state, key_button, key_button_release, key_button_just);
+                if(instant_press)
+                {
+                    if(button_state == JustPressed)
+                    {
+                        button_state = Released;
+                    }
+                    else if(button_state == Hover)
+                    {
+                        button_state = Pressed;
+                    }
+                }
+                
             }
             else
             {
                 button_state = Disabled;
             }
 
-            bool button_pressed = false;
 
-            if(instant_press)
+            if(button_state == Released)
             {
-                if(button_state == JustPressed)
-                {
-                    button_pressed = true;
-                }
-            }
-            else if(button_state == Released)
-            {
-                button_pressed = true;
+                sendCommand();
             }
 
-            if(button_pressed)
+            return true;
+        }
+
+        bool Render() override
+        {
+            if(!MenuBasePlus::Render())
+            {
+                return false;
+            }
+        
+            return true;
+        }
+
+        void sendCommand()
+        {
+            if(command_string != "")
             {
                 if(send_to_rules)
                 {
@@ -1207,23 +1272,22 @@ Optional send command option. Adding it will have it send a command to either ev
                     _owner.SendCommand(_owner.getCommandID(command_string), params);
                 }
             }
-
-            return true;
-        }
-
-        void Render() override
-        {
-            if(hidden)
-            {
-                return;
-            }
-            
-            MenuBasePlus::Render();
         }
 
         float getDistance(Vec2f point1, Vec2f point2)
         {
-            return ((point1.x-point2.x)*(point1.x-point2.x)+(point1.y-point2.y)*(point1.y-point2.y));
+            float dis = (Maths::Pow(point1.x-point2.x,2)+Maths::Pow(point1.y-point2.y,2));
+            return Maths::Sqrt(dis);
+            //return getDistanceToLine(point1, point1 + Vec2f(0,1), point2);
+        }
+
+        void RenderImage(CCamera@ camera) override
+        {
+            if(image_name != "")
+            {
+                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, upper_left_interpolated + image_pos * camera.targetDistance,
+                isWorldPos() ? camera.targetDistance : 0.5, button_state == Disabled ? SColor(80, 255, 255, 255) : SColor(255, 255, 255, 255));
+            }
         }
     }
 
@@ -1237,6 +1301,8 @@ Optional send command option. Adding it will have it send a command to either ev
                 return;
             }
 
+            render_background = false;
+
             super(_name, CheckBox);
         }
         MenuCheckBox(Vec2f _upper_left, Vec2f _lower_right, string _name)
@@ -1245,6 +1311,8 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 return;
             }
+
+            render_background = false;
 
             super(_upper_left, _lower_right, _name, CheckBox);
         }
@@ -1278,10 +1346,12 @@ Optional send command option. Adding it will have it send a command to either ev
             return true;
         }
 
-        void Render() override
+        bool Render() override
         {
-            //Temp
-            //MenuBasePlus::Render();
+            if(!MenuBasePlus::Render())
+            {
+                return false;
+            }
 
             InterpolatePositions();
 
@@ -1293,6 +1363,8 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 GUI::DrawRectangle(upper_left_interpolated, lower_right_interpolated, SColor(255, 127,25,25));
             }
+
+            return true;
         }
     }
 
@@ -1546,9 +1618,12 @@ Optional send command option. Adding it will have it send a command to either ev
             return true;
         }
 
-        void Render() override
+        bool Render() override
         {
-            MenuBasePlus::Render();
+            if(!MenuBasePlus::Render())
+            {
+                return false;
+            }
 
             /*if(!GUI::isFontLoaded(font))
             {
@@ -1575,6 +1650,7 @@ Optional send command option. Adding it will have it send a command to either ev
             }
 
 
+            return true;
         }
     }
 
@@ -1587,26 +1663,28 @@ Optional send command option. Adding it will have it send a command to either ev
     
         array<Menu> buttons();
     
-        void onTick( CRules@ this )
+        void onTick( CRules@ rules )
         {
 
         }
 
-        void onRender( CRules@ this )
+        void onRender( CRules@ rules )
         {
 
         }
     }*/
 
 
-    void onTick( CRules@ this )
-    {
 
+    
+    
+    void onTick( CRules@ rules )
+    {
+        FRAME_TIME = 0.0f;
     }
 
-    void onRender( CRules@ this )
+    void onRender( CRules@ rules )
     {
-
+        FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
     }
-
 }

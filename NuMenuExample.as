@@ -5,6 +5,11 @@ array<int> namehashes;
 
 void onInit( CRules@ this )
 {
+    if(!isClient())
+    {
+        return;
+    }
+
     array<NuMenu::IMenu@> _menus();
         /*NuMenu::FancyMenu(
         Vec2f(200, 200),//Top left
@@ -66,15 +71,15 @@ void onInit( CRules@ this )
         random_menu.setTitlebarHeight(16.0f);
         //random_menu.setTitlebarWidth(random_menu.getSize().x - 16.0f);
 
-        NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
+        /*NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
         option1.setRelationPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));
 
         _menus.push_back(random_menu);//*/
 
-        NuMenu::MenuButton menu_button_dunno = NuMenu::MenuButton(Vec2f(64,64), Vec2f(72, 72), "well_then");
+        /*NuMenu::MenuButton menu_button_dunno = NuMenu::MenuButton(Vec2f(64,64), Vec2f(72, 72), "well_then");
         menu_button_dunno.setIsWorldPos(true);
 
-        _menus.push_back(menu_button_dunno);
+        _menus.push_back(menu_button_dunno);*/
     }
 
     for(u16 i = 0; i < _menus.size(); i++)
@@ -86,10 +91,22 @@ void onInit( CRules@ this )
 
 void onTick( CRules@ this )
 {
+    NuMenu::onTick(this);
+
+    if(!isClient())
+    {
+        return;
+    }
+
     u16 i;
     //array<NuMenu::FancyMenu@> gotmenus();
     for(i = 0; i < menus.size(); i++)
     {
+        if(menus[i] == null)
+        {
+            continue;
+        }
+        
         menus[i].Tick();
         if(menus[i].getMenuState() == NuMenu::Released)//Menu itself checking.
         {
@@ -111,14 +128,23 @@ void onTick( CRules@ this )
     }
 
     
-
-    MenuOptionChanger(menus[0]);
+    if(menus.size () > 0)
+    {
+        MenuOptionChanger(menus[0]);
+    }
 }
 
 void onRender( CRules@ this )
 {
+    NuMenu::onRender(this);
+    
     for(u16 i = 0; i < menus.size(); i++)
     {
+        if(menus[i] == null)
+        {
+            continue;
+        }
+
         menus[i].Render();
     }
 }
