@@ -56,6 +56,9 @@ Optional send command option. Adding it will have it send a command to either ev
         int getNameHash();
         void setName(string value);
 
+        IMenu@ getOwnerMenu();
+        bool setOwnerMenu(IMenu@ _menu);
+
         u8 getMenuOption();
         void setMenuOption(u8 value);
 
@@ -71,16 +74,16 @@ Optional send command option. Adding it will have it send a command to either ev
         void setInterpolated(bool value);
 
         Vec2f getUpperLeftInterpolated();
-        Vec2f getUpperLeft();
+        Vec2f getUpperLeft(bool get_raw_pos = false);
         void setUpperLeft(Vec2f value);
         void setPosition(Vec2f value);
         Vec2f getLowerRightInterpolated();
-        Vec2f getLowerRight();
+        Vec2f getLowerRight(bool get_raw_pos = false);
         void setLowerRight(Vec2f value);
         bool didButtonJustMove();
         Vec2f getMenuSize();
         void setSize(Vec2f value);
-        Vec2f getMenuMiddle();
+        Vec2f getMenuMiddle(bool get_raw_pos = false);
 
         Vec2f getUpperLeftRelation();
         void setUpperLeftRelation(Vec2f value);
@@ -122,7 +125,7 @@ Optional send command option. Adding it will have it send a command to either ev
         float default_buffer = 4;
 
         //
-        //TODO
+        //World
         //
 
         private bool is_world_pos = false;//If this is true, this works on worldpos. If this is false, this works like normal gui (on ScreenPos). I.E move with camera or not. TODO
@@ -140,7 +143,7 @@ Optional send command option. Adding it will have it send a command to either ev
         }
         
         //
-        //TODO
+        //World 
         //
 
 
@@ -166,8 +169,42 @@ Optional send command option. Adding it will have it send a command to either ev
             name = value;
             name_hash = name.getHash();
         }
+        
         //
         //Name stuff
+        //
+
+
+        //
+        //Owner Menu
+        //
+
+        bool posto_owner_menu = true;//If this is true, this menu will move itself to the position of it's owner with relation added to it. 
+        private IMenu@ owner_menu;//The owner of this menu, usually the one that spawned this menu in.
+        IMenu@ getOwnerMenu()
+        {
+            return owner_menu;
+        }
+        bool setOwnerMenu(IMenu@ _menu)//Be aware, when this menu is moving with it's owner setPosition stuff will not do much. You need to change setRelation. As in relation to it's owner.
+        {
+            if(_menu.getNameHash() == getNameHash())
+            {
+                error("Tried to make menu its own owner.");
+                return false;
+            }
+            if(_menu.getOwnerMenu() != null && _menu.getOwnerMenu().getNameHash() == getNameHash())
+            {
+                error("Tried to intertwine ownership of menus.");
+                return false;
+            }
+
+            owner_menu = _menu;
+            return true;
+        }
+        
+
+        //
+        //Owner menu
         //
 
 
@@ -234,11 +271,13 @@ Optional send command option. Adding it will have it send a command to either ev
 
         private Vec2f upper_left_world_to_screen;//Only used if isWorldPos is true.
         private Vec2f upper_left;//Upper left of menu
-        Vec2f getUpperLeft()
+        Vec2f getUpperLeft(bool get_raw_pos = false)//If this bool is true; even if isWorldPos() is true, it will get the raw position. I.E in most cases the actual world position. not the world to screen pos. does nothing if isWorldPos is false.
         {
-            if(isWorldPos())
+            if(isWorldPos() && !get_raw_pos)
             {
-                return upper_left_world_to_screen;
+                //CCamera@ camera = getCamera();
+                Driver@ driver = getDriver();//This might be slow. - Todo numan
+                return driver.getScreenPosFromWorldPos(upper_left);
             }
             
             return upper_left;
@@ -248,13 +287,6 @@ Optional send command option. Adding it will have it send a command to either ev
             upper_left = value;
             menu_size = Vec2f(lower_right.x - upper_left.x, lower_right.y - upper_left.y);
             menu_middle = upper_left + menu_size / 2;
-        
-            if(isWorldPos())
-            {
-                Driver@ driver = getDriver();
-                upper_left_world_to_screen = driver.getScreenPosFromWorldPos(upper_left);
-                menu_middle_world_to_screen = driver.getScreenPosFromWorldPos(menu_middle);
-            }
         }
 
         //Changes the upper left position and lower right at the same time. No changes to the size of the menu.
@@ -263,23 +295,17 @@ Optional send command option. Adding it will have it send a command to either ev
             upper_left = value;
             lower_right = upper_left + menu_size;
             menu_middle = upper_left + menu_size / 2;
-        
-            if(isWorldPos())
-            {
-                Driver@ driver = getDriver();
-                upper_left_world_to_screen = driver.getScreenPosFromWorldPos(upper_left);
-                lower_right_world_to_screen = driver.getScreenPosFromWorldPos(lower_right);
-                menu_middle_world_to_screen = driver.getScreenPosFromWorldPos(menu_middle);
-            }
         }
 
         private Vec2f lower_right_world_to_screen;//Only used if isWorldPos is true.
         private Vec2f lower_right;//Lower right of menu
-        Vec2f getLowerRight()
+        Vec2f getLowerRight(bool get_raw_pos = false)//If this bool is true; even if isWorldPos() is true, it will get the raw position. I.E in most cases the actual world position. not the world to screen pos. does nothing if isWorldPos is false.
         {
-            if(isWorldPos())
+            if(isWorldPos() && !get_raw_pos)
             {
-                return lower_right_world_to_screen;
+                //CCamera@ camera = getCamera();
+                Driver@ driver = getDriver();
+                return driver.getScreenPosFromWorldPos(lower_right);
             }
 
             return lower_right;
@@ -289,13 +315,6 @@ Optional send command option. Adding it will have it send a command to either ev
             lower_right = value;
             menu_size = Vec2f(lower_right.x - upper_left.x, lower_right.y - upper_left.y);
             menu_middle = upper_left + menu_size / 2;
-
-            if(isWorldPos())
-            {
-                Driver@ driver = getDriver();
-                lower_right_world_to_screen = driver.getScreenPosFromWorldPos(lower_right);
-                menu_middle_world_to_screen = driver.getScreenPosFromWorldPos(menu_middle);
-            }
         }
 
         
@@ -312,9 +331,9 @@ Optional send command option. Adding it will have it send a command to either ev
 
         private Vec2f menu_middle_world_to_screen;
         private Vec2f menu_middle;//The point on screen the middle of the menu is.
-        Vec2f getMenuMiddle()
+        Vec2f getMenuMiddle(bool get_raw_pos = false)
         {
-            if(isWorldPos())
+            if(isWorldPos() && !get_raw_pos)
             {
                 return menu_middle_world_to_screen;
             }
@@ -416,12 +435,19 @@ Optional send command option. Adding it will have it send a command to either ev
                 return false;//Inform anything that uses this method that something went wrong.
             }
 
+            if(owner_menu != null && posto_owner_menu)//If this menu has an owner, and it is supposed to move towards the owner.
+            {
+                setUpperLeft(owner_menu.getUpperLeft(true));
+                setLowerRight(owner_menu.getLowerRight(true));
+            }
+
             //Set the interpolated values to the positions.
             upper_left_interpolated = getUpperLeft();
             lower_right_interpolated = getLowerRight();
             //And make the old be equal to the new.
             upper_left_old = getUpperLeft();
             lower_right_old = getLowerRight();
+
 
             CPlayer@ player = getLocalPlayer();
             if(player == null)//The player must exist to get the CControls. (and maybe some other stuff)
@@ -491,7 +517,7 @@ Optional send command option. Adding it will have it send a command to either ev
                 upper_left_interpolated = getUpperLeft();
                 lower_right_interpolated = getLowerRight();
             
-                menu_size = lower_right - upper_left;
+                menu_size = lower_right_interpolated - upper_left_interpolated;
             }
         }
 
@@ -538,7 +564,7 @@ Optional send command option. Adding it will have it send a command to either ev
                         rec_color = SColor(255, 255, 255, 255);
                         break;
                 }
-
+                
                 GUI::DrawRectangle(upper_left_interpolated, lower_right_interpolated, rec_color);
             }
         }
@@ -717,8 +743,10 @@ Optional send command option. Adding it will have it send a command to either ev
 
         bool isPointInTitlebar(Vec2f value)//Is the vec2f value within the titlebar?
         {
-            if(value.x <= getLowerRight().x - (menu_size.x - titlebar_size.x)&& value.y <= getUpperLeft().y + titlebar_size.y
-            && value.x >= getUpperLeft().x && value.y >= getUpperLeft().y)
+            if(value.x <= getLowerRight(false).x - (menu_size.x - titlebar_size.x) //If the point is to the left of the titlebar's right side.
+            && value.y <= getUpperLeft(false).y + titlebar_size.y//If the point is above the titlebar's bottom.
+            && value.x >= getUpperLeft(false).x//If the point is to the right of the titlebar's left side.
+            && value.y >= getUpperLeft(false).y)//If the point is below the titlebar's top.
             {
                 return true;//Yes
             }
@@ -797,7 +825,17 @@ Optional send command option. Adding it will have it send a command to either ev
 
             CControls@ controls = getLocalPlayer().getControls();//This can be done safely as the code to check if client&player&controls is null/false was done in the inherited class.
 
-            Vec2f mouse_pos = controls.getMouseScreenPos();
+            Vec2f mouse_pos;
+            if(isWorldPos())//World pos
+            {
+                mouse_pos = controls.getMouseWorldPos();
+            }
+            else//Screen pos
+            {
+                mouse_pos = controls.getMouseScreenPos();
+            }
+            
+            
             bool left_button = controls.mousePressed1;
             bool left_button_release = controls.isKeyJustReleased(KEY_LBUTTON);
             bool left_button_just = controls.isKeyJustPressed(KEY_LBUTTON);
@@ -822,7 +860,7 @@ Optional send command option. Adding it will have it send a command to either ev
                     
                     if(titlebar_press_pos != Vec2f_zero)
                     {
-                        setPosition(getUpperLeft() - //Current menu position subtracted by
+                        setPosition(getUpperLeft(false) - //Current menu position subtracted by
                          (titlebar_press_pos - mouse_pos));//The positioned the titlebar was pressed minus the current mouse position. (The difference.)
                         titlebar_press_pos = mouse_pos;
                     }
@@ -883,9 +921,12 @@ Optional send command option. Adding it will have it send a command to either ev
                     titlebar_size.x = menu_size.x;
                 }
 
-                GUI::DrawRectangle(upper_left_interpolated,//Upper left to
-                upper_left_interpolated +//Upper left plus 
-                titlebar_size);//Titlebar size
+                Vec2f _upperleft = upper_left_interpolated;//Upper left
+                
+                Vec2f _lowerright = (upper_left_interpolated + titlebar_size)//Upper left plus titlebar_size
+                ;
+
+                GUI::DrawRectangle(_upperleft, _lowerright);
             }
             //
             //Titlebar
@@ -920,7 +961,8 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             if(image_name != "")
             {
-                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, upper_left_interpolated + image_pos, 0.5f);
+                CCamera@ camera = getCamera();
+                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, upper_left_interpolated + image_pos, camera.targetDistance);
             }
         }
 
@@ -1079,6 +1121,20 @@ Optional send command option. Adding it will have it send a command to either ev
             moveMenuAttachments();
         }
         
+        void setIsWorldPos(bool value) override
+        {
+            MenuBasePlus::setIsWorldPos(value);
+            for(u16 i = 0; i < optional_menus.size(); i++)
+            {
+                if(optional_menus[i] == null)
+                {
+                    continue;
+                }
+
+                optional_menus[i].setIsWorldPos(value);
+            }
+        }
+
         //
         //Overries
         //
@@ -1089,8 +1145,12 @@ Optional send command option. Adding it will have it send a command to either ev
         //
 
         private IMenu@[] optional_menus;
+        IMenu@[] getOptionalMenuArray()
+        {
+            return @optional_menus;
+        }
 
-        Vec2f getMenuOptionalPos(u16 option_menu = 0)//In relation to this menu
+        Vec2f getOptionalMenuPos(u16 option_menu = 0)//In relation to this menu
         {
             if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
             {
@@ -1098,7 +1158,7 @@ Optional send command option. Adding it will have it send a command to either ev
             }
             return Vec2f_zero;
         }
-        bool setMenuOptionalPos(Vec2f value, u16 option_menu = 0)//Sets it in relation to this menu
+        bool setOptionalMenuPos(Vec2f value, u16 option_menu = 0)//Sets it in relation to this menu
         {
             if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
             {
@@ -1110,7 +1170,7 @@ Optional send command option. Adding it will have it send a command to either ev
             return false;
         }
 
-        u8 getOptionalState(u16 option_menu = 0)//Param refers to specific menu in array
+        u8 getOptionalMenuState(u16 option_menu = 0)//Param refers to specific menu in array
         {
             if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
             {
@@ -1194,6 +1254,13 @@ Optional send command option. Adding it will have it send a command to either ev
         //Using this will move the menu attachments (optional_menus) with the menu holding it to where it should go. (using upper_left of this menu, and upper_left_relation of the optional menu)
         void moveMenuAttachments(bool useInterpolatedValue = false)//When this is true it uses the interpolated values. This only matters in Render functions.
         {
+            CCamera@ camera;
+
+            if(isWorldPos())
+            {
+                @camera = @getCamera();
+            }
+
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
                 if(optional_menus[i] == null)//Should never happen, but check anyway to have less pain in case it does.
@@ -1204,7 +1271,8 @@ Optional send command option. Adding it will have it send a command to either ev
                 //switch(optional_menus[i].getMenuOption())
                 //{
                     //case CheckBox:
-                optional_menus[i].setPosition((useInterpolatedValue ? upper_left_interpolated : getUpperLeft()) + optional_menus[i].getUpperLeftRelation());
+            
+                optional_menus[i].setPosition((useInterpolatedValue ? upper_left_interpolated : getUpperLeft()) + optional_menus[i].getUpperLeftRelation() * camera.targetDistance);
                         //break;
                     //default:
                         //break;
@@ -1230,6 +1298,7 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 if(optional_menus[i] != null)
                 {
+                    //optional_menus[i].setIsWorldPos(isWorldPos());
                     optional_menus[i].Tick();
                     
                     //As with interpolation, on the next tick after the movement didButtonJustMove becomes false. In the Render() it uses that to judge if any menu attachments should move.

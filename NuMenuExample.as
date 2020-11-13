@@ -42,8 +42,8 @@ void onInit( CRules@ this )
 
     {
         NuMenu::MenuHolder random_menu = NuMenu::MenuHolder(
-            Vec2f(300, 300),//Top left
-            Vec2f(700, 360),//Bottom right
+            Vec2f(0, 0),//Top left
+            Vec2f(200, 200),//Bottom right
             "TestMenu");//Menu name
 
         random_menu.setIsWorldPos(true);
@@ -65,9 +65,13 @@ void onInit( CRules@ this )
 
         NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
         option1.setRelationPos(Vec2f(random_menu.getMenuSize().x/2, random_menu.getMenuSize().y - option1.getMenuSize().y));
-        random_menu.moveMenuAttachments();
 
-        _menus.push_back(random_menu);
+        _menus.push_back(random_menu);//*/
+
+        /*NuMenu::MenuButton menu_button_dunno = NuMenu::MenuButton(Vec2f(0,0), Vec2f(200, 200), "well_then");
+        menu_button_dunno.setIsWorldPos(true);
+
+        _menus.push_back(menu_button_dunno);//*/
     }
 
     for(u16 i = 0; i < _menus.size(); i++)
@@ -89,15 +93,15 @@ void onTick( CRules@ this )
             print("release in " + menus[i].getName());
         }
         
-        //if(menus[i].getNameHash() == "TestMenu".getHash())//Option checking.
-        //{
+        if(menus[i].getName() == "TestMenu")//Option checking.
+        {
             NuMenu::MenuHolder@ menubase = cast<NuMenu::MenuHolder@>(menus[i]);
             NuMenu::IMenu@ _menu = menubase.getOptionalMenu();
             if(_menu.getMenuState() == NuMenu::Released)
             {
                 print("option checked " + _menu.getName());
             }
-        //}
+        }
     }
 
     CPlayer@ player = getLocalPlayer();
@@ -108,15 +112,39 @@ void onTick( CRules@ this )
         {
             if(controls.isKeyPressed(KEY_LBUTTON))
             {
-                menus[0].setUpperLeft(controls.getMouseScreenPos());
+                Vec2f _pos;
+                if(menus[0].isWorldPos())
+                {
+                    _pos = controls.getMouseWorldPos();
+                    //Driver@ driver = getDriver();
+                    //_pos += driver.getScreenCenterPos();
+                }
+                else
+                {
+                    _pos = controls.getMouseScreenPos();
+                }
+                menus[0].setUpperLeft(_pos);
+                print("upperleft mouse = " + _pos);
             }
             if(controls.isKeyPressed(KEY_RBUTTON))
             {
-                menus[0].setLowerRight(controls.getMouseScreenPos());
+                Vec2f _pos;
+                if(menus[0].isWorldPos())
+                {
+                    _pos = controls.getMouseWorldPos();
+                }
+                else
+                {
+                    _pos = controls.getMouseScreenPos();
+                }
+
+                menus[0].setLowerRight(_pos);
+                print("lowerright mouse = " + _pos);
             }
             if(controls.isKeyJustPressed(KEY_KEY_X))
             {
                 menus[0].setInterpolated(!menus[0].getInterpolated());
+                print("Interpolation of menu = " + menus[0].getInterpolated());
             }
         }
     }
