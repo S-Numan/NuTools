@@ -964,7 +964,7 @@ Optional send command option. Adding it will have it send a command to either ev
             //
             //Titlebar
 
-            RenderImage();
+            RenderImage(camera);
 
             //Text Stuff
             //
@@ -1014,12 +1014,11 @@ Optional send command option. Adding it will have it send a command to either ev
 
         }
 
-        void RenderImage()
+        void RenderImage(CCamera@ camera)
         {
             if(image_name != "")
             {
-                CCamera@ camera = getCamera();
-                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, upper_left_interpolated + image_pos, camera.targetDistance);
+                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, upper_left_interpolated + image_pos, isWorldPos() ? camera.targetDistance : 1);
             }
         }
 
