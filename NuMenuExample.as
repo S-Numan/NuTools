@@ -42,13 +42,15 @@ void onInit( CRules@ this )
 
     {
         NuMenu::MenuHolder random_menu = NuMenu::MenuHolder(
-            Vec2f(0, 0),//Top left
-            Vec2f(200, 200),//Bottom right
+            Vec2f(64, 64),//Top left
+            Vec2f(128, 128),//Bottom right
             "TestMenu");//Menu name
 
         random_menu.setIsWorldPos(false);
 
         random_menu.addMenuOption(NuMenu::CheckBox);
+
+        //random_menu.setFont("AveriaSerif-Bold.ttf", 8);
 
         random_menu.setMiddleText("|Middle text|");
         //Fancy lower
@@ -58,20 +60,20 @@ void onInit( CRules@ this )
             19,//Image frame
             18,//Image frame while pressed
             Vec2f(16, 16),//Image frame size
-            Vec2f(0.0f, 0.0f));//button1.getMenuSize().y/2 - 16/2));
+            Vec2f(0.0f, 0.0f));//button1.getSize().y/2 - 16/2));
 
         random_menu.setTitlebarHeight(16.0f);
-        //random_menu.setTitlebarWidth(random_menu.getMenuSize().x - 16.0f);
+        //random_menu.setTitlebarWidth(random_menu.getSize().x - 16.0f);
 
         NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
-        option1.setRelationPos(Vec2f(random_menu.getMenuSize().x/2, random_menu.getMenuSize().y - option1.getMenuSize().y));
+        option1.setRelationPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));
 
         _menus.push_back(random_menu);//*/
 
-        /*NuMenu::MenuButton menu_button_dunno = NuMenu::MenuButton(Vec2f(0,0), Vec2f(200, 200), "well_then");
+        NuMenu::MenuButton menu_button_dunno = NuMenu::MenuButton(Vec2f(64,64), Vec2f(72, 72), "well_then");
         menu_button_dunno.setIsWorldPos(true);
 
-        _menus.push_back(menu_button_dunno);//*/
+        _menus.push_back(menu_button_dunno);
     }
 
     for(u16 i = 0; i < _menus.size(); i++)
@@ -93,14 +95,17 @@ void onTick( CRules@ this )
             print("release in " + menus[i].getName());
         }
         
-        if(menus[i].getName() == "TestMenu")//Option checking.
+        if(menus[i].getNameHash() == "TestMenu".getHash())//Option checking.
         {
             NuMenu::MenuHolder@ menubase = cast<NuMenu::MenuHolder@>(menus[i]);
             NuMenu::IMenu@ _menu = menubase.getOptionalMenu();
+            //NuMenu::MenuCheckBox@ _menu = cast<NuMenu::MenuCheckBox@>(menubase.getOptionalMenu());
             if(_menu.getMenuState() == NuMenu::Released)
             {
                 print("option checked " + _menu.getName());
             }
+            //print("old position of child menu 0 = " + _menu.upper_left_old.x + " " + _menu.upper_left_old.y);
+            //print("position of child menu 0 =    " +_menu.getPos().x + " " + _menu.getPos().y);
         }
     }
 
@@ -163,8 +168,8 @@ void MenuOptionChanger(NuMenu::IMenu@ _menu)
             }
             if(controls.isKeyJustPressed(KEY_KEY_X))
             {
-                _menu.setInterpolated(!_menu.getInterpolated());
-                print("Interpolation of menu = " + _menu.getInterpolated());
+                _menu.setInterpolated(!_menu.isInterpolated());
+                print("Interpolation of menu = " + _menu.isInterpolated());
             }
             if(controls.isKeyJustPressed(KEY_KEY_Z))
             {
