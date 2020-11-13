@@ -76,6 +76,7 @@ Optional send command option. Adding it will have it send a command to either ev
         Vec2f getUpperLeftInterpolated();
         Vec2f getUpperLeft(bool get_raw_pos = false);
         void setUpperLeft(Vec2f value);
+        Vec2f getPos(bool get_raw_pos = false);
         void setPosition(Vec2f value);
         Vec2f getLowerRightInterpolated();
         Vec2f getLowerRight(bool get_raw_pos = false);
@@ -83,7 +84,6 @@ Optional send command option. Adding it will have it send a command to either ev
         bool didButtonJustMove();
         Vec2f getMenuSize();
         void setSize(Vec2f value);
-        Vec2f getMenuMiddle(bool get_raw_pos = false);
 
         Vec2f getRelationPos();
         void setRelationPos(Vec2f value);
@@ -281,7 +281,6 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             upper_left = value;
             menu_size = Vec2f(lower_right.x - upper_left.x, lower_right.y - upper_left.y);
-            menu_middle = upper_left + menu_size / 2;
         }
 
         //Changes the upper left position and lower right at the same time. No changes to the size of the menu.
@@ -289,7 +288,10 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             upper_left = value;
             lower_right = upper_left + menu_size;
-            menu_middle = upper_left + menu_size / 2;
+        }
+        Vec2f getPos(bool get_raw_pos = false)
+        {
+            return getUpperLeft(get_raw_pos);
         }
 
         private Vec2f lower_right_world_to_screen;//Only used if isWorldPos is true.
@@ -298,7 +300,6 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             if(isWorldPos() && !get_raw_pos)
             {
-                //CCamera@ camera = getCamera();
                 Driver@ driver = getDriver();
                 return driver.getScreenPosFromWorldPos(lower_right);
             }
@@ -309,7 +310,6 @@ Optional send command option. Adding it will have it send a command to either ev
         { 
             lower_right = value;
             menu_size = Vec2f(lower_right.x - upper_left.x, lower_right.y - upper_left.y);
-            menu_middle = upper_left + menu_size / 2;
         }
 
         
@@ -322,18 +322,6 @@ Optional send command option. Adding it will have it send a command to either ev
         void setSize(Vec2f value)//Changes the length of the lower_right pos to make it the correct size.
         {
             setLowerRight(upper_left + value);
-        }
-
-        private Vec2f menu_middle_world_to_screen;
-        private Vec2f menu_middle;//The point on screen the middle of the menu is.
-        Vec2f getMenuMiddle(bool get_raw_pos = false)
-        {
-            if(isWorldPos() && !get_raw_pos)
-            {
-                return menu_middle_world_to_screen;
-            }
-
-            return menu_middle;
         }
 
         //
@@ -718,10 +706,10 @@ Optional send command option. Adding it will have it send a command to either ev
 
         bool isPointInTitlebar(Vec2f value)//Is the vec2f value within the titlebar?
         {
-            if(value.x <= getLowerRight(false).x - (menu_size.x - titlebar_size.x) //If the point is to the left of the titlebar's right side.
-            && value.y <= getUpperLeft(false).y + titlebar_size.y//If the point is above the titlebar's bottom.
-            && value.x >= getUpperLeft(false).x//If the point is to the right of the titlebar's left side.
-            && value.y >= getUpperLeft(false).y)//If the point is below the titlebar's top.
+            if(value.x <= getLowerRight(true).x - (menu_size.x - titlebar_size.x) //If the point is to the left of the titlebar's right side.
+            && value.y <= getUpperLeft(true).y + titlebar_size.y//If the point is above the titlebar's bottom.
+            && value.x >= getUpperLeft(true).x//If the point is to the right of the titlebar's left side.
+            && value.y >= getUpperLeft(true).y)//If the point is below the titlebar's top.
             {
                 return true;//Yes
             }
@@ -835,7 +823,7 @@ Optional send command option. Adding it will have it send a command to either ev
                     
                     if(titlebar_press_pos != Vec2f_zero)
                     {
-                        setPosition(getUpperLeft(false) - //Current menu position subtracted by
+                        setPosition(getUpperLeft(true) - //Current menu position subtracted by
                          (titlebar_press_pos - mouse_pos));//The positioned the titlebar was pressed minus the current mouse position. (The difference.)
                         titlebar_press_pos = mouse_pos;
                     }
@@ -1209,6 +1197,9 @@ Optional send command option. Adding it will have it send a command to either ev
                 //added_menu.setRelationPos(Vec2f(menu_size.x - optional_menu_size.x - default_buffer, menu_size.y/2 - optional_menu_size.y/2));
 
                 added_menu.setOwnerMenu(this);
+
+
+                added_menu.setPosition(getPos(true) + added_menu.getRelationPos());
 
                 return @added_menu;
             }
