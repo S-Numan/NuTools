@@ -1070,31 +1070,6 @@ Optional send command option. Adding it will have it send a command to either ev
         //
         //Overrides
         //
-
-        /*void setUpperLeft(Vec2f value) override
-        {
-            MenuBasePlus::setUpperLeft(value);
-            //moveMenuAttachments();
-        }
-
-        //Changes the upper left position and lower right at the same time. No changes to the size of the menu.
-        void setPosition(Vec2f value) override
-        {
-            MenuBasePlus::setPosition(value);
-            //moveMenuAttachments();
-        }
-
-        void setLowerRight(Vec2f value) override
-        { 
-            MenuBasePlus::setLowerRight(value);
-            //moveMenuAttachments();
-        }
-
-        void setSize(Vec2f value) override//Changes the length of the lower_right pos to make it the correct size.
-        {
-            MenuBasePlus::setSize(value);
-            //moveMenuAttachments();
-        }*/
         
         void setInterpolated(bool value)
         {
@@ -1220,7 +1195,6 @@ Optional send command option. Adding it will have it send a command to either ev
                     break;
             }
 
-            //moveMenuAttachments();
             optional_menu_id_count++;
 
 
@@ -1242,34 +1216,6 @@ Optional send command option. Adding it will have it send a command to either ev
             return @null;
         }
 
-        //Using this will move the menu attachments (optional_menus) with the menu holding it to where it should go. (using upper_left of this menu, and upper_left_relation of the optional menu)
-        void moveMenuAttachments(bool useInterpolatedValue = false)//When this is true it uses the interpolated values. This only matters in Render functions.
-        {
-            CCamera@ camera;
-
-            if(isWorldPos())
-            {
-                @camera = @getCamera();
-            }
-
-            for(u16 i = 0; i < optional_menus.size(); i++)
-            {
-                if(optional_menus[i] == null)//Should never happen, but check anyway to have less pain in case it does.
-                {
-                    error("Menu was equal to null."); continue;
-                }
-
-                //switch(optional_menus[i].getMenuOption())
-                //{
-                    //case CheckBox:
-            
-                optional_menus[i].setPosition((useInterpolatedValue ? upper_left_interpolated : getUpperLeft(false)) + optional_menus[i].getRelationPos()); //* camera.targetDistance);
-                        //break;
-                    //default:
-                        //break;
-                //}
-            }
-        }
 
         //
         //Optional Menus
@@ -1305,14 +1251,6 @@ Optional send command option. Adding it will have it send a command to either ev
             }*/
 
             RenderImage();
-
-            if(getInterpolated())//If this menu is interpolated.
-            {
-                if(didButtonJustMove())
-                {
-                    //moveMenuAttachments(true);
-                }
-            }
 
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
