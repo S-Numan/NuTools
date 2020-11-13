@@ -515,10 +515,10 @@ Optional send command option. Adding it will have it send a command to either ev
                         rec_color = SColor(255, 30, 50, 255);
                         break;
                     case Pressed:
-                        rec_color = SColor(255, 255, 0, 0);
+                        rec_color = SColor(255, 127,25,25);
                         break;
                     case Released:
-                        rec_color = SColor(255, 0, 255, 0);
+                        rec_color = SColor(255, 25,127,25);
                         break;
                     case Disabled:
                         rec_color = SColor(255, 5, 5, 5);
@@ -1025,11 +1025,11 @@ Optional send command option. Adding it will have it send a command to either ev
 
             if(menu_checked == true)
             {
-                GUI::DrawRectangle(upper_left_interpolated, lower_right_interpolated, SColor(255, 255, 0, 0));
+                GUI::DrawRectangle(upper_left_interpolated, lower_right_interpolated, SColor(255, 25,127,25));
             }
             else
             {
-                GUI::DrawRectangle(upper_left_interpolated, lower_right_interpolated, SColor(255, 0, 255, 0));
+                GUI::DrawRectangle(upper_left_interpolated, lower_right_interpolated, SColor(255, 127,25,25));
             }
         }
     }

@@ -104,6 +104,26 @@ void onTick( CRules@ this )
         }
     }
 
+    
+
+    MenuOptionChanger(menus[0]);
+}
+
+void onRender( CRules@ this )
+{
+    for(u16 i = 0; i < menus.size(); i++)
+    {
+        menus[i].Render();
+    }
+}
+
+
+
+
+
+
+void MenuOptionChanger(NuMenu::IMenu@ _menu)
+{
     CPlayer@ player = getLocalPlayer();
     if(player != null)
     {
@@ -113,7 +133,7 @@ void onTick( CRules@ this )
             if(controls.isKeyPressed(KEY_LBUTTON))
             {
                 Vec2f _pos;
-                if(menus[0].isWorldPos())
+                if(_menu.isWorldPos())
                 {
                     _pos = controls.getMouseWorldPos();
                     //Driver@ driver = getDriver();
@@ -123,13 +143,13 @@ void onTick( CRules@ this )
                 {
                     _pos = controls.getMouseScreenPos();
                 }
-                menus[0].setUpperLeft(_pos);
+                _menu.setUpperLeft(_pos);
                 print("upperleft mouse = " + _pos);
             }
             if(controls.isKeyPressed(KEY_RBUTTON))
             {
                 Vec2f _pos;
-                if(menus[0].isWorldPos())
+                if(_menu.isWorldPos())
                 {
                     _pos = controls.getMouseWorldPos();
                 }
@@ -138,28 +158,19 @@ void onTick( CRules@ this )
                     _pos = controls.getMouseScreenPos();
                 }
 
-                menus[0].setLowerRight(_pos);
+                _menu.setLowerRight(_pos);
                 print("lowerright mouse = " + _pos);
             }
             if(controls.isKeyJustPressed(KEY_KEY_X))
             {
-                menus[0].setInterpolated(!menus[0].getInterpolated());
-                print("Interpolation of menu = " + menus[0].getInterpolated());
+                _menu.setInterpolated(!_menu.getInterpolated());
+                print("Interpolation of menu = " + _menu.getInterpolated());
             }
             if(controls.isKeyJustPressed(KEY_KEY_Z))
             {
-                menus[0].setIsWorldPos(!menus[0].isWorldPos());
-                print("IsWorldPos = " + menus[0].isWorldPos());
+                _menu.setIsWorldPos(!_menu.isWorldPos());
+                print("IsWorldPos = " + _menu.isWorldPos());
             }
         }
-    }
-
-}
-
-void onRender( CRules@ this )
-{
-    for(u16 i = 0; i < menus.size(); i++)
-    {
-        menus[i].Render();
     }
 }
