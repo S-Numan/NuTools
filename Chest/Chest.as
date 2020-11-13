@@ -50,10 +50,13 @@ void onInit(CBlob@ this)
 
 void GetButtonsFor(CBlob@ this, CBlob@ caller)
 {
-	if (!canSeeButtons(this, caller) || this.exists(DROP)) return;
+    if(this.exists(DROP)){ return; }//Chest only
+
+
+	if (!canSeeButtons(this, caller)) { return; }
 
 	const f32 DISTANCE_MAX = this.getRadius() + caller.getRadius() + 8.0f;
-	if (this.getDistanceTo(caller) > DISTANCE_MAX || this.isAttached()) return;
+	if (this.getDistanceTo(caller) > DISTANCE_MAX) { return; }
 
 	CBitStream params;
 	params.write_u16(caller.getNetworkID());

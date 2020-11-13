@@ -27,6 +27,9 @@ Optional send command option. Adding it will have it send a command to either ev
     
 //TODO add params to Tick? such as Tick(CControls controls)
 //TODO fix text/font size changing
+//TODO don't draw when out of range
+
+
 
     u8 MenuOptionHolder = 100;
 
@@ -175,7 +178,10 @@ Optional send command option. Adding it will have it send a command to either ev
 
 
         //
-        //Owner Menu
+        //Owners
+        //
+
+        //Menu
         //
 
         private IMenu@ owner_menu;//The owner of this menu, usually the one that spawned this menu in.
@@ -195,10 +201,41 @@ Optional send command option. Adding it will have it send a command to either ev
                 error("Tried to intertwine ownership of menus.");
                 return false;
             }
+            if(getOwnerBlob() != null)
+            {
+                error("You cannot have both a menu and blob as an owner at the same time.");
+                return false;
+            }
 
             @owner_menu = @_menu;
             return true;
         }
+
+        //
+        //Menu
+
+        //Blob
+        //
+
+        private CBlob@ owner_blob;//The owner of this menu, usually the one that spawned this menu in.
+        CBlob@ getOwnerBlob()
+        {
+            return owner_blob;
+        }
+        bool setOwnerMenu(CBlob@ _blob)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setRelation. As in relation to it's owner.
+        {
+            if(getOwnerMenu() != null)
+            {
+                error("You cannot have both a menu and blob as an owner at the same time.");
+                return false;
+            }
+
+            @owner_blob = @_blob;
+            return true;
+        }
+
+        //Blob
+        //
 
         bool move_to_owner = true;//If this is true, this menu will move itself to the position of it's owner with relation added to it. 
         bool getMoveToOwner()
@@ -209,11 +246,11 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             move_to_owner = value;
         }
-        
 
         //
-        //Owner menu
+        //Owners
         //
+
 
 
         //
@@ -437,7 +474,13 @@ Optional send command option. Adding it will have it send a command to either ev
             upper_left_old = getUpperLeft(true);
             lower_right_old = getLowerRight(true);
 
-            
+
+            //Automatically move to blob if there is an owner blob and getMoveToOwner is true.
+            CBlob@ _owner_blob = getOwnerBlob();
+            if(_owner_blob != null && getMoveToOwner())
+            {
+                setPos(_owner_blob.getPosition() + getRelationPos());
+            }  
 
             CPlayer@ player = getLocalPlayer();
             if(player == null)//The player must exist to get the CControls. (and maybe some other stuff)
