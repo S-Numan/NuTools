@@ -85,13 +85,8 @@ Optional send command option. Adding it will have it send a command to either ev
         void setSize(Vec2f value);
         Vec2f getMenuMiddle(bool get_raw_pos = false);
 
-        Vec2f getUpperLeftRelation();
-        void setUpperLeftRelation(Vec2f value);
-        Vec2f getLowerRightRelation();
-        void setLowerRightRelation(Vec2f value);
-
+        Vec2f getRelationPos();
         void setRelationPos(Vec2f value);
-        void setRelationSize();
 
         bool isPointInMenu(Vec2f value);
 
@@ -198,7 +193,7 @@ Optional send command option. Adding it will have it send a command to either ev
                 return false;
             }
 
-            owner_menu = _menu;
+            @owner_menu = @_menu;
             return true;
         }
         
@@ -365,34 +360,15 @@ Optional send command option. Adding it will have it send a command to either ev
         //Relation positions
         //
 
-        private Vec2f upper_left_relation;//For the inherited classes for less pain.
-        Vec2f getUpperLeftRelation()
-        {
-            return upper_left_relation;
-        }
-        void setUpperLeftRelation(Vec2f value)
-        {
-            upper_left_relation = value;
-        }
-        private Vec2f lower_right_relation;//See above
-        Vec2f getLowerRightRelation()
-        {
-            return lower_right_relation;
-        }
-        void setLowerRightRelation(Vec2f value)
-        {
-            lower_right_relation = value;
-        }
+        private Vec2f relation_pos;//For moving this in relation to something else
 
+        Vec2f getRelationPos()
+        {
+            return relation_pos;
+        }
         void setRelationPos(Vec2f value)
         {
-            upper_left_relation = value;
-            setRelationSize();
-        }
-
-        void setRelationSize()
-        {
-            lower_right_relation = upper_left_relation + menu_size;
+            relation_pos = value;
         }
 
         //
@@ -435,12 +411,6 @@ Optional send command option. Adding it will have it send a command to either ev
                 return false;//Inform anything that uses this method that something went wrong.
             }
 
-            if(owner_menu != null && posto_owner_menu)//If this menu has an owner, and it is supposed to move towards the owner.
-            {
-                setUpperLeft(owner_menu.getUpperLeft(true));
-                setLowerRight(owner_menu.getLowerRight(true));
-            }
-
             //Set the interpolated values to the positions.
             upper_left_interpolated = getUpperLeft();
             lower_right_interpolated = getLowerRight();
@@ -448,6 +418,11 @@ Optional send command option. Adding it will have it send a command to either ev
             upper_left_old = getUpperLeft();
             lower_right_old = getLowerRight();
 
+
+            if(owner_menu != null && posto_owner_menu)//If this menu has an owner, and it is supposed to move towards the owner.
+            {
+                setPosition(owner_menu.getUpperLeft(true) + getRelationPos());
+            }
 
             CPlayer@ player = getLocalPlayer();
             if(player == null)//The player must exist to get the CControls. (and maybe some other stuff)
@@ -1096,31 +1071,45 @@ Optional send command option. Adding it will have it send a command to either ev
         //Overrides
         //
 
-        void setUpperLeft(Vec2f value) override
+        /*void setUpperLeft(Vec2f value) override
         {
             MenuBasePlus::setUpperLeft(value);
-            moveMenuAttachments();
+            //moveMenuAttachments();
         }
 
         //Changes the upper left position and lower right at the same time. No changes to the size of the menu.
         void setPosition(Vec2f value) override
         {
             MenuBasePlus::setPosition(value);
-            moveMenuAttachments();
+            //moveMenuAttachments();
         }
 
         void setLowerRight(Vec2f value) override
         { 
             MenuBasePlus::setLowerRight(value);
-            moveMenuAttachments();
+            //moveMenuAttachments();
         }
 
         void setSize(Vec2f value) override//Changes the length of the lower_right pos to make it the correct size.
         {
             MenuBasePlus::setSize(value);
-            moveMenuAttachments();
-        }
+            //moveMenuAttachments();
+        }*/
         
+        void setInterpolated(bool value)
+        {
+            MenuBasePlus::setInterpolated(value);
+            for(u16 i = 0; i < optional_menus.size(); i++)
+            {
+                if(optional_menus[i] == null)
+                {
+                    continue;
+                }
+
+                optional_menus[i].setInterpolated(value);
+            }
+        }
+
         void setIsWorldPos(bool value) override
         {
             MenuBasePlus::setIsWorldPos(value);
@@ -1147,14 +1136,14 @@ Optional send command option. Adding it will have it send a command to either ev
         private IMenu@[] optional_menus;
         IMenu@[] getOptionalMenuArray()
         {
-            return @optional_menus;
+            return optional_menus;
         }
 
         Vec2f getOptionalMenuPos(u16 option_menu = 0)//In relation to this menu
         {
             if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
             {
-                return optional_menus[option_menu].getUpperLeftRelation();
+                return optional_menus[option_menu].getRelationPos();
             }
             return Vec2f_zero;
         }
@@ -1213,10 +1202,6 @@ Optional send command option. Adding it will have it send a command to either ev
                         Vec2f(0,0),
                         _name + "_but");
 
-                    _menu.setSize(optional_menu_size);
-                    _menu.setInterpolated(false);//Done manually
-
-                    _menu.setRelationPos(Vec2f(menu_size.x - optional_menu_size.x - default_buffer, menu_size.y/2 - optional_menu_size.y/2));
 
                     optional_menus.push_back(@_menu);
                     break;
@@ -1227,10 +1212,6 @@ Optional send command option. Adding it will have it send a command to either ev
                         Vec2f(0,0),
                         _name + "_chk");
 
-                    _menu.setSize(optional_menu_size);
-                    _menu.setInterpolated(false);//Done manually
-
-                    _menu.setRelationPos(Vec2f(menu_size.x - optional_menu_size.x - default_buffer, menu_size.y/2 - optional_menu_size.y/2));
 
                     optional_menus.push_back(@_menu);
                     break;
@@ -1239,13 +1220,23 @@ Optional send command option. Adding it will have it send a command to either ev
                     break;
             }
 
-            moveMenuAttachments();
+            //moveMenuAttachments();
             optional_menu_id_count++;
 
 
             if(optional_menus.size() != 0 && optional_menus[optional_menus.size() - 1] != null)
             {
-                return @optional_menus[optional_menus.size() - 1];
+                IMenu@ added_menu = @optional_menus[optional_menus.size() - 1];
+
+                added_menu.setIsWorldPos(isWorldPos());
+                added_menu.setSize(optional_menu_size);
+                added_menu.setInterpolated(getInterpolated());
+
+                //added_menu.setRelationPos(Vec2f(menu_size.x - optional_menu_size.x - default_buffer, menu_size.y/2 - optional_menu_size.y/2));
+
+                added_menu.setOwnerMenu(this);
+
+                return @added_menu;
             }
             
             return @null;
@@ -1272,7 +1263,7 @@ Optional send command option. Adding it will have it send a command to either ev
                 //{
                     //case CheckBox:
             
-                optional_menus[i].setPosition((useInterpolatedValue ? upper_left_interpolated : getUpperLeft()) + optional_menus[i].getUpperLeftRelation() * camera.targetDistance);
+                optional_menus[i].setPosition((useInterpolatedValue ? upper_left_interpolated : getUpperLeft(false)) + optional_menus[i].getRelationPos()); //* camera.targetDistance);
                         //break;
                     //default:
                         //break;
@@ -1287,7 +1278,6 @@ Optional send command option. Adding it will have it send a command to either ev
 
         bool Tick() override
         {
-            bool button_just_move_old = didButtonJustMove();
             
             if(!MenuBasePlus::Tick())
             {
@@ -1298,14 +1288,7 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 if(optional_menus[i] != null)
                 {
-                    //optional_menus[i].setIsWorldPos(isWorldPos());
                     optional_menus[i].Tick();
-                    
-                    //As with interpolation, on the next tick after the movement didButtonJustMove becomes false. In the Render() it uses that to judge if any menu attachments should move.
-                    if(getInterpolated() && button_just_move_old)//Without this every button would become one render call away from where it should actually be.
-                    {
-                        optional_menus[i].setPosition(getUpperLeft() + optional_menus[i].getUpperLeftRelation());
-                    }
                 }
             }
             return true;
@@ -1327,7 +1310,7 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 if(didButtonJustMove())
                 {
-                    moveMenuAttachments(true);
+                    //moveMenuAttachments(true);
                 }
             }
 

@@ -46,7 +46,7 @@ void onInit( CRules@ this )
             Vec2f(200, 200),//Bottom right
             "TestMenu");//Menu name
 
-        random_menu.setIsWorldPos(true);
+        random_menu.setIsWorldPos(false);
 
         random_menu.addMenuOption(NuMenu::CheckBox);
 
@@ -145,6 +145,11 @@ void onTick( CRules@ this )
             {
                 menus[0].setInterpolated(!menus[0].getInterpolated());
                 print("Interpolation of menu = " + menus[0].getInterpolated());
+            }
+            if(controls.isKeyJustPressed(KEY_KEY_Z))
+            {
+                menus[0].setIsWorldPos(!menus[0].isWorldPos());
+                print("IsWorldPos = " + menus[0].isWorldPos());
             }
         }
     }
