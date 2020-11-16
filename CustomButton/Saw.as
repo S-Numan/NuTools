@@ -31,46 +31,39 @@ bool getSawOn(CBlob@ this)
 
 void GetButtonsFor(CBlob@ this, CBlob@ caller)
 {
-	if (!canSeeButtons(this, caller)) return;
+	if (!canSeeButtons(this, caller)) { return; }
 
-	if (caller.getTeamNum() != this.getTeamNum() || this.getDistanceTo(caller) > 16) return;
+    const float MAX_DISTANCE = 16;//Max distance the button can be from the caller. Any further and the button wont show up.
 
-	//string desc = getTranslatedString("Turn Saw " + (getSawOn(this) ? "Off" : "On"));
+	if (caller.getTeamNum() != this.getTeamNum() ||
+    this.getDistanceTo(caller) > MAX_DISTANCE) { return; }//Max distance button is allowed from the caller.
 	
-    NuMenu::MenuButton@ button = NuMenu::MenuButton("");
+    NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
     
-    button.setIsWorldPos(true);
-    button.setOwnerBlob(this);
-    button.kill_on_press = true;
-    button.instant_press = true;
-    
+    button.kill_on_press = true;//The button will be removed on press. (logic for this happens outside the button class)
+    button.instant_press = true;//Button is Pressed when hovering over. Button is instantly released upon pressing.
 
-    button.setSize(Vec2f(8, 8));
-    
-    button.setRelationPos(-(button.getSize() / 2));
+    button.setSize(Vec2f(8, 8));//Size of button. Changes how large the button is. Larger buttons are easier to press.
+    button.setRelationPos(-(button.getSize() / 2));//Where the button is in relation to it's OwnerBlob. This should center the button directly on the blob.
 
-
-
-    button.setImage("GUI/PartyIndicator.png",//Image name
-            4,//Image frame
-            5,//Image frame while pressed
+    button.setImage("UI/ButtonIcons.png",//Image name
+            0,//Image frame
+            1,//Image frame while pressed
             Vec2f(16, 16),//Image frame size
             Vec2f(0.0f, 0.0f));//Image position
 
-    button.image_pos = -(button.getSize() / 2) - button.image_frame_size / 4;
+    button.image_pos = button.image_frame_size / 2;//Where the image is on the button
 
+    button.command_string = "activate";//This command will be sent to this blob when this button is pressed.
+            
+    //string desc = getTranslatedString("Turn Saw " + (getSawOn(this) ? "Off" : "On"));
 
-    button.command_string = toggle_id;
+    button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
+    button.Tick(caller.getPosition());//Tick button once to initially set the button state. For example if the button is out of range this will instantly tell the button to be greyed. Without this the button with be normal for a tick.
 
-
-    button.enableRadius = 100.0f;
-
-    array<NuMenu::MenuButton@>@ buttons;
-    getRules().get("CustomButtons", @buttons);
- 
-    button.Tick(caller.getPosition());
-    buttons.push_back(button);
-    //print("t = " + buttons.size());
+    array<NuMenu::MenuButton@>@ buttons;//Init array.
+    getRules().get("CustomButtons", @buttons);//Grab array.
+    buttons.push_back(button);//Put button in CustomButtons array.
 }
 
 void onCommand(CBlob@ this, u8 cmd, CBitStream @params)

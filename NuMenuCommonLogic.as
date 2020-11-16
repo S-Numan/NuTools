@@ -10,3 +10,4 @@ void onRender( CRules@ rules )
 {
     NuMenu::onRender(rules);
 }
+

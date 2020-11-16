@@ -46,10 +46,12 @@ void onInit( CRules@ this )
         */
 
     {
+        print("creation");
         NuMenu::MenuHolder random_menu = NuMenu::MenuHolder(
             Vec2f(64, 64),//Top left
-            Vec2f(128, 128),//Bottom right
+            Vec2f(128 * 4, 128 * 4),//Bottom right
             "TestMenu");//Menu name
+        print("just ater creation");
 
         random_menu.setIsWorldPos(false);
 
@@ -58,10 +60,26 @@ void onInit( CRules@ this )
         
         //random_menu.setFont("AveriaSerif-Bold.ttf", 8);
 
-        random_menu.setMiddleText("|Middle text|");
-        //Fancy lower
-        random_menu.setLeftText("|Left text|");
-        random_menu.setRightText("|Right text|");
+        random_menu.setText("ZCenter textZ", NuMenu::POSCenter);
+
+        random_menu.setText("ZTop textZ"   , NuMenu::POSTop);
+        random_menu.setText("ZAbove textZ" , NuMenu::POSAbove);
+
+        random_menu.setText("ZLeft textZ"  , NuMenu::POSLeft);
+        random_menu.setText("ZLefter textZ"  , NuMenu::POSLefter);
+
+        random_menu.setText("ZRight textZ" , NuMenu::POSRight);
+        random_menu.setText("ZRighter textZ" , NuMenu::POSRighter);
+
+
+        random_menu.setText("ZBottom textZ", NuMenu::POSBottom);
+        random_menu.setText("ZUnder textZ" , NuMenu::POSUnder);
+        
+
+        random_menu.reposition_text = true;
+
+
+        
         random_menu.setImage("GUI/AccoladeBadges.png",//Image name
             19,//Image frame
             18,//Image frame while pressed
@@ -72,9 +90,9 @@ void onInit( CRules@ this )
         //random_menu.setTitlebarWidth(random_menu.getSize().x - 16.0f);
 
         /*NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
-        option1.setRelationPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));
+        option1.setRelationPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));//*/
 
-        _menus.push_back(random_menu);//*/
+        _menus.push_back(random_menu);
 
         /*NuMenu::MenuButton menu_button_dunno = NuMenu::MenuButton(Vec2f(64,64), Vec2f(72, 72), "well_then");
         menu_button_dunno.setIsWorldPos(true);
@@ -118,7 +136,7 @@ void onTick( CRules@ this )
             NuMenu::MenuHolder@ menubase = cast<NuMenu::MenuHolder@>(menus[i]);
             NuMenu::IMenu@ _menu = menubase.getOptionalMenu();
             //NuMenu::MenuCheckBox@ _menu = cast<NuMenu::MenuCheckBox@>(menubase.getOptionalMenu());
-            if(_menu.getMenuState() == NuMenu::Released)
+            if(_menu != null && _menu.getMenuState() == NuMenu::Released)
             {
                 print("option checked " + _menu.getName());
             }
