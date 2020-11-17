@@ -1,5 +1,5 @@
 f32 FRAME_TIME = 0.0f; // last frame time
-const float MARGIN = 255.0f; 
+const float MARGIN = 255.0f;//How many pixels away will things stop drawing from outside the screen.
 
 
 namespace NuMenu
@@ -26,24 +26,21 @@ Left right arrow togglable option for right_text
 Check mark option on right
 
 
-
-Optional send command option. Adding it will have it send a command to either everything or just the server upon the button being pressed*/
+*/
     
 //TODO add params to Tick? such as Tick(CControls controls)
 //TODO fix text/font size changing//Copy and paste several font files and fix text
 //TODO don't draw when out of range
 //TODO fix things attached to blobs being a tick delayed
-//TODO titlebar text? Basically text on the very top middle of the menu. Add it!
-//Add sfx for on hover, un hover, justpress, and release.
 //Stretchy ends for MenuBasePlus. Drag the menu size around.
-//Circular collisions? Collisions atm are too boxy or small.
-//Possible need for reposition image.
+//Circular collisions? Collisions atm are too boxy or small. Do distance from point. See bottom of button class.
 //Take another look at reposition_text. Optimise perhaps. Perhaps not. Improve it somehow, maybe.
 //Make more things in MenuBase methods for IMenu.
-//Stop button spazz when pushed against terrain with owner blob.
+//Stop button spazz when pushed against terrain with owner blob. Blob pos freaks out when attached to user while pushing against wall. Try an attachment point? Maybe try making your own with nothing on it to see if it smooths it. Use CShape pos?
 //Seperate draw and collision positions?
 //Add top right, bottom left, and bottom right to POSPositions
-    
+//Seperate MenuBasePlus into one more layer down.
+//Confirm the distance calculation with buttons isn't that wonky. It feels wonky. Something has to be wonky
     
     enum POSPositions//Stores all positions that stuff can be in.
     {
@@ -75,6 +72,8 @@ Optional send command option. Adding it will have it send a command to either ev
         Slider,
         LeftAndRight,
         CheckBox,
+
+        MenuOptionsCount,//Always last, this specifies the amount of menu options.
     }
 
     enum ButtonState
@@ -793,15 +792,19 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 if(didMenuJustMove())
                 {
-                    if(getOwnerBlob() != null && getMoveToOwner())
+                    CBlob@ _blob = getOwnerBlob();
+
+                    if(_blob != null && getMoveToOwner())//If this menu has an owner blob and it is supposed to move towards it.
                     {
                         CCamera@ camera = getCamera();
                         Driver@ driver = getDriver();//This might be even slower. - Todo numan
-                        CBlob@ _blob = getOwnerBlob();
+                        
+                        
+                        upper_left[2] = driver.getScreenPosFromWorldPos(_blob.getInterpolatedPosition())//Screen position of the blob plus
+                        + getRelationPos() * (camera.targetDistance * 2);//the relation pos times the camera distance times 2
 
-                        upper_left[2] = driver.getScreenPosFromWorldPos(_blob.getInterpolatedPosition()) + getRelationPos() * (camera.targetDistance * 2);
-
-                        lower_right[2] = upper_left[2] + getSize() * (camera.targetDistance * 2);
+                        lower_right[2] = upper_left[2]//Upper left interpolated plus
+                        + (getSize()) * (camera.targetDistance * 2);//The menu size times the camera distance times 2
                     }
                     else//*/
                     {

@@ -82,6 +82,8 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
     button.default_buffer = 12.0f;//Buffer between bottom of the button and the text.
     button.setText(getTranslatedString("Open"), NuMenu::POSUnder);//The text on the button..
 
+    button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
+
     addButton(caller, button);
 }
 

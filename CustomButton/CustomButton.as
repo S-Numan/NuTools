@@ -115,6 +115,11 @@ void onTick( CRules@ rules )
                 if(buttons[i].kill_on_press)
                 {
                     buttons.removeAt(i);
+                    if(e_key_release)
+                    {
+                        buttons.clear();
+                        return;
+                    }
                 }
                 break;
             }
@@ -167,7 +172,7 @@ void onTick( CRules@ rules )
         }
         //Quick pass
     }
-    else if(buttons.size() != 0)
+    else if(buttons.size() != 0)//Blob is equal to null.
     {
         buttons.clear();
     }
