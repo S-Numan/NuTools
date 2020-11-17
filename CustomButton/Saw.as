@@ -39,31 +39,26 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
     this.getDistanceTo(caller) > MAX_DISTANCE) { return; }//Max distance button is allowed from the caller.
 	
     NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
-    
-    button.kill_on_press = true;//The button will be removed on press. (logic for this happens outside the button class)
-    button.instant_press = true;//Button is Pressed when hovering over. Button is instantly released upon pressing.
 
     button.setSize(Vec2f(8, 8));//Size of button. Changes how large the button is. Larger buttons are easier to press.
-    button.setRelationPos(-(button.getSize() / 2));//Where the button is in relation to it's OwnerBlob. This should center the button directly on the blob.
 
-    button.setImage("UI/ButtonIcons.png",//Image name
-            0,//Image frame
-            1,//Image frame while pressed
-            Vec2f(16, 16),//Image frame size
-            Vec2f(0.0f, 0.0f));//Image position
+    initButton(button);//Sets up things easily.
 
-    button.image_pos = button.image_frame_size / 2;//Where the image is on the button
+    button.setIcon("GUI/InteractionIconsBackground.png",//Image name
+            Vec2f(32, 32),//Icon frame size
+            0,//Default frame
+            1,//Hover frame (does not matter when instant_press = true)
+            1,//Pressing frame
+            NuMenu::POSCenter);//Image position
 
-    button.command_string = "activate";//This command will be sent to this blob when this button is pressed.
-            
-    //string desc = getTranslatedString("Turn Saw " + (getSawOn(this) ? "Off" : "On"));
+    button.default_buffer = 12.0f;//Buffer between bottom of the button and the text.
+    button.setText(getTranslatedString("Turn Saw " + (getSawOn(this) ? "Off" : "On")), NuMenu::POSUnder);//The text on the button..
+
+    button.command_string = toggle_id;//This command will be sent to this blob when this button is pressed.
 
     button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
-    button.Tick(caller.getPosition());//Tick button once to initially set the button state. For example if the button is out of range this will instantly tell the button to be greyed. Without this the button with be normal for a tick.
 
-    array<NuMenu::MenuButton@>@ buttons;//Init array.
-    getRules().get("CustomButtons", @buttons);//Grab array.
-    buttons.push_back(button);//Put button in CustomButtons array.
+    addButton(caller, button);
 }
 
 void onCommand(CBlob@ this, u8 cmd, CBitStream @params)

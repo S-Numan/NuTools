@@ -34,13 +34,23 @@ Optional send command option. Adding it will have it send a command to either ev
 //TODO don't draw when out of range
 //TODO fix things attached to blobs being a tick delayed
 //TODO titlebar text? Basically text on the very top middle of the menu. Add it!
-//Add sfx for on hover and on justpress then on release.
+//Add sfx for on hover, un hover, justpress, and release.
 //Stretchy ends for MenuBasePlus. Drag the menu size around.
-
-
+//Circular collisions? Collisions atm are too boxy or small.
+//Possible need for reposition image.
+//Take another look at reposition_text. Optimise perhaps. Perhaps not. Improve it somehow, maybe.
+//Make more things in MenuBase methods for IMenu.
+//Stop button spazz when pushed against terrain with owner blob.
+//Seperate draw and collision positions?
+//Add top right, bottom left, and bottom right to POSPositions
+    
     
     enum POSPositions//Stores all positions that stuff can be in.
     {
+        POSTopLeft,
+        POSTopRight,
+        POSBottomLeft,
+        POSBottomRight,
         POSCenter,//in the center of the menu
         POSTop,//positioned on the top of the menu
         POSAbove,//above the top of the menu
@@ -71,12 +81,46 @@ Optional send command option. Adding it will have it send a command to either ev
     {
         Idle,//Mouse is scared of button. Is not near and has not touched.
         Hover,//Mouse is hovering over the button without doing anything. Mouse has anxiety of what will happen if it touches the button.
+        JustHover,//Mouse has only just started stalking this button.
+        UnHover,//Mouse has just stopped stalking this button, a shame.
         JustPressed,//Mouse just pressed the button.
         Pressed,//Mouse is currently holding down the left mouse button over the button. Good job mouse.
-        Released,//Mouse has released while over the button. ( ͡° ͜ʖ ͡°)
         Selected,//Mouse has touched this button first, but is still nervous and is not over the button. Still holding left mouse button though.
+        Released,//Mouse has released while over the button. ( ͡° ͜ʖ ͡°)
         FalseRelease,//Mouse released while not over the button. (when the ButtonState was Selected and the mouse let go)
         Disabled,//The mouse has shown dominance over the button by breaking it's knees with a crowbar
+        
+        ButtonStateCount,//Always last, this specifies the amount of button states.
+    }
+
+    class IconInfo
+    {
+        IconInfo()
+        {
+            name = "";
+            frame_on = array<u16>(ButtonStateCount, Idle);
+        }
+
+        void setDefaultFrame(u16 frame)//Sets the regular frame for all button states
+        {
+            for(u16 i = 0; i < frame_on.size(); i++)
+            {
+                frame_on[i] = frame;
+            }
+        }
+
+        void setHoverAndPressFrames(u16 hover, u16 press)//Sets frame for hover and press button states.
+        {
+            frame_on[JustHover] = hover;
+            frame_on[Hover] = hover;
+            frame_on[JustPressed] = press;
+            frame_on[Pressed] = press;
+        }
+        
+        string name;//File name of icon.
+        Vec2f frame_size;//The frame size of the icon. (for choosing different frames);
+        array<u16> frame_on;//Stores what frame the image is on depending on what state the button is in
+        Vec2f pos;//Position of image in relation to the menu.
     }
 
     interface IMenu
@@ -96,6 +140,9 @@ Optional send command option. Adding it will have it send a command to either ev
         void setMenuOption(u8 value);
 
         u8 getMenuState();
+        u8 getButtonState();
+        void setButtonState(u8 _button_state);
+        void setMenuState(u8 _button_state);
 
         bool isWorldPos();
         void setIsWorldPos(bool value);
@@ -185,7 +232,10 @@ Optional send command option. Adding it will have it send a command to either ev
 
             render_background = true;
 
-            did_menu_just_move = false;
+            did_menu_just_move = true;
+
+            upper_left = array<Vec2f>(3);
+            lower_right = array<Vec2f>(3);
         }
 
         float default_buffer;
@@ -332,10 +382,27 @@ Optional send command option. Adding it will have it send a command to either ev
         }
 
 
-        u8 button_state;//State of button (being pressed? mouse is hovered over?)
+        private u8 button_state;//State of button (being pressed? mouse is hovered over?)
         u8 getMenuState()
         {
             return button_state;
+        }
+        u8 getButtonState()
+        {
+            return button_state;
+        }
+        void setButtonState(u8 _button_state)
+        {
+            if(_button_state >= ButtonStateCount)
+            {
+                error("STOP! YOU HAVE VIOLATED THE LAW! PAY THE COURT THE FINE OR SERVE YOUR SENTENCE. YOUR HIGHER THAN POSSIBLE BUTTON STATE IS NOW FORFEIT");
+                return;
+            }
+            button_state = _button_state;
+        }
+        void setMenuState(u8 _button_state)
+        {
+            setButtonState(_button_state);
         }
 
         private bool render_background;//If this is true, the menu will draw a background for the menu button by default.
@@ -378,7 +445,7 @@ Optional send command option. Adding it will have it send a command to either ev
         //Normal Positions
         //
 
-        private array<Vec2f> upper_left(3);//Upper left of menu. [0] is normal; [1] is old; [2] is interpolated 
+        private array<Vec2f> upper_left;//Upper left of menu. [0] is normal; [1] is old; [2] is interpolated 
         Vec2f getUpperLeft(bool get_raw_pos = false)//If this bool is true; even if isWorldPos() is true, it will get the raw position. I.E in most cases the actual world position. not the world to screen pos. does nothing if isWorldPos is false.
         {
             if(isWorldPos() && !get_raw_pos)
@@ -441,47 +508,114 @@ Optional send command option. Adding it will have it send a command to either ev
 
 
 
-        bool getPosOnSize(u16 position, Vec2f size, Vec2f &out vec_pos, bool no_buffer = false)//Insert an enum for a position based on the menu. Note that this only gives you positions based on the size. Not position on screen/world. Add getPos() to this if you want the real position.
+        bool getPosOnSize(u16 position, Vec2f size, float buffer, Vec2f &out vec_pos)//Insert an enum for a position based on the menu. Note that this only gives you positions based on the size. Not position on screen/world. Add getPos() to this if you want the real position.
         {
-            float temp_buffer = default_buffer;
-            if(no_buffer)
-            {
-                temp_buffer = 0;
-            }
 
             switch(position)
             {
+                case POSTopLeft:
+                    vec_pos = Vec2f(0, 0);
+                    break;
+                case POSTopRight:
+                    vec_pos = Vec2f(size.x, 0);
+                    break;
+                case POSBottomLeft:
+                    vec_pos = Vec2f(0, size.y);
+                    break;
+                case POSBottomRight:
+                    vec_pos = Vec2f(size.x, size.y);
+                    break;
                 case POSCenter:
                     vec_pos = Vec2f(size.x/2, size.y/2);
                     break;
                 case POSTop:
-                    vec_pos = Vec2f(size.x/2, temp_buffer);
+                    vec_pos = Vec2f(size.x/2, buffer);
                     break;
                 case POSAbove:
-                    vec_pos = Vec2f(size.x/2, -temp_buffer); 
+                    vec_pos = Vec2f(size.x/2, -buffer); 
                     break;
                 case POSBottom:
-                    vec_pos = Vec2f(size.x/2, size.y - temp_buffer);
+                    vec_pos = Vec2f(size.x/2, size.y - buffer);
                     break;
                 case POSUnder:
-                    vec_pos = Vec2f(size.x/2, size.y + temp_buffer);
+                    vec_pos = Vec2f(size.x/2, size.y + buffer);
                     break;
                 case POSLeft:
-                    vec_pos = Vec2f(temp_buffer, size.y/2);
+                    vec_pos = Vec2f(buffer, size.y/2);
                     break;
                 case POSLefter:
-                    vec_pos = Vec2f(-temp_buffer, size.y/2);
+                    vec_pos = Vec2f(-buffer, size.y/2);
                     break;
                 case POSRight:
-                    vec_pos = Vec2f(size.x - temp_buffer, size.y/2);
+                    vec_pos = Vec2f(size.x - buffer, size.y/2);
                     break;
                 case POSRighter:
-                    vec_pos = Vec2f(size.x + temp_buffer, size.y/2);
+                    vec_pos = Vec2f(size.x + buffer, size.y/2);
                     break;
                 default://Position out of bounds
                 {
                     vec_pos = Vec2f_zero;//Just return 0,0
                     return false;//Nope.
+                }
+            }
+
+            return true;
+        }
+
+        //This method takes details from getPosOnSize, and a dimension to properly center something within (or outside) the menu. For example, this stops text from being displayed outside of the menu, and instead changes the pos to inside just enough.
+        //Takes in a enum position, the size of the menu, the dimensions of what you're putting in the menu, a buffer, and an input/output pos. Returns false if the position was not found.
+        bool getDesiredPosOnSize(u16 position, Vec2f size, Vec2f dimensions, float buffer, Vec2f &out pos)
+        {
+            if(!getPosOnSize(position, size, buffer, pos))
+            {
+                return false;
+            }
+            
+            switch(position)
+            {
+                case POSTopLeft:
+                    pos = Vec2f(pos.x                 , pos.y);
+                    break;
+                case POSTopRight:
+                    pos = Vec2f(pos.x - dimensions.x/2, pos.y);
+                    break;
+                case POSBottomLeft:
+                    pos = Vec2f(pos.x                 , pos.y - dimensions.y);
+                    break;
+                case POSBottomRight:
+                    pos = Vec2f(pos.x - dimensions.x/2, pos.y - dimensions.y);
+                    break;
+                case POSCenter:
+                    pos = Vec2f(pos.x - dimensions.x/2, pos.y - dimensions.y/2);
+                    break;
+                case POSTop:
+                    pos = Vec2f(pos.x - dimensions.x/2, pos.y);
+                    break;
+                case POSAbove:
+                    pos = Vec2f(pos.x - dimensions.x/2, pos.y - dimensions.y); 
+                    break;
+                case POSBottom:
+                    pos = Vec2f(pos.x - dimensions.x/2, pos.y - dimensions.y);
+                    break;
+                case POSUnder:
+                    pos = Vec2f(pos.x - dimensions.x/2, pos.y);
+                    break;
+                case POSLeft:
+                    pos = Vec2f(pos.x                 , pos.y - dimensions.y/2);
+                    break;
+                case POSLefter:
+                    pos = Vec2f(pos.x - dimensions.x  , pos.y - dimensions.y/2);
+                    break;
+                case POSRight:
+                    pos = Vec2f(pos.x - dimensions.x  , pos.y - dimensions.y/2);
+                    break;
+                case POSRighter:
+                    pos = Vec2f(pos.x                 , pos.y - dimensions.y/2);
+                    break;
+                default:
+                {
+                    pos = Vec2f_zero;
+                    return false;
                 }
             }
 
@@ -544,6 +678,7 @@ Optional send command option. Adding it will have it send a command to either ev
         void setRelationPos(Vec2f value)
         {
             relation_pos = value;
+            //setMenuJustMoved(true);//Not sure if this should be here.
         }
 
         //
@@ -723,10 +858,16 @@ Optional send command option. Adding it will have it send a command to either ev
                         rec_color = SColor(255, 200, 200, 200);
                         break;
                     case Hover:
-                        rec_color = SColor(255, 70, 50, 0);
+                        rec_color = SColor(255, 70, 50, 25);
+                        break;
+                    case JustHover:
+                        rec_color = SColor(255, 100, 100, 100);
+                        break;
+                    case UnHover:
+                        rec_color = SColor(255, 255, 25, 25);
                         break;
                     case Selected:
-                        rec_color = SColor(255, 30, 50, 0);
+                        rec_color = SColor(255, 30, 50, 25);
                         break;
                     case FalseRelease:
                         rec_color = SColor(255, 30, 50, 255);
@@ -795,10 +936,22 @@ Optional send command option. Adding it will have it send a command to either ev
             resize_text = false;
             text_used = false;
 
+            icons_used = false;
+            draw_icons = true;
+            reposition_icons = false;
+            
             titlebar_ignore_press = false;
-            titlebar_draw = true;
+            draw_titlebar = true;
 
             initial_press = false;
+
+            text_strings = array<string>(POSPositionsCount, "");
+            text_positions = array<Vec2f>(POSPositionsCount);
+        
+            icons = array<NuMenu::IconInfo@>(POSPositionsCount);
+
+            menu_sounds_on = array<string>(ButtonStateCount, "");
+            menu_volume = 1.0f;
         }
 
 
@@ -814,6 +967,10 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 RepositionAllText(getSize());
             }
+            if(reposition_icons)
+            {
+                RepositionAllIcons(getSize());
+            }
         }
 
         void setPos(Vec2f value) override
@@ -822,6 +979,10 @@ Optional send command option. Adding it will have it send a command to either ev
             if(reposition_text)
             {
                 RepositionAllText(getSize());
+            }
+            if(reposition_icons)
+            {
+                RepositionAllIcons(getSize());
             }
         }
 
@@ -832,9 +993,39 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 RepositionAllText(getSize());
             }
+            if(reposition_icons)
+            {
+                RepositionAllIcons(getSize());
+            }
+        }
+
+        void setButtonState(u8 _button_state) override
+        {
+            MenuBase::setButtonState(_button_state);
+
+            if(menu_sounds_on[_button_state].size() != 0)
+            {
+                if(isWorldPos())
+                {
+                    Sound::Play(menu_sounds_on[_button_state], getPos(true), menu_volume);
+                }
+                else
+                {
+                    Sound::Play2D(menu_sounds_on[_button_state], menu_volume, 1.0f);
+                }
+            }
         }
         //
         //Overrides
+        //
+
+        //
+        //SFX
+        //
+            array<string> menu_sounds_on;//[Insert state]
+            float menu_volume;
+        //
+        //SFX
         //
 
 
@@ -920,84 +1111,45 @@ Optional send command option. Adding it will have it send a command to either ev
         bool reposition_text;//If this is true, the text's position will be reassigned every time the menu moves based on what text it is. top will be put back on the top every movement.
         
         
-        private array<string> text_strings(POSPositionsCount, "");
-        private array<Vec2f> text_positions(POSPositionsCount);
+        private array<string> text_strings;
+        private array<Vec2f> text_positions;
 
         string getText(u16 array_position)
         {
-            if(array_position >= text_strings.size())
-            {
-                error("getText : Tried to get text out of array bounds");
-                return "";
-            }
+            if(array_position >= text_strings.size()){error("getText : Tried to get text out of array bounds"); return ""; }
+
             return text_strings[array_position];
         }
         void setText(string text, u16 array_position)
         {
+            if(array_position >= text_strings.size()){error("setText : Tried to get text out of array bounds"); return; }
+            
+            GUI::SetFont(font);
             Vec2f text_pos;
-            if(!getDesiredTextPosition(text, array_position, getSize(), text_pos))
+            
+            Vec2f text_dimensions;
+            GUI::GetTextDimensions(text, text_dimensions);
+            
+            if(!getDesiredPosOnSize(array_position, getSize(), text_dimensions, default_buffer, text_pos))//Move that pos.
             {
-                warning("Text position went above the text_positions array max size");
+                error("Text position went above the text_positions array max size");
                 return;
             }
 
 
             text_positions[array_position] = text_pos;
             
-            text_used = UpdateIsTextUsed();
-            
             text_strings[array_position] = text;
-        }
 
-        bool getDesiredTextPosition(string text, u16 array_position, Vec2f size , Vec2f &out text_pos, bool no_buffer = false)//Returns the text position of the desired array_position
-        {
-            GUI::SetFont(font);
-            Vec2f text_dimensions;
-            GUI::GetTextDimensions(text, text_dimensions);
-
-            if(!getPosOnSize(array_position, size, text_pos))
-            {
-                return false;
-            }
-
-            switch(array_position)
-            {
-                case POSTop:
-                    text_pos = Vec2f(text_pos.x - text_dimensions.x/2, text_pos.y);
-                    break;
-                case POSAbove:
-                    text_pos = Vec2f(text_pos.x - text_dimensions.x/2, text_pos.y - text_dimensions.y); 
-                    break;
-                case POSBottom:
-                    text_pos = Vec2f(text_pos.x - text_dimensions.x/2, text_pos.y - text_dimensions.y);
-                    break;
-                case POSUnder:
-                    text_pos = Vec2f(text_pos.x - text_dimensions.x/2, text_pos.y);
-                    break;
-                case POSLeft:
-                    text_pos = Vec2f(text_pos.x, text_pos.y - text_dimensions.y/2);
-                    break;
-                case POSLefter:
-                    text_pos = Vec2f(text_pos.x - text_dimensions.x, text_pos.y - text_dimensions.y/2);
-                    break;
-                case POSRight:
-                    text_pos = Vec2f(text_pos.x - text_dimensions.x, text_pos.y - text_dimensions.y/2);
-                    break;
-                case POSRighter:
-                    text_pos = Vec2f(text_pos.x, text_pos.y - text_dimensions.y/2);
-                    break;
-                case POSCenter:
-                    text_pos = Vec2f(text_pos.x - text_dimensions.x/2, text_pos.y - text_dimensions.y/2);
-                    break;
-            }
-
-            return true;
+            text_used = UpdateIsTextUsed();
         }
 
         void RepositionAllText(Vec2f size)
         {
-            if(draw_text && isTextUsed())
+            if(isTextUsed())
             {
+                GUI::SetFont(font);
+                
                 for(u16 i = 0; i < POSPositionsCount; i++)
                 {
                     string text = getText(i);
@@ -1008,8 +1160,15 @@ Optional send command option. Adding it will have it send a command to either ev
                     }
 
                     Vec2f text_pos;
-
-                    getDesiredTextPosition(text, i, size, text_pos);
+            
+                    Vec2f text_dimensions;
+                    GUI::GetTextDimensions(text, text_dimensions);
+                    
+                    if(!getDesiredPosOnSize(i, size, text_dimensions, default_buffer, text_pos))//Move that pos.
+                    {
+                        error("Text position went above the text_positions array max size");
+                        return;
+                    }
                     
                     setTextPos(text_pos, i);
                 }
@@ -1020,20 +1179,13 @@ Optional send command option. Adding it will have it send a command to either ev
         
         Vec2f getTextPos(u16 array_position)
         {
-            if(array_position >= text_positions.size())
-            {
-                error("getTextPos : Tried to get a position out of array bounds");
-                return Vec2f_zero;
-            }
+            if(array_position >= text_strings.size()){error("getTextPos : Tried to get text out of array bounds"); return Vec2f_zero; }
+
             return text_positions[array_position];
         }
         void setTextPos(Vec2f value, u16 array_position)
         {
-            if(array_position >= text_positions.size())
-            {
-                error("setTextPos : Tried to set a position out of array bounds");
-                return;
-            }
+            if(array_position >= text_strings.size()){error("setTextPos : Tried to get text out of array bounds"); return; }
             
             text_positions[array_position] = value;
         }
@@ -1091,7 +1243,7 @@ Optional send command option. Adding it will have it send a command to either ev
 
         bool titlebar_ignore_press;//When this is true the titlebar cannot move the menu.
 
-        bool titlebar_draw;//If this is false the titlebar will not be drawn (but will still function)
+        bool draw_titlebar;//If this is false the titlebar will not be drawn (but will still function)
 
         bool isPointInTitlebar(Vec2f value)//Is the vec2f value within the titlebar?
         {
@@ -1139,6 +1291,7 @@ Optional send command option. Adding it will have it send a command to either ev
                     if(left_button_release)//Same tick press and release.
                     {
                         _button_state = Released;//Button was released
+                        initial_press = false;//No longer pressed.
                     }
                     else//Normal behavior
                     {
@@ -1149,7 +1302,18 @@ Optional send command option. Adding it will have it send a command to either ev
                 
                 else if(!left_button)//If the button was not initially pressed and left mouse button is not being held
                 {
-                    _button_state = Hover;//Button is being hovered over
+                    if(_button_state == Hover)//If we are currently hovering.
+                    {
+                        _button_state = Hover;//Continue hovering.
+                    }
+                    else if(_button_state == JustHover)//If this button was just being hovered above
+                    {
+                        _button_state = Hover;//Continue hovering.
+                    }
+                    else if(_button_state != JustHover)//If we aren't hovering, we should be.
+                    {
+                        _button_state = JustHover;//Button is being hovered over.
+                    }
                 }
             }
             else//Not in menu
@@ -1162,12 +1326,16 @@ Optional send command option. Adding it will have it send a command to either ev
 
                         initial_press = false;//This button is no longer initially pressed.
                     }
-                    else if(button_state != Selected)//If the mouse is not selected
+                    else if(_button_state != Selected)//If the mouse is not selected
                     {
                         _button_state = Selected;//Select it.
                     }
                 }
-                else if(button_state != Idle)//If the mouse button was not initially pressed and is not idle.
+                else if(_button_state == JustHover || _button_state == Hover)//If the position is not in the menu, and the button was not initailly pressed and the button was hovering.
+                {
+                    _button_state = UnHover;//Hover release.
+                }
+                else if(_button_state != Idle)//If the position is in the button, was not initially pressed, is not hovering, and is not idle.
                 {
                     _button_state = Idle;//Make the mouse button idle.
                 }
@@ -1243,39 +1411,117 @@ Optional send command option. Adding it will have it send a command to either ev
 
 
         //
-        //Image stuff
+        //Icon stuff
         //
+        
+        bool draw_icons;
+        bool reposition_icons;//If this is true, the icons's position will be reassigned every time the menu moves based on what icon position it is in. top will be put back on the top every movement.
+        
+        
+        private array<NuMenu::IconInfo@> icons;
 
-        string image_name;//File name of image.
-        Vec2f image_frame_size;//The frame size of the image. (for choosing different frames);
-        u16 image_frame;//Frame of image in file.
-        u16 image_frame_press;//Frame image changes to on press.
-        Vec2f image_pos;//Position of image in relation to the menu.
-
-        void setImage(string _image_name, u16 _image_frame, u16 _image_frame_press, Vec2f _image_frame_size, Vec2f _image_pos)
+        
+        void setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
         {
-            image_name = _image_name;
-            image_frame = _image_frame;
-            image_frame_press = _image_frame_press;
-            image_frame_size = _image_frame_size;
-            image_pos = _image_pos;
-        }
-
-        void setImage(string _image_name, u16 _image_frame, u16 _image_frame_press, Vec2f _image_frame_size, u16 position)
-        {
-            Vec2f _image_pos;
+            if(icons.size() <= position){ error("In setIcon : tried to get past the highest element in the icons array."); return; }
             
-            if(!getPosOnSize(position, getSize(), _image_pos))
+            IconInfo@ icon = IconInfo();
+            
+            icon.name = icon_name;
+            icon.frame_size = icon_frame_size;
+
+            icon.setDefaultFrame(icon_frame_default);
+            
+            icon.setHoverAndPressFrames(icon_frame_hover, icon_frame_press);
+            
+            Vec2f icon_pos;
+            
+            if(!getDesiredPosOnSize(position, getSize(), icon.frame_size, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/, icon_pos))//Move that pos.
             {
-                error("setImage position was an unknown position");
+                error("setIcon position was an unknown position");
                 return;
             }
+            
+            icon.pos = icon_pos;// + getSize() / 2 - icon.frame_size;
 
-            setImage(_image_name, _image_frame, _image_frame_press, _image_frame_size, _image_pos);
+
+            @icons[position] = @icon;
+
+            icons_used = UpdateAreIconsUsed();
+        }
+        
+        IconInfo@ getIcon(u16 position = 0)
+        {
+            if(icons.size() <= position){ error("In getIcon : tried to get past the highest element in the icons array."); return null; }
+
+            return icons[position];
+        }
+
+        void setIconPos(Vec2f icon_pos, u16 position = 0)
+        {
+            if(icons.size() <= position){ error("In setIconPos : tried to get past the highest element in the icons array."); return; }
+
+            icons[position].pos = icon_pos;
+
+        }
+
+        void RepositionAllIcons(Vec2f size)
+        {
+            if(areIconsUsed())
+            {
+                CCamera@ camera;
+                if(isWorldPos())
+                {
+                    @camera = @getCamera();
+                }
+                
+                for(u16 i = 0; i < POSPositionsCount; i++)
+                {
+                    IconInfo@ icon = getIcon(i);
+                        
+                    if(icon == null)
+                    {
+                        continue;
+                    }
+
+                    Vec2f icon_pos;
+                    
+                    if(!getDesiredPosOnSize(i, size, icon.frame_size, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/, icon_pos))//Move that pos.
+                    {
+                        error("Icon position went above the icons array max size");
+                        return;
+                    }
+                    
+                    icon.pos = icon_pos;
+                }
+            }
+        }
+
+
+        
+        private bool icons_used;
+
+        private bool UpdateAreIconsUsed()//Updates the text_used bool.
+        {
+            for(u16 i = 0; i < icons.size(); i++)
+            {
+                if(icons[i] == null)
+                {
+                    continue;
+                }
+                
+                return true;
+            }
+            return false;
+        }
+
+        bool areIconsUsed()
+        {
+            return icons_used;
         }
 
         //
-        //Image stuff
+        //Icon stuff
         //
 
 
@@ -1290,75 +1536,109 @@ Optional send command option. Adding it will have it send a command to either ev
                 return false;
             }
 
+            
+            if(draw_titlebar)
+            {
+                DrawTitlebar();
+            }
+            
+            if(draw_icons)
+            {
+                DrawIcons(SColor(255, 255, 255, 255));
+            }
+            
+            if(draw_text)//If text exists and it is supposed to be drawn.
+            {
+                DrawTexts();
+            }
+
+            return true;
+        }
+
+        void DrawIcons(SColor color)
+        {
+            if(!areIconsUsed())
+            {
+                return;
+            }
             CCamera@ camera;
             if(isWorldPos())
             {
                 @camera = @getCamera();
             }
 
-            //Titlebar
-            //
-            
-            if(titlebar_draw && titlebar_size.y != 0.0f)
+            //Reposition icons.
+            if(reposition_icons && isInterpolated()//If this menu is interpolated
+            && (didMenuJustMove() || isWorldPos()))//And the menu just moved or is on a world position.
             {
-                if(titlebar_width_is_menu)
-                {
-                    Vec2f interpolated_size = getLowerRightInterpolated() - getUpperLeftInterpolated();
-                    if(titlebar_size.x != interpolated_size.x)
-                    {
-                        titlebar_size.x = interpolated_size.x;
-                    }
-                }
-
-
-                Vec2f _upperleft = getUpperLeftInterpolated();//Upper left
-                
-                Vec2f _lowerright = (getUpperLeftInterpolated() + Vec2f(titlebar_size.x, +//Upper left plus titlebar_size.x +
-                titlebar_size.y * (isWorldPos() ? camera.targetDistance * 2 : 1))); //titlebar_size.y multiplied by the camera distance if isWorldPos() is true.
-
-                GUI::DrawRectangle(_upperleft, _lowerright);
+                RepositionAllIcons(getLowerRightInterpolated() - getUpperLeftInterpolated());
             }
-            //
-            //Titlebar
 
-            RenderImage(camera);
-
-            //Text Stuff
-            //
-
-            if(isTextUsed() && draw_text)//If text exists and it is supposed to be drawn.
+            for(u16 i = 0; i < icons.size(); i++)
             {
-                SelectFont();//Sets the font
-
-                //For repositionioning text in an interpolated manner. Only works if reposition_text is true.
-                if((reposition_text && isInterpolated())//If this menu is interpolated 
-                && didMenuJustMove() || isWorldPos())//and the menu just moved or is on a world position.
+                if(icons[i] == null)
                 {
-                    RepositionAllText(getLowerRightInterpolated() - getUpperLeftInterpolated());
+                    continue;
                 }
                 
-                for(u16 i = 0; i < text_strings.size(); i++)
-                {
-                    GUI::DrawText(text_strings[i], getUpperLeftInterpolated() + text_positions[i], //* (isWorldPos() ? 1 * 1 : 1),//lol what?
-                    text_color);
-                }
-            }
-            //
-            //Text stuff
 
-            return true;
+                GUI::DrawIcon(icons[i].name,//Icon name
+                icons[i].frame_on[button_state],//Icon frame
+                icons[i].frame_size,//Icon size
+                getUpperLeftInterpolated() + icons[i].pos * (isWorldPos() ? camera.targetDistance * 2: 1),//Icon position
+                isWorldPos() ? camera.targetDistance : 0.5,//Icon scale
+                color);//Color
+            }
         }
 
-        void RenderImage(CCamera@ camera)
+        void DrawTexts()
         {
-            if(image_name != "")
+            if(!isTextUsed())
             {
-                GUI::DrawIcon(image_name,
-                button_state == Pressed ? image_frame_press : image_frame,
-                image_frame_size,
-                getUpperLeftInterpolated() + image_pos * (isWorldPos() ? camera.targetDistance : 1),
-                isWorldPos() ? camera.targetDistance : 0.5);
+                return;
             }
+            SelectFont();//Sets the font
+
+            //For repositionioning text in an interpolated manner. Only works if reposition_text is true.
+            if((reposition_text && isInterpolated())//If this menu is interpolated 
+            && (didMenuJustMove() || isWorldPos()))//and the menu just moved or is on a world position.
+            {
+                RepositionAllText(getLowerRightInterpolated() - getUpperLeftInterpolated());
+            }
+
+            for(u16 i = 0; i < text_strings.size(); i++)
+            {
+                if(text_strings[i].size() == 0)
+                {
+                    continue;
+                }
+                GUI::DrawText(text_strings[i], getUpperLeftInterpolated() + text_positions[i] * (isWorldPos() && !reposition_text ? getCamera().targetDistance * 2: 1), //* (isWorldPos() ? 1 * 1 : 1),//lol what?
+                text_color);
+            }
+        }
+
+        void DrawTitlebar()
+        {
+            if(titlebar_size.x == 0 || titlebar_size.y == 0)
+            {
+                return;
+            }
+            if(titlebar_width_is_menu)
+            {
+                Vec2f interpolated_size = getLowerRightInterpolated() - getUpperLeftInterpolated();
+                if(titlebar_size.x != interpolated_size.x)
+                {
+                    titlebar_size.x = interpolated_size.x;
+                }
+            }
+
+
+            Vec2f _upperleft = getUpperLeftInterpolated();//Upper left
+            
+            Vec2f _lowerright = (getUpperLeftInterpolated() + Vec2f(titlebar_size.x, +//Upper left plus titlebar_size.x +
+            titlebar_size.y * (isWorldPos() ? getCamera().targetDistance * 2 : 1))); //titlebar_size.y multiplied by the camera distance if isWorldPos() is true.
+
+            GUI::DrawRectangle(_upperleft, _lowerright);
         }
 
         //
@@ -1386,11 +1666,12 @@ Optional send command option. Adding it will have it send a command to either ev
             {
                 return;
             }
+
+            super(_name, Button);
             
             setOwnerBlob(blob);//This is the button's owner. The button will follow this blob (can be disabled).
             setIsWorldPos(true);//The position of the button is in the world, not the screen as the button is following a blob, a thing in the world. Therefor isWorldPos should be true.
-
-            super(_name, Button);
+            //Remove this and see what happens for funzies. - TODO Numan
         }
 
         MenuButton(Vec2f _upper_left, Vec2f _lower_right, string _name)
@@ -1463,34 +1744,40 @@ Optional send command option. Adding it will have it send a command to either ev
 
             float distance_from_button = getDistance(position, getPos(true) + getSize() / 2);
             
+            u8 _button_state = getButtonState();
+
             if(enableRadius == 0.0f || position == Vec2f_zero ||
             distance_from_button < enableRadius)//Is within enable(interact) distance
             {
-                button_state = getPressingState(point, button_state, key_button, key_button_release, key_button_just);
+                _button_state = getPressingState(point, _button_state, key_button, key_button_release, key_button_just);
                 if(instant_press)
                 {
-                    if(button_state == JustPressed)
+                    if(_button_state == JustPressed)
                     {
-                        button_state = Released;
+                        _button_state = Released;
                     }
-                    else if(button_state == Hover)
+                    else if(_button_state == JustHover)
                     {
-                        button_state = Pressed;
+                        _button_state = Pressed;
                     }
                 }
                 
             }
             else
             {
-                button_state = Disabled;
+                _button_state = Disabled;
             }
 
 
-            if(button_state == Released)
+            if(_button_state == Released)
             {
                 sendCommand();
             }
 
+            if(_button_state != getButtonState())
+            {
+                setButtonState(_button_state);
+            }
             return true;
         }
 
@@ -1530,13 +1817,13 @@ Optional send command option. Adding it will have it send a command to either ev
             //return getDistanceToLine(point1, point1 + Vec2f(0,1), point2);
         }
 
-        void RenderImage(CCamera@ camera) override
+        void DrawIcons(SColor color) override
         {
-            if(image_name != "")
+            if(button_state == Disabled)
             {
-                GUI::DrawIcon(image_name, button_state == Pressed ? image_frame_press : image_frame, image_frame_size, getUpperLeftInterpolated() + image_pos * camera.targetDistance,
-                isWorldPos() ? camera.targetDistance : 0.5, button_state == Disabled ? SColor(80, 255, 255, 255) : SColor(255, 255, 255, 255));
+                color.setAlpha(80);
             }
+            MenuBasePlus::DrawIcons(color);
         }
     }
 
@@ -1550,9 +1837,9 @@ Optional send command option. Adding it will have it send a command to either ev
                 return;
             }
 
-            render_background = false;
-
             super(_name, CheckBox);
+
+            render_background = false;
         }
         MenuCheckBox(Vec2f _upper_left, Vec2f _lower_right, string _name)
         {
@@ -1561,9 +1848,9 @@ Optional send command option. Adding it will have it send a command to either ev
                 return;
             }
 
-            render_background = false;
-
             super(_upper_left, _lower_right, _name, CheckBox);
+
+            render_background = false;
         }
 
         void initVars() override
@@ -1731,6 +2018,18 @@ Optional send command option. Adding it will have it send a command to either ev
         {
             return optional_menus;
         }
+        bool findElementPos(IMenu@ _menu, u16 &out pos)//returning false means it did not find it in the array.
+        {
+            for(u16 i = 0; i < optional_menus.size(); i++)
+            {
+                if(@_menu == @optional_menus[i])
+                {
+                    pos = i;
+                    return true;
+                }
+            }
+            return false;
+        }
 
         Vec2f getOptionalMenuPos(u16 option_menu = 0)//In relation to this menu
         {
@@ -1740,6 +2039,16 @@ Optional send command option. Adding it will have it send a command to either ev
             }
             return Vec2f_zero;
         }
+        Vec2f getOptionalMenuPos(IMenu@ _menu)
+        {
+            u16 pos;
+            if(!findElementPos(_menu, pos))
+            {
+                return Vec2f_zero;
+            }
+            return getOptionalMenuPos(pos);
+        }
+        
         bool setOptionalMenuPos(Vec2f value, u16 option_menu = 0)//Sets it in relation to this menu
         {
             if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
@@ -1756,6 +2065,17 @@ Optional send command option. Adding it will have it send a command to either ev
             }
             
             return false;
+        }
+        bool setOptionalMenuPos(Vec2f value, IMenu@ _menu)
+        {
+            u16 pos;
+            if(!findElementPos(_menu, pos))
+            {
+                return false;
+            }
+            
+            setOptionalMenuPos(value, pos);
+            return true;
         }
 
         u8 getOptionalMenuState(u16 option_menu = 0)//Param refers to specific menu in array

@@ -59,40 +59,30 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
 	const f32 DISTANCE_MAX = this.getRadius() + caller.getRadius() + 8.0f;
     if (this.getDistanceTo(caller) > DISTANCE_MAX) { return; }
 
-	CBitStream params;
-	params.write_u16(caller.getNetworkID());
-
-	NuMenu::MenuButton@ button = NuMenu::MenuButton("");
+	NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);
     
-    button.setIsWorldPos(true);
-    button.setOwnerBlob(this);
-    button.kill_on_press = true;
-    button.instant_press = true;
-
     button.setSize(Vec2f(8, 8));
-    button.setRelationPos(-(button.getSize() / 2));
-    
-    button.setImage("GUI/PartyIndicator.png",//Image name
-            4,//Image frame
-            5,//Image frame while pressed
-            Vec2f(16, 16),//Image frame size
-            Vec2f(0.0f, 0.0f));//Image position
 
-    //button.image_pos = -button.image_frame_size - button.getSize() / 2;
-    button.image_pos = -(button.getSize() / 2) - button.image_frame_size / 4;
+    initButton(button);//Sets up things easily.
 
-    button.command_string = "activate";
+
+    button.setIcon("GUI/InteractionIconsBackground.png",//Image name
+            Vec2f(32, 32),//Icon frame size
+            0,//Default frame
+            1,//Hover frame (does not matter when instant_press = true)
+            1,//Pressing frame
+            NuMenu::POSCenter);//Image position
+
+
+    CBitStream params;
+	params.write_u16(caller.getNetworkID());
     button.params = params;
-            
-	//getTranslatedString("Open"),                                     // description
+    button.command_string = "activate";
 
-	button.enableRadius = 200.0f;
+    button.default_buffer = 12.0f;//Buffer between bottom of the button and the text.
+    button.setText(getTranslatedString("Open"), NuMenu::POSUnder);//The text on the button..
 
-    array<NuMenu::MenuButton@>@ buttons;
-    getRules().get("CustomButtons", @buttons);
- 
-    button.Tick(caller.getPosition());
-    buttons.push_back(button);
+    addButton(caller, button);
 }
 
 void onCommand(CBlob@ this, u8 cmd, CBitStream @params)

@@ -49,9 +49,11 @@ void onInit( CRules@ this )
         print("creation");
         NuMenu::MenuHolder random_menu = NuMenu::MenuHolder(
             Vec2f(64, 64),//Top left
-            Vec2f(128 * 4, 128 * 4),//Bottom right
+            Vec2f(128 * 2, 128 * 2),//Bottom right
             "TestMenu");//Menu name
         print("just ater creation");
+
+        random_menu.default_buffer = 40.0f;
 
         random_menu.setIsWorldPos(false);
 
@@ -80,17 +82,21 @@ void onInit( CRules@ this )
 
 
         
-        random_menu.setImage("GUI/AccoladeBadges.png",//Image name
-            19,//Image frame
-            18,//Image frame while pressed
+        random_menu.setIcon("GUI/AccoladeBadges.png",//Image name
             Vec2f(16, 16),//Image frame size
-            Vec2f(0.0f, 0.0f));//button1.getSize().y/2 - 16/2));
+            19,//Image frame
+            18,//Image frame while hovered
+            18,//Image frame while presseds
+            NuMenu::POSTopLeft);//Position
+
+        //random_menu.reposition_icons = true;
 
         random_menu.setTitlebarHeight(16.0f);
         //random_menu.setTitlebarWidth(random_menu.getSize().x - 16.0f);
 
-        /*NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
-        option1.setRelationPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));//*/
+        NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
+        //option1.setRelationPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));
+        random_menu.setOptionalMenuPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y), option1);//*/
 
         _menus.push_back(random_menu);
 

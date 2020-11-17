@@ -96,6 +96,20 @@ void onTick( CRules@ rules )
             if(e_key_release){buttons[i].initial_press = true;}
             buttons[i].Tick(KEY, controls.getMouseScreenPos(), blob.getPosition());
 
+            //Text
+            if(buttons[i].getMenuState() == NuMenu::Pressed)
+            {
+                buttons[i].draw_text = true;
+            }
+            else
+            {
+                if(buttons[i].draw_text != false)
+                {
+                    buttons[i].draw_text = false;
+                }
+            }
+            //Text
+
             if(buttons[i].getMenuState() == NuMenu::Released)
             {
                 if(buttons[i].kill_on_press)
@@ -103,11 +117,6 @@ void onTick( CRules@ rules )
                     buttons.removeAt(i);
                 }
                 break;
-            }
-            else if(e_key_release)
-            {
-                buttons[i].initial_press = false;
-                buttons[i].button_state = NuMenu::Idle;
             }
         }
 
@@ -150,13 +159,17 @@ void onTick( CRules@ rules )
                 if (buttons[i].enableRadius == 0.0f || distances[i] < buttons[i].enableRadius)
                 {
                     buttons[i].sendCommand();
-                    buttons[i].button_state = NuMenu::Released;
+                    buttons[i].setButtonState(NuMenu::Released);
                     break;
                 }
             }
             //Sort with the closest on the bottom of the array farthest at the top.
         }
         //Quick pass
+    }
+    else if(buttons.size() != 0)
+    {
+        buttons.clear();
     }
 
 
@@ -218,36 +231,32 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
         this.getDistanceTo(caller) > MAX_DISTANCE) { return; }//Max distance button is allowed from the caller.
 
     NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
-    
-    button.kill_on_press = true;//The button will be removed on press. (logic for this happens outside the button class)
-    button.instant_press = true;//Button is Pressed when hovering over. Button is instantly released upon pressing.
-
+ 
     button.setSize(Vec2f(8, 8));//Size of button. Changes how large the button is. Larger buttons are easier to press.
-    button.setRelationPos(-(button.getSize() / 2));//Where the button is in relation to it's OwnerBlob. This should center the button directly on the blob.
 
-    button.setImage("UI/ButtonIcons.png",//Image name
-            0,//Image frame
-            1,//Image frame while pressed
-            Vec2f(16, 16),//Image frame size
-            Vec2f(0.0f, 0.0f));//Image position
+    initButton(button);//Sets up things easily.
 
-    button.image_pos = button.image_frame_size / 2;//Where the image is on the button
+    button.setIcon("GUI/InteractionIconsBackground.png",//Image name
+            Vec2f(32, 32),//Icon frame size
+            0,//Default frame
+            1,//Hover frame (does not matter when instant_press = true)
+            1,//Pressing frame
+            NuMenu::POSCenter);//Image position
 
+    button.default_buffer = 12.0f;//Buffer between bottom of the button and the text.
+    button.setText(getTranslatedString("Description of button"), NuMenu::POSUnder);//The text on the button
+
+    //button.render_background = false;//Setting this to false prevents the usual debug square background from showing up.
 
     //CBitStream params;//Params sent when the button is pressed.
     //params.write_u16(caller.getNetworkID());//The caller, I.E the player blob is added as a param.
     //button.params = params;//Set params
     button.command_string = "activate";//This command will be sent to this blob when this button is pressed.
     //button.send_to_rules = true;//If this is true, instead of sending the command to OwnerBlob, the the command will be sent to CRules.
-            
-    //button.TODO(getTranslatedString("Open"));//Description placed under the button
 
-    button.enableRadius = 32.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
-    button.Tick(caller.getPosition());//Tick button once to initially set the button state. For example if the button is out of range this will instantly tell the button to be greyed. Without this the button with be normal for a tick.
+    button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
 
-    array<NuMenu::MenuButton@>@ buttons;//Init array.
-    getRules().get("CustomButtons", @buttons);//Grab array.
-    buttons.push_back(button);//Put button in CustomButtons array.
+    addButton(caller, button);
 }
 
 */
