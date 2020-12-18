@@ -56,8 +56,6 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
 
 	if (!canSeeButtons(this, caller)) { return; }
 
-	const f32 DISTANCE_MAX = this.getRadius() + caller.getRadius() + 8.0f;
-    if (this.getDistanceTo(caller) > DISTANCE_MAX) { return; }
 
 	NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);
     

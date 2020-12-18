@@ -27,20 +27,56 @@ Check mark option on right
 
 
 */
-    
-//TODO add params to Tick? such as Tick(CControls controls)
-//TODO fix text/font size changing//Copy and paste several font files and fix text
-//TODO don't draw when out of range
-//TODO fix things attached to blobs being a tick delayed
-//Stretchy ends for MenuBasePlus. Drag the menu size around.
+//
+//TODO LIST
+//
+
+
+//add params to Tick? such as Tick(CControls controls)
+//fix text/font size changing//Copy and paste several font files and fix text
+//don't draw when out of range
+//fix things attached to blobs being a tick delayed
+//Stretchy ends for MenuBaseExEx. Drag the menu size around.
 //Circular collisions? Collisions atm are too boxy or small. Do distance from point. See bottom of button class.
 //Take another look at reposition_text. Optimise perhaps. Perhaps not. Improve it somehow, maybe.
 //Make more things in MenuBase methods for IMenu.
 //Stop button spazz when pushed against terrain with owner blob. Blob pos freaks out when attached to user while pushing against wall. Try an attachment point? Maybe try making your own with nothing on it to see if it smooths it. Use CShape pos?
 //Seperate draw and collision positions?
 //Add top right, bottom left, and bottom right to POSPositions
-//Seperate MenuBasePlus into one more layer down.
 //Confirm the distance calculation with buttons isn't that wonky. It feels wonky. Something has to be wonky
+//Rotate value. Only for if I'm really bored. Since it probably wont ever get used. Plus you cannot rotate GUI.
+//Switch to Render:: instead of gui draw.
+//Editable text while the game is running. Think naming something.
+//See if the icon repositioning is actually required for CustomButton.as stuff. Figure out how to not make it required if it is. It shouldn't be.
+//Function handle as param for button or something.
+
+
+
+//MAX PRIORITY TODO
+//
+
+
+//Seperate MenuBasePlus into one more layer down AT LEAST.
+//SEPERATE
+//DO SOON
+//MOVE STUFF LIKE TEXT.
+
+
+//
+//MAX PRIORITY TODO
+
+
+
+//
+//TODO LIST
+//
+
+    float getDistance(Vec2f point1, Vec2f point2)//Add to NumanLib later
+    {
+        float dis = (Maths::Pow(point1.x-point2.x,2)+Maths::Pow(point1.y-point2.y,2));
+        return Maths::Sqrt(dis);
+        //return getDistanceToLine(point1, point1 + Vec2f(0,1), point2);
+    }
     
     enum POSPositions//Stores all positions that stuff can be in.
     {
@@ -62,18 +98,34 @@ Check mark option on right
     }
 
 
-    u8 MenuOptionHolder = 100;
+    u8 MenuOptionHolder = 100;//Menu holder option. starts at 100 in case you want to add another MenuOptions enum to it to explain that this holder holds these menu types only.
 
     enum MenuOptions
     {
-        Blank,
-        Custom,
-        Button,
-        Slider,
-        LeftAndRight,
-        CheckBox,
+        Blank,//Nothing
+        Custom,//Custom button.
+        Button,//Press a button. Buttons have many states. Catch em all!
+        Slider,//Slide a slider left and right. Choose color of each side. Increments instead of smoothness is possible too. Both vertical and horizontal. Option to act more like the traditional kag heart system instead of a bar.
+        //Option to drag if held or only move if pressed once.
+        //Left/right top/down buttons. (buttons appaer to the left and right of the slider. Can press to move slider.)
+        //Can cut texture in half or other amounts to display exact loss of health.
+
+        //CheckBox,//Remove my class. Replace with button
+
+        TextBox,//Click this box, and you can type in text! Other options for selecting too.
+        TextWriter,//Features such as slowly writing in text. Scrollable text is not drawn if it goes under the menu. If this happens, a scrollbar will appear. (Slider basically)
 
         MenuOptionsCount,//Always last, this specifies the amount of menu options.
+    }
+
+    enum MenuConfiguration//Extension to MenuOptions. For example you can have a Slider with the On off configuration or the Statusbar configuration. For more complicated
+    {   
+        //TODO, figure out how to make an auto-configeration system for slider and other classes. Maybe a global method or something. Make a method that allows you to pick the cofiguration you want too.
+        
+        StatusBar = MenuOptionsCount,//Slider: Give a max value and current value. Choose color of each side. This works like a Slider but is automatically configured for ease of use. No draggy bit.
+        OnOffSwitch,//Slider: 
+        TraditionalSlider,//Slider: (E.G choose a circle. 1-5 circles.)
+        CheckBox,//Button: Press once and the button is pressed. Press again and the button is unpressed.
     }
 
     enum ButtonState
@@ -124,6 +176,8 @@ Check mark option on right
 
     interface IMenu
     {
+        void initVars();
+
         string getName();
         int getNameHash();
         void setName(string value);
@@ -158,17 +212,34 @@ Check mark option on right
         void setUpperLeft(Vec2f value);
         Vec2f getPos(bool get_raw_pos = false);
         void setPos(Vec2f value);
+        Vec2f getMiddle(bool get_raw_pos = false);
         Vec2f getLowerRightInterpolated();
         Vec2f getLowerRight(bool get_raw_pos = false);
         void setLowerRight(Vec2f value);
         Vec2f getSize();
         void setSize(Vec2f value);
 
+        Vec2f getUpperLeftOld(bool get_raw_pos = false);
+        Vec2f getLowerRightOld(bool get_raw_pos = false);
+
+        bool getPosOnSize(u16 position, Vec2f size, float buffer, Vec2f &out vec_pos);
+        bool getDesiredPosOnSize(u16 position, Vec2f size, Vec2f dimensions, float buffer, Vec2f &out pos);
+
         bool didMenuJustMove();
         void setMenuJustMoved(bool value);
 
         Vec2f getRelationPos();
         void setRelationPos(Vec2f value);
+
+        Vec2f getCollisionUpperLeft(bool get_raw_pos = false);
+        Vec2f getCollisionLowerRight(bool get_raw_pos = false);
+        void setCollisionUpperLeft(Vec2f value);
+        void setCollisionLowerRight(Vec2f value);
+        bool getCollisionSetter();
+        void setCollisionSetter(bool value);
+
+        f32 getRadius();
+        void setRadius(f32 value);
 
         bool isPointInMenu(Vec2f value);
 
@@ -225,16 +296,26 @@ Check mark option on right
         {
             default_buffer = 4.0f;
             is_world_pos = false;
+
+            name = "";
+            name_hash = 0;
+
+            @owner_menu = @null;
+            @owner_blob = @null;
             move_to_owner = true;
-            
+
             button_state = Idle;
 
             render_background = true;
 
             did_menu_just_move = true;
 
-            upper_left = array<Vec2f>(3);
-            lower_right = array<Vec2f>(3);
+            upper_left = array<Vec2f>(4);
+            lower_right = array<Vec2f>(4);
+
+            collision_setter = true;
+
+            radius = 0.0f;
         }
 
         float default_buffer;
@@ -350,7 +431,7 @@ Check mark option on right
         //Blob
         //
 
-        bool move_to_owner;//If this is true, this menu will move itself to the position of it's owner with relation added to it. 
+        private bool move_to_owner;//If this is true, this menu will move itself to the position of it's owner with relation added to it. 
         bool getMoveToOwner()
         {
             return move_to_owner;
@@ -394,7 +475,7 @@ Check mark option on right
         {
             if(_button_state >= ButtonStateCount)
             {
-                error("STOP! YOU HAVE VIOLATED THE LAW! PAY THE COURT THE FINE OR SERVE YOUR SENTENCE. YOUR HIGHER THAN POSSIBLE BUTTON STATE IS NOW FORFEIT");
+                error("STOP! YOU HAVE VIOLATED THE LAW! PAY THE COURT A FINE OR SERVE YOUR SENTENCE. YOUR HIGHER THAN POSSIBLE BUTTON STATE IS NOW FORFEIT");
                 return;
             }
             button_state = _button_state;
@@ -402,16 +483,6 @@ Check mark option on right
         void setMenuState(u8 _button_state)
         {
             setButtonState(_button_state);
-        }
-
-        private bool render_background;//If this is true, the menu will draw a background for the menu button by default.
-        bool getRenderBackground()
-        {
-            return render_background;
-        }
-        void setRenderBackground(bool value)
-        {
-            render_background = value;
         }
 
         private bool button_interpolation;
@@ -444,14 +515,14 @@ Check mark option on right
         //Normal Positions
         //
 
-        private array<Vec2f> upper_left;//Upper left of menu. [0] is normal; [1] is old; [2] is interpolated 
+        private array<Vec2f> upper_left;//Upper left of menu. [0] is normal; [1] is old; [2] is interpolated; [3] is collision 
         Vec2f getUpperLeft(bool get_raw_pos = false)//If this bool is true; even if isWorldPos() is true, it will get the raw position. I.E in most cases the actual world position. not the world to screen pos. does nothing if isWorldPos is false.
         {
             if(isWorldPos() && !get_raw_pos)
             {
                 //CCamera@ camera = getCamera();
-                Driver@ driver = getDriver();//This might be slow. - Todo numan
-                return driver.getScreenPosFromWorldPos(upper_left[0]);
+                //This might be slow. - Todo numan
+                return getDriver().getScreenPosFromWorldPos(upper_left[0]);
             }
             
             return upper_left[0];
@@ -460,6 +531,11 @@ Check mark option on right
         {
             upper_left[0] = value;
             menu_size = Vec2f(lower_right[0].x - upper_left[0].x, lower_right[0].y - upper_left[0].y);
+            if(getCollisionSetter())//If the collision is not disabled.
+            {
+                upper_left[3] = Vec2f_zero;
+            }
+
             setMenuJustMoved(true);
         }
 
@@ -468,6 +544,7 @@ Check mark option on right
         {
             upper_left[0] = value;
             lower_right[0] = upper_left[0] + menu_size;
+
             setMenuJustMoved(true);
         }
         Vec2f getPos(bool get_raw_pos = false)
@@ -475,13 +552,20 @@ Check mark option on right
             return getUpperLeft(get_raw_pos);
         }
 
-        private array<Vec2f> lower_right(3);//Lower right of menu. [0] is normal; [1] is old; [2] is interpolated
+        //Not in relation to the menu
+        Vec2f getMiddle(bool get_raw_pos = false)
+        {
+            return getUpperLeft(get_raw_pos)//Upper left
+            + (isWorldPos() ? getDriver().getScreenPosFromWorldPos(getSize() / 2) ://Plus if world pos size divided by two converted.
+            getSize() / 2);//Plus if not world pos just size divided by two.
+        }
+
+        private array<Vec2f> lower_right(3);//Lower right of menu. [0] is normal; [1] is old; [2] is interpolated; [3] is collision
         Vec2f getLowerRight(bool get_raw_pos = false)//If this bool is true; even if isWorldPos() is true, it will get the raw position. I.E in most cases the actual world position. not the world to screen pos. does nothing if isWorldPos is false.
         {
             if(isWorldPos() && !get_raw_pos)
             {
-                Driver@ driver = getDriver();
-                return driver.getScreenPosFromWorldPos(lower_right[0]);
+                return getDriver().getScreenPosFromWorldPos(lower_right[0]);
             }
 
             return lower_right[0];
@@ -490,12 +574,18 @@ Check mark option on right
         { 
             lower_right[0] = value;
             menu_size = Vec2f(lower_right[0].x - upper_left[0].x, lower_right[0].y - upper_left[0].y);
+
+            if(getCollisionSetter())//If the collision is not disabled.
+            {
+                lower_right[3] = menu_size;
+            }
+
             setMenuJustMoved(true);
         }
 
         
 
-        private Vec2f menu_size;//The size of the menu. How far it takes for top_left to get to lower_right.
+        private Vec2f menu_size;//The size of the menu. How far it takes for top_left to get to lower_right. In relation to the menu
         Vec2f getSize()
         {
             return menu_size;
@@ -632,8 +722,7 @@ Check mark option on right
         {
             if(isWorldPos() && !get_raw_pos)
             {
-                Driver@ driver = getDriver();
-                return driver.getScreenPosFromWorldPos(upper_left[1]);
+                return getDriver().getScreenPosFromWorldPos(upper_left[1]);
             }
             
             return upper_left[1];
@@ -642,8 +731,7 @@ Check mark option on right
         {
             if(isWorldPos() && !get_raw_pos)
             {
-                Driver@ driver = getDriver();
-                return driver.getScreenPosFromWorldPos(lower_right[1]);
+                return getDriver().getScreenPosFromWorldPos(lower_right[1]);
             }
             
             return lower_right[1];
@@ -683,6 +771,69 @@ Check mark option on right
         //
         //Relation positions
 
+        //Collisions
+        //
+        
+
+        //Not in relation to the menu.
+        Vec2f getCollisionUpperLeft(bool get_raw_pos = false)
+        {
+            if(isWorldPos() && !get_raw_pos)
+            {
+                return getDriver().getScreenPosFromWorldPos(upper_left[0] + upper_left[3]);
+            }
+
+            return upper_left[0] + upper_left[3];//Top left of the menu plus the top left collision position.
+        }
+        Vec2f getCollisionLowerRight(bool get_raw_pos = false)
+        {
+            if(isWorldPos() && !get_raw_pos)
+            {
+                return getDriver().getScreenPosFromWorldPos(upper_left[0] + lower_right[3]);
+            }
+            
+            return upper_left[0] + lower_right[3];//Top left of the menu plus the lower right collision position. (usually menu_size)
+        }
+
+        //In relation to the menu.
+        void setCollisionUpperLeft(Vec2f value)
+        {
+            upper_left[3] = value;
+        }
+        void setCollisionLowerRight(Vec2f value)
+        {
+            lower_right[3] = value;
+        }
+        
+        //If this is false, the collision will not be automatically set to the regular upper_left sizes.
+        private bool collision_setter;
+        bool getCollisionSetter()
+        {
+            return collision_setter;
+        }
+        void setCollisionSetter(bool value)
+        {
+            collision_setter = value;
+        }
+
+
+        private f32 radius;
+        f32 getRadius()
+        {
+            return radius;
+        }
+        void setRadius(f32 value)
+        {
+            radius = value;
+        }
+
+
+        
+        //
+        //Collisions
+
+
+
         //
         //Positions
         //
@@ -694,10 +845,20 @@ Check mark option on right
 
         bool isPointInMenu(Vec2f value)//Is the vec2f value within the menu?
         {
-            if(value.x <= getLowerRight().x && value.y <= getLowerRight().y
-            && value.x >= getUpperLeft().x && value.y >= getUpperLeft().y)
+            if(getCollisionUpperLeft() != Vec2f_zero && getCollisionLowerRight() != Vec2f_zero//If these values aren't nothing
+            && value.x <= getCollisionLowerRight().x
+            && value.x >= getCollisionUpperLeft().x 
+            && value.y <= getCollisionLowerRight().y
+            && value.y >= getCollisionUpperLeft().y)
             {
                 return true;//Yes
+            }
+            else if(getRadius() != 0.0f)//Try checking for radius instead
+            {
+                if(getDistance(getMiddle(), value) < getRadius())//If the distance between the middle and value is less than the radius 
+                {
+                    return true;
+                }
             }
             return false;//No
         }
@@ -836,6 +997,16 @@ Check mark option on right
         //
         //Rendering
         //
+
+        private bool render_background;//If this is true, the menu will draw a background for the menu button by default.
+        bool getRenderBackground()
+        {
+            return render_background;
+        }
+        void setRenderBackground(bool value)
+        {
+            render_background = value;
+        }
        
         bool Render()//Overwrite this method if you want a different look.
         {
@@ -852,10 +1023,10 @@ Check mark option on right
 
             InterpolatePositions();//Don't forget this if you want interpolation.
 
-            if(render_background)
+            if(getRenderBackground())
             {
                 SColor rec_color;
-                switch(button_state)
+                switch(getButtonState())
                 {
                     case Idle:
                         rec_color = SColor(255, 200, 200, 200);
@@ -900,61 +1071,46 @@ Check mark option on right
         //
     }
     
-    //Base of all menus + more stuff. Stuff includes text, a titlebar (can be hidden and simply used for dragging the menu.) And a method that allows you to check if this was pressed and the states it can be in. Allows a single icon as well
-    class MenuBasePlus : MenuBase
+
+
+
+
+
+
+
+
+
+    class MenuBaseEx : MenuBase
     {
-        MenuBasePlus(string _name, u8 _menu_option = Custom)
+        MenuBaseEx(string _name, u8 _menu_option = Custom)
         {
-            if(!isClient())
-            {
-                return;
-            }
+            if(!isClient()) { return; }
 
             super(_name, _menu_option);
-            
-            setTextColor(SColor(255, 0, 0, 0));
-
-            setFont("AveriaSerif-Bold.ttf", 4);
         }
 
-        MenuBasePlus(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option = Custom)
+        MenuBaseEx(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option = Custom)
         {
-            if(!isClient())
-            {
-                return;
-            }
+            if(!isClient()) { return; }
 
             super(_upper_left, _lower_right, _name, _menu_option);
-            
-            setTextColor(SColor(255, 0, 0, 0));
-
-            setFont("AveriaSerif-Bold.ttf", 4);
         }
 
         void initVars() override
         {
             MenuBase::initVars();
-            draw_text = true;
-            reposition_text = false;
-            resize_text = false;
-            text_used = false;
 
             icons_used = false;
             draw_icons = true;
             reposition_icons = false;
-            
-            titlebar_ignore_press = false;
-            draw_titlebar = true;
 
             initial_press = false;
-
-            text_strings = array<string>(POSPositionsCount, "");
-            text_positions = array<Vec2f>(POSPositionsCount);
         
             icons = array<NuMenu::IconInfo@>(POSPositionsCount);
 
             menu_sounds_on = array<string>(ButtonStateCount, "");
             menu_volume = 1.0f;
+            play_sound_on_world = false;
         }
 
 
@@ -962,43 +1118,16 @@ Check mark option on right
         //
         //Overrides
         //
-        void setUpperLeft(Vec2f value) override
-        {
-            //print("repos2 = " + reposition_text + " resize = " + resize_text + " draw_text = " + draw_text + " text_used = " + text_used);
-            MenuBase::setUpperLeft(value);
-            if(reposition_text)
-            {
-                RepositionAllText(getSize());
-            }
-            if(reposition_icons)
-            {
-                RepositionAllIcons(getSize());
-            }
-        }
 
-        void setPos(Vec2f value) override
-        {
-            MenuBase::setPos(value);
-            if(reposition_text)
+        void setMenuJustMoved(bool value) override
+        {   
+            MenuBase::setMenuJustMoved(value);
+            if(value)//Menu just moved.
             {
-                RepositionAllText(getSize());
-            }
-            if(reposition_icons)
-            {
-                RepositionAllIcons(getSize());
-            }
-        }
-
-        void setLowerRight(Vec2f value) override
-        { 
-            MenuBase::setLowerRight(value);
-            if(reposition_text)
-            {
-                RepositionAllText(getSize());
-            }
-            if(reposition_icons)
-            {
-                RepositionAllIcons(getSize());
+                if(reposition_icons)
+                {
+                    RepositionAllIcons(getSize());
+                }
             }
         }
 
@@ -1008,9 +1137,9 @@ Check mark option on right
 
             if(menu_sounds_on[_button_state].size() != 0)
             {
-                if(isWorldPos())
+                if(play_sound_on_world)
                 {
-                    Sound::Play(menu_sounds_on[_button_state], getPos(true), menu_volume);
+                    Sound::Play(menu_sounds_on[_button_state], getPos(true), menu_volume, 1.0f);
                 }
                 else
                 {
@@ -1018,6 +1147,7 @@ Check mark option on right
                 }
             }
         }
+        
         //
         //Overrides
         //
@@ -1027,243 +1157,9 @@ Check mark option on right
         //
             array<string> menu_sounds_on;//[Insert state]
             float menu_volume;
+            bool play_sound_on_world;
         //
         //SFX
-        //
-
-
-        //
-        //Text stuff
-        //
-
-        //Text settings
-        //
-
-        private u16 font_size;
-        private string font;//Font used.
-        string getFont()
-        {
-            return font;
-        }
-        u16 getFontSize()
-        {
-            return font_size;
-        }
-        //This loads a custom font for the menu. This does not pick an existing font.
-        void setFont(string _font, u16 size)//TODO - numan : Make text smoothly grow and shrink
-        {
-            font = _font;
-            font_size = size;
-            string fontfile = CFileMatcher(_font).getFirst();
-            
-            
-            if (!GUI::isFontLoaded(font))
-            {
-                GUI::LoadFont(font, fontfile, size, true);
-            }
-            else if (!GUI::isFontLoaded(font + "_" + (size / 2)))
-            {
-                GUI::LoadFont(font + "_" + (size / 2), fontfile + "_1", size / 2, true);
-            }
-            else if (!GUI::isFontLoaded(font + "_" + (size * 2)))
-            {
-                GUI::LoadFont(font + "_" + (size * 2), fontfile + "_2", size * 2, true);
-            }
-        }
-        
-        void SelectFont()
-        {
-            CCamera@ camera = getCamera();
-            if(resize_text && isWorldPos())
-            {
-                if(camera.targetDistance < 0.9)
-                {
-                    GUI::SetFont(font + "_" + (getFontSize() / 2));
-                }
-                else if(camera.targetDistance > 0.9 && camera.targetDistance < 1.1)
-                {
-                    GUI::SetFont(font);
-                }
-                else//Camera targetDistance more than 1.1
-                {
-                    GUI::SetFont(font + "_" + (getFontSize() * 2));
-                }
-            }
-            else
-            {
-                GUI::SetFont(font);
-            }
-        }
-
-
-        private SColor text_color;
-        SColor getTextColor()
-        {
-            return text_color;
-        }
-        void setTextColor(SColor value)
-        {
-            text_color = value;
-        }
-
-        //
-        //Text settings
-
-        bool draw_text;
-        bool resize_text;
-        bool reposition_text;//If this is true, the text's position will be reassigned every time the menu moves based on what text it is. top will be put back on the top every movement.
-        
-        
-        private array<string> text_strings;
-        private array<Vec2f> text_positions;
-
-        string getText(u16 array_position)
-        {
-            if(array_position >= text_strings.size()){error("getText : Tried to get text out of array bounds"); return ""; }
-
-            return text_strings[array_position];
-        }
-        void setText(string text, u16 array_position)
-        {
-            if(array_position >= text_strings.size()){error("setText : Tried to get text out of array bounds"); return; }
-            
-            GUI::SetFont(font);
-            Vec2f text_pos;
-            
-            Vec2f text_dimensions;
-            GUI::GetTextDimensions(text, text_dimensions);
-            
-            if(!getDesiredPosOnSize(array_position, getSize(), text_dimensions, default_buffer, text_pos))//Move that pos.
-            {
-                error("Text position went above the text_positions array max size");
-                return;
-            }
-
-
-            text_positions[array_position] = text_pos;
-            
-            text_strings[array_position] = text;
-
-            text_used = UpdateIsTextUsed();
-        }
-
-        void RepositionAllText(Vec2f size)
-        {
-            if(isTextUsed())
-            {
-                GUI::SetFont(font);
-                
-                for(u16 i = 0; i < POSPositionsCount; i++)
-                {
-                    string text = getText(i);
-                        
-                    if(text.size() == 0)
-                    {
-                        continue;
-                    }
-
-                    Vec2f text_pos;
-            
-                    Vec2f text_dimensions;
-                    GUI::GetTextDimensions(text, text_dimensions);
-                    
-                    if(!getDesiredPosOnSize(i, size, text_dimensions, default_buffer, text_pos))//Move that pos.
-                    {
-                        error("Text position went above the text_positions array max size");
-                        return;
-                    }
-                    
-                    setTextPos(text_pos, i);
-                }
-            }
-        }
-
-
-        
-        Vec2f getTextPos(u16 array_position)
-        {
-            if(array_position >= text_strings.size()){error("getTextPos : Tried to get text out of array bounds"); return Vec2f_zero; }
-
-            return text_positions[array_position];
-        }
-        void setTextPos(Vec2f value, u16 array_position)
-        {
-            if(array_position >= text_strings.size()){error("setTextPos : Tried to get text out of array bounds"); return; }
-            
-            text_positions[array_position] = value;
-        }
-
-
-        private bool text_used;
-
-        private bool UpdateIsTextUsed()//Updates the text_used bool.
-        {
-            for(u16 i = 0; i < text_strings.size(); i++)
-            {
-                if(text_strings[i].size() != 0)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        bool isTextUsed()
-        {
-            return text_used;
-        }
-
-        //
-        //Text stuff
-        //
-
-        //
-        //Titlebar
-        //
-        
-        private Vec2f titlebar_size;
-        Vec2f getTitlebarSize()
-        {
-            return titlebar_size;
-        }
-        void setTitlebarHeight(float value)
-        {
-            titlebar_size.y = value;
-            if(titlebar_size.x == 0)
-            {
-                titlebar_size.x = getSize().x;
-            }
-        }
-        bool titlebar_width_is_menu = true;//When this is true the titlebar width will move with the menu
-        void setTitlebarWidth(float value)
-        {
-            titlebar_size.x = value;
-            titlebar_width_is_menu = false;
-        }
-
-        Vec2f titlebar_press_pos;//Do not edit, this is for the moving menu part of the code.
-        
-
-        bool titlebar_ignore_press;//When this is true the titlebar cannot move the menu.
-
-        bool draw_titlebar;//If this is false the titlebar will not be drawn (but will still function)
-
-        bool isPointInTitlebar(Vec2f value)//Is the vec2f value within the titlebar?
-        {
-            Vec2f _upperleft = getUpperLeft(true);
-            
-            if(value.x <= getLowerRight(true).x - (getSize().x - titlebar_size.x) //If the point is to the left of the titlebar's right side.
-            && value.y <= _upperleft.y + titlebar_size.y//If the point is above the titlebar's bottom.
-            && value.x >= _upperleft.x//If the point is to the right of the titlebar's left side.
-            && value.y >= _upperleft.y)//If the point is below the titlebar's top.
-            {
-                return true;//Yes
-            }
-            return false;//No
-        }
-
-        //
-        //Titlebar
         //
 
 
@@ -1354,56 +1250,6 @@ Check mark option on right
             {
                 return false;
             }
-            u16 i;
-
-            CControls@ controls = getLocalPlayer().getControls();//This can be done safely as the code to check if client&player&controls is null/false was done in the inherited class.
-
-            Vec2f mouse_pos;
-            if(isWorldPos())//World pos
-            {
-                mouse_pos = controls.getMouseWorldPos();
-            }
-            else//Screen pos
-            {
-                mouse_pos = controls.getMouseScreenPos();
-            }
-            
-            
-            bool left_button = controls.mousePressed1;
-            bool left_button_release = controls.isKeyJustReleased(KEY_LBUTTON);
-            bool left_button_just = controls.isKeyJustPressed(KEY_LBUTTON);
-
-
-            //Titlebar
-            if(titlebar_width_is_menu)
-            {
-                titlebar_size.x = getSize().x * (getCamera().targetDistance * 2);
-            }
-
-            if(!titlebar_ignore_press && titlebar_size.y != 0.0f)
-            {
-                if(left_button)
-                {
-                    if(left_button_just && isPointInTitlebar(mouse_pos))
-                    {
-                        titlebar_press_pos = mouse_pos;
-                    }
-                    
-                    if(titlebar_press_pos != Vec2f_zero)
-                    {
-                        //MenuBasePlus required to not accidently use the one in MenuHolder which moves their children menu's before the tick methods.
-                        MenuBasePlus::setPos(getUpperLeft(true) - //Current menu position subtracted by
-                         (titlebar_press_pos - mouse_pos));//The positioned the titlebar was pressed minus the current mouse position. (The difference.)
-                        titlebar_press_pos = mouse_pos;
-                    }
-                }
-
-                else if(titlebar_press_pos != Vec2f_zero)
-                {
-                    titlebar_press_pos = Vec2f_zero;
-                }
-            }
-            //Titlebar
 
             return true;//Everything worked out correctly.
         }
@@ -1538,21 +1384,10 @@ Check mark option on right
             {
                 return false;
             }
-
-            
-            if(draw_titlebar)
-            {
-                DrawTitlebar();
-            }
             
             if(draw_icons)
             {
                 DrawIcons(SColor(255, 255, 255, 255));
-            }
-            
-            if(draw_text)//If text exists and it is supposed to be drawn.
-            {
-                DrawTexts();
             }
 
             return true;
@@ -1594,30 +1429,413 @@ Check mark option on right
             }
         }
 
-        void DrawTexts()
+        //
+        //Rendering
+        //
+
+    }
+    
+    //Base of all menus + previous ex + this. Includes text, and a titlebar (can be hidden and simply used for dragging the menu.)
+    class MenuBaseExEx : MenuBaseEx
+    {
+        MenuBaseExEx(string _name, u8 _menu_option = Custom)
         {
-            if(!isTextUsed())
+            if(!isClient()) { return; }
+
+            super(_name, _menu_option);
+            
+            setTextColor(SColor(255, 0, 0, 0));
+
+            setFont("AveriaSerif-Bold.ttf", 4);
+        }
+
+        MenuBaseExEx(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option = Custom)
+        {
+            if(!isClient()) { return; }
+
+            super(_upper_left, _lower_right, _name, _menu_option);
+
+            setTextColor(SColor(255, 0, 0, 0));
+
+            setFont("AveriaSerif-Bold.ttf", 4);
+        }
+
+        void initVars() override
+        {
+            MenuBaseEx::initVars();
+            
+            titlebar_ignore_press = false;
+            draw_titlebar = true;
+            titlebar_size = Vec2f_zero;
+            titlebar_press_pos = Vec2f_zero;
+        
+        
+            draw_text = true;
+            reposition_text = false;
+            resize_text = false;
+            text_used = false;
+
+            text_strings = array<string>(POSPositionsCount, "");
+            text_positions = array<Vec2f>(POSPositionsCount);
+            font_size = 4;
+            font = "";
+            text_color = SColor(255, 0, 0, 0);
+        }
+
+        //
+        //Overrides
+        //
+        void setMenuJustMoved(bool value) override
+        {
+            //print("repos2 = " + reposition_text + " resize = " + resize_text + " draw_text = " + draw_text + " text_used = " + text_used);//Debug
+            
+            MenuBaseEx::setMenuJustMoved(value);
+            if(value)//Menu just moved.
             {
+                //Optimize me, this will be done twice a tick if both top left and bottom right are moved. That is no goodo.
+                if(reposition_text)
+                {
+                    RepositionAllText(getSize());
+                }
+            }
+        }
+        //
+        //Overrides
+        //
+
+
+
+        //
+        //Text stuff
+        //
+
+        //Text settings
+        //
+
+        private u16 font_size;
+        private string font;//Font used.
+        string getFont()
+        {
+            return font;
+        }
+        u16 getFontSize()
+        {
+            return font_size;
+        }
+        //This loads a custom font for the menu. This does not pick an existing font.
+        void setFont(string _font, u16 size)//TODO - numan : Make text smoothly grow and shrink
+        {
+            font = _font;
+            font_size = size;
+            string fontfile = CFileMatcher(_font).getFirst();
+            
+            
+            if (!GUI::isFontLoaded(font))
+            {
+                GUI::LoadFont(font, fontfile, size, true);
+            }
+            else if (!GUI::isFontLoaded(font + "_" + (size / 2)))
+            {
+                GUI::LoadFont(font + "_" + (size / 2), fontfile + "_1", size / 2, true);
+            }
+            else if (!GUI::isFontLoaded(font + "_" + (size * 2)))
+            {
+                GUI::LoadFont(font + "_" + (size * 2), fontfile + "_2", size * 2, true);
+            }
+        }
+        
+        void SelectFont()
+        {
+            CCamera@ camera = getCamera();
+            if(resize_text && isWorldPos())
+            {
+                //if(camera.targetDistance < 0.9)
+                //{
+                //    GUI::SetFont(font + "_" + (getFontSize() / 2));
+                //}
+                //else if(camera.targetDistance > 0.9 && camera.targetDistance < 1.1)
+                //{
+                    GUI::SetFont(font);
+                //}
+                //else//Camera targetDistance more than 1.1
+                //{
+                //    GUI::SetFont(font + "_" + (getFontSize() * 2));
+                //}
+            }
+            else
+            {
+                GUI::SetFont(font);
+            }
+        }
+
+
+        private SColor text_color;
+        SColor getTextColor()
+        {
+            return text_color;
+        }
+        void setTextColor(SColor value)
+        {
+            text_color = value;
+        }
+
+        //
+        //Text settings
+
+        bool draw_text;
+        bool resize_text;
+        bool reposition_text;//If this is true, the text's position will be reassigned every time the menu moves based on what text it is. top will be put back on the top every movement.
+        
+        
+        private array<string> text_strings;
+        private array<Vec2f> text_positions;
+
+        string getText(u16 array_position)
+        {
+            if(array_position >= text_strings.size()){error("getText : Tried to get text out of array bounds"); return ""; }
+
+            return text_strings[array_position];
+        }
+        void setText(string text, u16 array_position)
+        {
+            if(array_position >= text_strings.size()){error("setText : Tried to get text out of array bounds"); return; }
+            
+            GUI::SetFont(font);
+            Vec2f text_pos;
+            
+            Vec2f text_dimensions;
+            GUI::GetTextDimensions(text, text_dimensions);
+            
+            if(!getDesiredPosOnSize(array_position, getSize(), text_dimensions, default_buffer, text_pos))//Move that pos.
+            {
+                error("Text position went above the text_positions array max size");
                 return;
             }
-            SelectFont();//Sets the font
 
-            //For repositionioning text in an interpolated manner. Only works if reposition_text is true.
-            if((reposition_text && isInterpolated())//If this menu is interpolated 
-            && (didMenuJustMove() || isWorldPos()))//and the menu just moved or is on a world position.
+
+            text_positions[array_position] = text_pos;
+            
+            text_strings[array_position] = text;
+
+            text_used = UpdateIsTextUsed();
+        }
+
+        void RepositionAllText(Vec2f size)
+        {
+            if(isTextUsed())
             {
-                RepositionAllText(getLowerRightInterpolated() - getUpperLeftInterpolated());
-            }
+                GUI::SetFont(font);
+                
+                for(u16 i = 0; i < POSPositionsCount; i++)
+                {
+                    string text = getText(i);
+                        
+                    if(text.size() == 0)
+                    {
+                        continue;
+                    }
 
+                    Vec2f text_pos;
+            
+                    Vec2f text_dimensions;
+                    GUI::GetTextDimensions(text, text_dimensions);
+                    
+                    if(!getDesiredPosOnSize(i, size, text_dimensions, default_buffer, text_pos))//Move that pos.
+                    {
+                        error("Text position went above the text_positions array max size");
+                        return;
+                    }
+                    
+                    setTextPos(text_pos, i);
+                }
+            }
+        }
+
+
+        
+        Vec2f getTextPos(u16 array_position)
+        {
+            if(array_position >= text_strings.size()){error("getTextPos : Tried to get text out of array bounds"); return Vec2f_zero; }
+
+            return text_positions[array_position];
+        }
+        void setTextPos(Vec2f value, u16 array_position)
+        {
+            if(array_position >= text_strings.size()){error("setTextPos : Tried to get text out of array bounds"); return; }
+            
+            text_positions[array_position] = value;
+        }
+
+
+        private bool text_used;
+
+        private bool UpdateIsTextUsed()//Updates the text_used bool.
+        {
             for(u16 i = 0; i < text_strings.size(); i++)
             {
-                if(text_strings[i].size() == 0)
+                if(text_strings[i].size() != 0)
                 {
-                    continue;
+                    return true;
                 }
-                GUI::DrawText(text_strings[i], getUpperLeftInterpolated() + text_positions[i] * (isWorldPos() && !reposition_text ? getCamera().targetDistance * 2: 1), //* (isWorldPos() ? 1 * 1 : 1),//lol what?
-                text_color);
             }
+            return false;
+        }
+
+        bool isTextUsed()
+        {
+            return text_used;
+        }
+
+        //
+        //Text stuff
+        //
+
+
+
+        //
+        //Titlebar
+        //
+        
+        private Vec2f titlebar_size;
+        Vec2f getTitlebarSize()
+        {
+            return titlebar_size;
+        }
+        void setTitlebarHeight(float value)
+        {
+            titlebar_size.y = value;
+            if(titlebar_size.x == 0)
+            {
+                titlebar_size.x = getSize().x;
+            }
+        }
+        bool titlebar_width_is_menu = true;//When this is true the titlebar width will move with the menu
+        void setTitlebarWidth(float value)
+        {
+            titlebar_size.x = value;
+            titlebar_width_is_menu = false;
+        }
+
+        Vec2f titlebar_press_pos;//Do not edit, this is for the moving menu part of the code.
+        
+
+        bool titlebar_ignore_press;//When this is true the titlebar cannot move the menu.
+
+        bool draw_titlebar;//If this is false the titlebar will not be drawn (but will still function)
+
+        bool isPointInTitlebar(Vec2f value)//Is the vec2f value within the titlebar?
+        {
+            Vec2f _upperleft = getUpperLeft(true);
+            
+            if(value.x <= getLowerRight(true).x - (getSize().x - titlebar_size.x) //If the point is to the left of the titlebar's right side.
+            && value.y <= _upperleft.y + titlebar_size.y//If the point is above the titlebar's bottom.
+            && value.x >= _upperleft.x//If the point is to the right of the titlebar's left side.
+            && value.y >= _upperleft.y)//If the point is below the titlebar's top.
+            {
+                return true;//Yes
+            }
+            return false;//No
+        }
+
+        //
+        //Titlebar
+        //
+
+        //Always change positions AFTER this method.
+        bool Tick() override
+        {
+            if(!MenuBaseEx::Tick())
+            {
+                return false;
+            }
+            u16 i;
+
+            CControls@ controls = getLocalPlayer().getControls();//This can be done safely as the code to check if client&player&controls is null/false was done in the inherited class.
+
+            Vec2f mouse_pos;
+            if(isWorldPos())//World pos
+            {
+                mouse_pos = controls.getMouseWorldPos();
+            }
+            else//Screen pos
+            {
+                mouse_pos = controls.getMouseScreenPos();
+            }
+            
+            
+            bool left_button = controls.mousePressed1;
+            bool left_button_release = controls.isKeyJustReleased(KEY_LBUTTON);
+            bool left_button_just = controls.isKeyJustPressed(KEY_LBUTTON);
+
+
+            //Titlebar
+            if(titlebar_width_is_menu)
+            {
+                titlebar_size.x = getSize().x * (getCamera().targetDistance * 2);
+            }
+
+            if(!titlebar_ignore_press && titlebar_size.y != 0.0f)
+            {
+                if(left_button)
+                {
+                    if(left_button_just && isPointInTitlebar(mouse_pos))
+                    {
+                        titlebar_press_pos = mouse_pos;
+                    }
+                    
+                    if(titlebar_press_pos != Vec2f_zero)
+                    {
+                        //MenuBaseExEx required to not accidently use the one in MenuHolder which moves their children menu's before the tick methods.
+                        MenuBaseExEx::setPos(getUpperLeft(true) - //Current menu position subtracted by
+                         (titlebar_press_pos - mouse_pos));//The positioned the titlebar was pressed minus the current mouse position. (The difference.)
+                        titlebar_press_pos = mouse_pos;
+                    }
+                }
+
+                else if(titlebar_press_pos != Vec2f_zero)
+                {
+                    titlebar_press_pos = Vec2f_zero;
+                }
+            }
+            //Titlebar
+
+            return true;//Everything worked out correctly.
+        }
+
+        bool Render() override
+        {
+            bool _draw_icons = draw_icons;//Make a temp value called _draw_icons and make it equal to draw_icons.
+
+            if(draw_icons)//If draw_icons is true
+            {
+                draw_icons = false;//Make it false. This is done to prevent the icons from being drawn before the titlebar. That would be no good.
+            }
+
+            if(!MenuBaseEx::Render())
+            {
+                draw_icons = _draw_icons;//Rendering failed, revert draw_icons to it's original state.
+                return false;
+            }
+            draw_icons = _draw_icons;//If MenuBaseEx was going to draw an icon, it wouldn't. Revert back draw_icon.
+
+
+            
+            if(draw_titlebar)//Draw the titlebar first
+            {
+                DrawTitlebar();
+            }
+            
+            if(draw_icons)//Then draw icons
+            {
+                DrawIcons(SColor(255, 255, 255, 255));
+            }
+
+            if(draw_text)//If text exists and it is supposed to be drawn.
+            {
+                DrawTexts();//Too
+            }
+
+            return true;
         }
 
         void DrawTitlebar()
@@ -1644,14 +1862,36 @@ Check mark option on right
             GUI::DrawRectangle(_upperleft, _lowerright);
         }
 
-        //
-        //Rendering
-        //
 
+        void DrawTexts()
+        {
+            if(!isTextUsed())
+            {
+                return;
+            }
+            SelectFont();//Sets the font
+
+            //For repositionioning text in an interpolated manner. Only works if reposition_text is true.
+            if((reposition_text && isInterpolated())//If this menu is interpolated 
+            && (didMenuJustMove() || isWorldPos()))//and the menu just moved or is on a world position.
+            {
+                RepositionAllText(getLowerRightInterpolated() - getUpperLeftInterpolated());
+            }
+
+            for(u16 i = 0; i < text_strings.size(); i++)
+            {
+                if(text_strings[i].size() == 0)
+                {
+                    continue;
+                }
+                GUI::DrawText(text_strings[i], getUpperLeftInterpolated() + text_positions[i] * (isWorldPos() && !reposition_text ? getCamera().targetDistance * 2: 1), //* (isWorldPos() ? 1 * 1 : 1),//lol what?
+                text_color);
+            }
+        }
     }
 
     //Menu set up to function like a button.
-    class MenuButton : MenuBasePlus
+    class MenuButton : MenuBaseExEx
     {
         MenuButton(string _name)
         {
@@ -1689,7 +1929,7 @@ Check mark option on right
 
         void initVars() override
         {
-            MenuBasePlus::initVars();
+            MenuBaseExEx::initVars();
             send_to_rules = false;
             kill_on_press = false;
             instant_press = false;
@@ -1731,7 +1971,7 @@ Check mark option on right
         //Examples: point parameter for the mouse position, the position parameter is for the blob. position parameter only really useful when it comes to radius stuff.
         bool Tick(u16 key_code, Vec2f point, Vec2f position = Vec2f_zero)
         {
-            if(!MenuBasePlus::Tick())
+            if(!MenuBaseExEx::Tick())
             {
                 return false;
             }
@@ -1745,7 +1985,7 @@ Check mark option on right
             bool key_button_just = controls.isKeyJustPressed(key_code);//Just pressed
 
 
-            float distance_from_button = getDistance(position, getPos(true) + getSize() / 2);
+            float distance_from_button = getDistance(position, getMiddle(true));
             
             u8 _button_state = getButtonState();
 
@@ -1786,7 +2026,7 @@ Check mark option on right
 
         bool Render() override
         {
-            if(!MenuBasePlus::Render())
+            if(!MenuBaseExEx::Render())
             {
                 return false;
             }
@@ -1813,25 +2053,18 @@ Check mark option on right
             }
         }
 
-        float getDistance(Vec2f point1, Vec2f point2)
-        {
-            float dis = (Maths::Pow(point1.x-point2.x,2)+Maths::Pow(point1.y-point2.y,2));
-            return Maths::Sqrt(dis);
-            //return getDistanceToLine(point1, point1 + Vec2f(0,1), point2);
-        }
-
         void DrawIcons(SColor color) override
         {
             if(button_state == Disabled)
             {
                 color.setAlpha(80);
             }
-            MenuBasePlus::DrawIcons(color);
+            MenuBaseExEx::DrawIcons(color);
         }
     }
 
     //Menu setup to function like an check box. Click once and it's state changes.
-    class MenuCheckBox : MenuBasePlus
+    class MenuCheckBox : MenuBaseExEx
     {
         MenuCheckBox(string _name)
         {
@@ -1858,7 +2091,7 @@ Check mark option on right
 
         void initVars() override
         {
-            MenuBasePlus::initVars();
+            MenuBaseExEx::initVars();
             menu_checked = false;
         }
 
@@ -1866,7 +2099,7 @@ Check mark option on right
 
         bool Tick() override
         {
-            if(!MenuBasePlus::Tick())
+            if(!MenuBaseExEx::Tick())
             {
                 return false;
             }
@@ -1893,7 +2126,7 @@ Check mark option on right
 
         bool Render() override
         {
-            if(!MenuBasePlus::Render())
+            if(!MenuBaseExEx::Render())
             {
                 return false;
             }
@@ -1922,7 +2155,7 @@ Check mark option on right
 
 
     //This menu is designed to hold other menu's and keep them attached to it.
-    class MenuHolder : MenuBasePlus
+    class MenuHolder : MenuBaseExEx
     {
         MenuHolder(string _name)
         {
@@ -1944,7 +2177,7 @@ Check mark option on right
 
         void initVars() override
         {
-            MenuBasePlus::initVars();
+            MenuBaseExEx::initVars();
         }
 
         
@@ -1956,30 +2189,30 @@ Check mark option on right
 
         void setUpperLeft(Vec2f value) override
         {
-            MenuBasePlus::setUpperLeft(value);
+            MenuBaseExEx::setUpperLeft(value);
             moveHeldMenus();
         }
 
         void setPos(Vec2f value)
         {
-            MenuBasePlus::setPos(value);
+            MenuBaseExEx::setPos(value);
             moveHeldMenus();
         }
         void setLowerRight(Vec2f value) override
         { 
-            MenuBasePlus::setLowerRight(value);
+            MenuBaseExEx::setLowerRight(value);
             moveHeldMenus();
         }
 
         void setSize(Vec2f value) override
         {
-            MenuBasePlus::setSize(value);
+            MenuBaseExEx::setSize(value);
             moveHeldMenus();
         }
         
         void setInterpolated(bool value) override
         {
-            MenuBasePlus::setInterpolated(value);
+            MenuBaseExEx::setInterpolated(value);
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
                 if(optional_menus[i] == null)
@@ -1993,7 +2226,7 @@ Check mark option on right
 
         void setIsWorldPos(bool value) override
         {
-            MenuBasePlus::setIsWorldPos(value);
+            MenuBaseExEx::setIsWorldPos(value);
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
                 if(optional_menus[i] == null)
@@ -2190,7 +2423,7 @@ Check mark option on right
         bool Tick() override
         {
             
-            if(!MenuBasePlus::Tick())
+            if(!MenuBaseExEx::Tick())
             {
                 return false;
             }
@@ -2211,7 +2444,7 @@ Check mark option on right
 
         bool Render() override
         {
-            if(!MenuBasePlus::Render())
+            if(!MenuBaseExEx::Render())
             {
                 return false;
             }

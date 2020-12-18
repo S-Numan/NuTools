@@ -138,7 +138,7 @@ void onTick( CRules@ rules )
 
             for(j = 0; j < N; j++)
             {
-                distances[j] = buttons[j].getDistance(blob.getPosition(), buttons[j].getPos(true) + buttons[j].getSize() / 2);
+                distances[j] = NuMenu::getDistance(blob.getPosition(), buttons[j].getPos(true) + buttons[j].getSize() / 2);
             }
             if(buttons.size() == 1)//No need to sort only one button
             {

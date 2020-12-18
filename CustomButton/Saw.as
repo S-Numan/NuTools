@@ -31,16 +31,17 @@ bool getSawOn(CBlob@ this)
 
 void GetButtonsFor(CBlob@ this, CBlob@ caller)
 {
-	if (!canSeeButtons(this, caller)) { return; }
-
-    const float MAX_DISTANCE = 16;//Max distance the button can be from the caller. Any further and the button wont show up.
-
-	if (caller.getTeamNum() != this.getTeamNum() ||
-    this.getDistanceTo(caller) > MAX_DISTANCE) { return; }//Max distance button is allowed from the caller.
+	if (!canSeeButtons(this, caller,
+    true,//Team only
+    16.0f))//Max distance
+    {
+        return;
+    }
 	
     NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
 
     button.setSize(Vec2f(8, 8));//Size of button. Changes how large the button is. Larger buttons are easier to press.
+    button.setRadius(10.0f);//Radius of button. Cicle around it where you can press the
 
     initButton(button);//Sets up things easily.
 
