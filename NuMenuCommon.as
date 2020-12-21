@@ -1380,7 +1380,7 @@ Check mark option on right
                 SColor icon_color = SColor(255, 255, 255, 255);
                 if(button_state == Disabled)
                 {
-                    color.setAlpha(80);
+                    icon_color.setAlpha(80);
                 }
                 DrawIcons(icon_color);
             }
@@ -1825,7 +1825,7 @@ Check mark option on right
                 SColor icon_color = SColor(255, 255, 255, 255);
                 if(button_state == Disabled)
                 {
-                    color.setAlpha(80);
+                    icon_color.setAlpha(80);
                 }
                 DrawIcons(icon_color);
             }
@@ -1988,7 +1988,7 @@ Check mark option on right
             u8 _button_state = getButtonState();//Get the button state.
 
             if(enableRadius == 0.0f || position == Vec2f_zero ||//Provided both these values have been assigned, the statement below will check.
-            getDistance(position, getMiddle(true) < enableRadius)//The button is within enable(interact) distance.
+            getDistance(position, getMiddle(true)) < enableRadius)//The button is within enable(interact) distance.
             {
                 _button_state = getPressingState(point, _button_state, key_button, key_button_release, key_button_just);//Get the pressing state. That pun in intentional.
             }
@@ -1998,7 +1998,7 @@ Check mark option on right
             }
 
             if(_button_state == Released//If the button was released.
-            || (instant_press && JustPressed))//Or if the button is supposed to be released instantly upon press.
+            || (instant_press && _button_state == JustPressed))//Or if the button is supposed to be released instantly upon press.
             {
                 sendCommand();//Send the command.
             }
