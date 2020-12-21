@@ -54,7 +54,12 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
     if(this.exists(DROP)){ return; }//Chest only
 
 
-	if (!canSeeButtons(this, caller)) { return; }
+	if (!canSeeButtons(this, caller,
+    true,//Team only
+    16.0f))//Max distance
+    {
+        return;
+    }
 
 
 	NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);
