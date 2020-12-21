@@ -51,7 +51,7 @@ Check mark option on right
 //1. Function handle as param for button or something.
 
 //2. Switch to Render:: instead of gui draw.
-//With this, have values for the first part of a sprite. The middle part. And the end part. Rename and modify IconInfo for this.
+//With this, have values for the first part of a sprite. The middle part. And the end part. Modify MenuImage for this.
 //Useful things to note:
 //Render::SetTransformScreenspace(); Render::SetTransformWorldspace();
 //UV is the scale/offset of the image or something? Like saying xy but for texture matrixes. 0.5 would be half image size?
@@ -134,19 +134,29 @@ Check mark option on right
         ButtonStateCount,//Always last, this specifies the amount of button states.
     }
 
-    class IconInfo
+    class MenuImage
     {
-        IconInfo()
+        MenuImage()
         {
             name = "";
             frame_on = array<u16>(ButtonStateCount, Idle);
+            color_on = array<SColor(ButtonStateCount, SColor(255, 255, 255, 255));
+            Vec2f pos = Vec2f_zero;
         }
 
-        void setDefaultFrame(u16 frame)//Sets the regular frame for all button states
+        void setDefaultFrame(u16 frame)//Sets the regular frame for all button states.
         {
             for(u16 i = 0; i < frame_on.size(); i++)
             {
                 frame_on[i] = frame;
+            }
+        }
+
+        void setDefaultColor(SColor color)//Sets the regular color for all button states.
+        {
+            for(u16 i = 0; i < color_on.size(); i++)
+            {
+                color_on[i] = color;
             }
         }
 
@@ -161,6 +171,7 @@ Check mark option on right
         string name;//File name of icon.
         Vec2f frame_size;//The frame size of the icon. (for choosing different frames);
         array<u16> frame_on;//Stores what frame the image is on depending on what state the button is in
+        array<SColor> color_on;//Color depending on the button state
         Vec2f pos;//Position of image in relation to the menu.
     }
 
@@ -1096,7 +1107,7 @@ Check mark option on right
 
             initial_press = false;
         
-            icons = array<NuMenu::IconInfo@>(POSPositionsCount);
+            icons = array<NuMenu::MenuImage@>(POSPositionsCount);
 
             menu_sounds_on = array<string>(ButtonStateCount, "");
             menu_volume = 1.0f;
@@ -1257,14 +1268,14 @@ Check mark option on right
         bool reposition_icons;//If this is true, the icons's position will be reassigned every time the menu moves based on what icon position it is in. top will be put back on the top every movement.
         
         
-        private array<NuMenu::IconInfo@> icons;
+        private array<NuMenu::MenuImage@> icons;
 
         
         void setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
         {
             if(icons.size() <= position){ error("In setIcon : tried to get past the highest element in the icons array."); return; }
             
-            IconInfo@ icon = IconInfo();
+            MenuImage@ icon = MenuImage();
             
             icon.name = icon_name;
             icon.frame_size = icon_frame_size;
@@ -1289,7 +1300,7 @@ Check mark option on right
             icons_used = UpdateAreIconsUsed();
         }
         
-        IconInfo@ getIcon(u16 position = 0)
+        MenuImage@ getIcon(u16 position = 0)
         {
             if(icons.size() <= position){ error("In getIcon : tried to get past the highest element in the icons array."); return null; }
 
@@ -1316,7 +1327,7 @@ Check mark option on right
                 
                 for(u16 i = 0; i < POSPositionsCount; i++)
                 {
-                    IconInfo@ icon = getIcon(i);
+                    MenuImage@ icon = getIcon(i);
                         
                     if(icon == null)
                     {
@@ -1377,18 +1388,13 @@ Check mark option on right
             
             if(draw_icons)
             {
-                SColor icon_color = SColor(255, 255, 255, 255);
-                if(button_state == Disabled)
-                {
-                    icon_color.setAlpha(80);
-                }
-                DrawIcons(icon_color);
+                DrawIcons();
             }
 
             return true;
         }
 
-        void DrawIcons(SColor color)
+        void DrawIcons()
         {
             if(!areIconsUsed())
             {
@@ -1420,7 +1426,7 @@ Check mark option on right
                 icons[i].frame_size,//Icon size
                 getUpperLeftInterpolated() + icons[i].pos * (isWorldPos() ? camera.targetDistance * 2: 1),//Icon position
                 isWorldPos() ? camera.targetDistance : 0.5,//Icon scale
-                color);//Color
+                icons[i].color_on[button_state]);//Color
             }
         }
 
@@ -1822,12 +1828,7 @@ Check mark option on right
             
             if(draw_icons)//Then draw icons
             {
-                SColor icon_color = SColor(255, 255, 255, 255);
-                if(button_state == Disabled)
-                {
-                    icon_color.setAlpha(80);
-                }
-                DrawIcons(icon_color);
+                DrawIcons();
             }
 
             if(draw_text)//If text exists and it is supposed to be drawn.
