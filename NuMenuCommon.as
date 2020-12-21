@@ -34,7 +34,6 @@ Check mark option on right
 
 //add params to Tick? such as Tick(CControls controls)
 //fix text/font size changing//Copy and paste several font files and fix text
-//don't draw when out of range
 //fix things attached to blobs being a tick delayed
 //Stretchy ends for MenuBaseExEx. Drag the menu size around.
 //Circular collisions? Collisions atm are too boxy or small. Do distance from point. See bottom of button class.
@@ -45,26 +44,17 @@ Check mark option on right
 //Add top right, bottom left, and bottom right to POSPositions
 //Confirm the distance calculation with buttons isn't that wonky. It feels wonky. Something has to be wonky
 //Rotate value. Only for if I'm really bored. Since it probably wont ever get used. Plus you cannot rotate GUI.
-//Switch to Render:: instead of gui draw.
 //Editable text while the game is running. Think naming something.
 //See if the icon repositioning is actually required for CustomButton.as stuff. Figure out how to not make it required if it is. It shouldn't be.
-//Function handle as param for button or something.
 
 
+//1. Function handle as param for button or something.
 
-//MAX PRIORITY TODO
-//
-
-
-//Seperate MenuBasePlus into one more layer down AT LEAST.
-//SEPERATE
-//DO SOON
-//MOVE STUFF LIKE TEXT.
-
-
-//
-//MAX PRIORITY TODO
-
+//2. Switch to Render:: instead of gui draw.
+//With this, have values for the first part of a sprite. The middle part. And the end part. Rename and modify IconInfo for this.
+//Useful things to note:
+//Render::SetTransformScreenspace(); Render::SetTransformWorldspace();
+//UV is the scale/offset of the image or something? Like saying xy but for texture matrixes. 0.5 would be half image size?
 
 
 //
@@ -1012,7 +1002,7 @@ Check mark option on right
         {
             Driver@ driver = getDriver();
 
-            //If this cannot be seen.
+            //If this cannot be seen. This is out of range. 
             if(getUpperLeft().x  - MARGIN > driver.getScreenWidth()
             || getUpperLeft().y  - MARGIN > driver.getScreenHeight()
             || getLowerRight().x + MARGIN < 0
@@ -1387,7 +1377,12 @@ Check mark option on right
             
             if(draw_icons)
             {
-                DrawIcons(SColor(255, 255, 255, 255));
+                SColor icon_color = SColor(255, 255, 255, 255);
+                if(button_state == Disabled)
+                {
+                    color.setAlpha(80);
+                }
+                DrawIcons(icon_color);
             }
 
             return true;
@@ -1827,7 +1822,12 @@ Check mark option on right
             
             if(draw_icons)//Then draw icons
             {
-                DrawIcons(SColor(255, 255, 255, 255));
+                SColor icon_color = SColor(255, 255, 255, 255);
+                if(button_state == Disabled)
+                {
+                    color.setAlpha(80);
+                }
+                DrawIcons(icon_color);
             }
 
             if(draw_text)//If text exists and it is supposed to be drawn.
@@ -1984,42 +1984,28 @@ Check mark option on right
             bool key_button_release = controls.isKeyJustReleased(key_code);//Just released
             bool key_button_just = controls.isKeyJustPressed(key_code);//Just pressed
 
-
-            float distance_from_button = getDistance(position, getMiddle(true));
             
-            u8 _button_state = getButtonState();
+            u8 _button_state = getButtonState();//Get the button state.
 
-            if(enableRadius == 0.0f || position == Vec2f_zero ||
-            distance_from_button < enableRadius)//Is within enable(interact) distance
+            if(enableRadius == 0.0f || position == Vec2f_zero ||//Provided both these values have been assigned, the statement below will check.
+            getDistance(position, getMiddle(true) < enableRadius)//The button is within enable(interact) distance.
             {
-                _button_state = getPressingState(point, _button_state, key_button, key_button_release, key_button_just);
-                if(instant_press)
-                {
-                    if(_button_state == JustPressed)
-                    {
-                        _button_state = Released;
-                    }
-                    else if(_button_state == JustHover)
-                    {
-                        _button_state = Pressed;
-                    }
-                }
-                
+                _button_state = getPressingState(point, _button_state, key_button, key_button_release, key_button_just);//Get the pressing state. That pun in intentional.
             }
-            else
+            else//enableRadius and position were assigned, and the button was out of range.
             {
-                _button_state = Disabled;
+                _button_state = Disabled;//The button is disabled
             }
 
-
-            if(_button_state == Released)
+            if(_button_state == Released//If the button was released.
+            || (instant_press && JustPressed))//Or if the button is supposed to be released instantly upon press.
             {
-                sendCommand();
+                sendCommand();//Send the command.
             }
 
-            if(_button_state != getButtonState())
+            if(_button_state != getButtonState())//Was the button state changed.
             {
-                setButtonState(_button_state);
+                setButtonState(_button_state);//Set the button state.
             }
             return true;
         }
@@ -2036,30 +2022,21 @@ Check mark option on right
 
         void sendCommand()
         {
-            if(command_string != "")
+            if(command_string != "")//If there is a command_string to send.
             {
-                if(send_to_rules)
+                if(send_to_rules)//if send_to_rules is true.
                 {
                     CRules@ _rules = getRules();
 
                     _rules.SendCommand(_rules.getCommandID(command_string), params);
                 }
-                else if(getOwnerBlob() != null)
+                else if(getOwnerBlob() != null)//If send_to_rules is false, send it to the owner_blob. Provided it exists.
                 {
                     CBlob@ _owner = getOwnerBlob();
 
                     _owner.SendCommand(_owner.getCommandID(command_string), params);
                 }
             }
-        }
-
-        void DrawIcons(SColor color) override
-        {
-            if(button_state == Disabled)
-            {
-                color.setAlpha(80);
-            }
-            MenuBaseExEx::DrawIcons(color);
         }
     }
 
