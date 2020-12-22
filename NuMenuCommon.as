@@ -140,7 +140,7 @@ Check mark option on right
         {
             name = "";
             frame_on = array<u16>(ButtonStateCount, Idle);
-            color_on = array<SColor(ButtonStateCount, SColor(255, 255, 255, 255));
+            color_on = array<SColor>(ButtonStateCount, SColor(255, 255, 255, 255));
             Vec2f pos = Vec2f_zero;
         }
 
@@ -1271,9 +1271,9 @@ Check mark option on right
         private array<NuMenu::MenuImage@> icons;
 
         
-        void setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
+        MenuImage@ setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
         {
-            if(icons.size() <= position){ error("In setIcon : tried to get past the highest element in the icons array."); return; }
+            if(icons.size() <= position){ error("In setIcon : tried to get past the highest element in the icons array."); return @null; }
             
             MenuImage@ icon = MenuImage();
             
@@ -1289,7 +1289,7 @@ Check mark option on right
             if(!getDesiredPosOnSize(position, getSize(), icon.frame_size, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/, icon_pos))//Move that pos.
             {
                 error("setIcon position was an unknown position");
-                return;
+                return @null;
             }
             
             icon.pos = icon_pos;// + getSize() / 2 - icon.frame_size;
@@ -1298,6 +1298,8 @@ Check mark option on right
             @icons[position] = @icon;
 
             icons_used = UpdateAreIconsUsed();
+        
+            return icon;
         }
         
         MenuImage@ getIcon(u16 position = 0)
@@ -1305,6 +1307,11 @@ Check mark option on right
             if(icons.size() <= position){ error("In getIcon : tried to get past the highest element in the icons array."); return null; }
 
             return icons[position];
+        }
+
+        u16 getIconCount()
+        {
+            return icons.size();
         }
 
         void setIconPos(Vec2f icon_pos, u16 position = 0)

@@ -69,14 +69,6 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
     initButton(button);//Sets up things easily.
 
 
-    button.setIcon("GUI/InteractionIconsBackground.png",//Image name
-            Vec2f(32, 32),//Icon frame size
-            0,//Default frame
-            1,//Hover frame (does not matter when instant_press = true)
-            1,//Pressing frame
-            NuMenu::POSCenter);//Image position
-
-
     CBitStream params;
 	params.write_u16(caller.getNetworkID());
     button.params = params;

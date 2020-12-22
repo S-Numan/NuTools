@@ -45,12 +45,7 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
 
     initButton(button);//Sets up things easily.
 
-    button.setIcon("GUI/InteractionIconsBackground.png",//Image name
-            Vec2f(32, 32),//Icon frame size
-            0,//Default frame
-            1,//Hover frame (does not matter when instant_press = true)
-            1,//Pressing frame
-            NuMenu::POSCenter);//Image position
+    
 
     button.default_buffer = 12.0f;//Buffer between bottom of the button and the text.
     button.setText(getTranslatedString("Turn Saw " + (getSawOn(this) ? "Off" : "On")), NuMenu::POSUnder);//The text on the button..

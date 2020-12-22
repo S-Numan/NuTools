@@ -34,6 +34,18 @@ void initButton(NuMenu::MenuButton@ button)
     button.menu_sounds_on[NuMenu::Pressed] = "select.ogg";
     button.menu_sounds_on[NuMenu::Released] = "buttonclick.ogg";
     button.menu_volume = 3.0f;
+
+    NuMenu::MenuImage@ icon = button.setIcon("GUI/InteractionIconsBackground.png",//Image name
+        Vec2f(32, 32),//Icon frame size
+        0,//Default frame
+        1,//Hover frame 
+        1,//Pressing frame
+        NuMenu::POSCenter);//Image position
+
+    if(icon != null)//If the icon was properly made.
+    {
+        icon.color_on[NuMenu::Disabled].setAlpha(80);//Get the color of the icon when it is disabled, and change it to fade out when disabled.
+    }
 }
 
 void addButton(CBlob@ caller, NuMenu::MenuButton@ button)
