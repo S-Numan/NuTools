@@ -95,6 +95,14 @@ void onInit( CRules@ this )
         //random_menu.setTitlebarWidth(random_menu.getSize().x - 16.0f);
 
         NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
+
+        NuMenu::MenuButton@ button1;//We will cast option1 into button1 as an example.
+        if(option1.getMenuOption() == NuMenu::Button)//While it is known the above is a button, this is just as an example for how to check if it can be casted.
+        {
+            button1 = cast<NuMenu::MenuButton@>(option1);//Cast into button1. 
+        }
+        button1.func = @ButtonTestFunction;//We can now use button functions and all it's derivatives.
+
         //option1.setRelationPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));
         random_menu.setOptionalMenuPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y), option1);//*/
 
@@ -111,6 +119,11 @@ void onInit( CRules@ this )
         menus.push_back(_menus[i]);
         namehashes.push_back(_menus[i].getNameHash());
     }
+}
+
+void ButtonTestFunction(CBitStream lol)
+{
+    print("function: button was pressed.");
 }
 
 void onTick( CRules@ this )

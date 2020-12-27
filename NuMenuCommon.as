@@ -48,9 +48,7 @@ Check mark option on right
 //See if the icon repositioning is actually required for CustomButton.as stuff. Figure out how to not make it required if it is. It shouldn't be.
 
 
-//1. Function handle as param for button or something.
-
-//2. Switch to Render:: instead of gui draw.
+//1. Switch to Render:: instead of gui draw.
 //With this, have values for the first part of a sprite. The middle part. And the end part. Modify MenuImage for this.
 //Useful things to note:
 //Render::SetTransformScreenspace(); Render::SetTransformWorldspace();
@@ -1898,6 +1896,7 @@ Check mark option on right
         }
     }
 
+    funcdef void BUTTONCALLBACK(CBitStream);
     //Menu set up to function like a button.
     class MenuButton : MenuBaseExEx
     {
@@ -1941,15 +1940,21 @@ Check mark option on right
             send_to_rules = false;
             kill_on_press = false;
             instant_press = false;
+
+            func = @null;
+
+            command_string = "";
         }
 
+        BUTTONCALLBACK@ func;//The function called upon being pressed.
 
-        string command_string = "";//The command id sent out upon being pressed.
+
+        string command_string;//The command id sent out upon being pressed.
         bool send_to_rules;//If this is false, it will attempt to send the command_string to the owner blob. Otherwise it will send it to CRules.
         CBitStream params;//The params to accompany above
 
 
-        bool kill_on_press;
+        bool kill_on_press;//Does nothing. Just holds a value in case someone wants to use it.
 
         bool instant_press;//If this is true, the button will trigger upon being just pressed.
 
@@ -2044,6 +2049,10 @@ Check mark option on right
 
                     _owner.SendCommand(_owner.getCommandID(command_string), params);
                 }
+            }
+            if(func != null)
+            {
+                func(params);
             }
         }
     }
