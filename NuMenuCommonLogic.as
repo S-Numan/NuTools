@@ -3,11 +3,11 @@
 
 void onTick( CRules@ rules )
 {
-    NuMenu::onTick(rules);
+    //NuMenu::onTick(rules);
 }
 
 void onRender( CRules@ rules )
 {
-    NuMenu::onRender(rules);
+    //NuMenu::onRender(rules);
 }
 
