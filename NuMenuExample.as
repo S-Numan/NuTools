@@ -99,7 +99,7 @@ void onInit( CRules@ this )
         NuMenu::MenuButton@ button1;//We will cast option1 into button1 as an example.
         if(option1.getMenuOption() == NuMenu::Button)//While it is known the above is a button, this is just as an example for how to check if it can be casted.
         {
-            button1 = cast<NuMenu::MenuButton@>(option1);//Cast into button1. 
+            @button1 = cast<NuMenu::MenuButton@>(option1);//Cast into button1. 
         }
         button1.func = @ButtonTestFunction;//We can now use button functions and all it's derivatives.
 
