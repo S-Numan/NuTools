@@ -19,8 +19,7 @@ void onInit( CRules@ rules )
     //buttons.push_back(_menus[i]);
     //namehashes.push_back(_menus[i].getNameHash());
 
-    rules.set("CustomButtons", @buttons);
-    
+    rules.set("CustomButtons", @buttons);   
 }
 
 

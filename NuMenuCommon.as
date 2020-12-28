@@ -53,6 +53,11 @@ Check mark option on right
 //Useful things to note:
 //Render::SetTransformScreenspace(); Render::SetTransformWorldspace();
 //UV is the scale/offset of the image or something? Like saying xy but for texture matrixes. 0.5 would be half image size?
+//
+//2. Easier menu adding. Just make the menu and add it somewhere and it will run on it's own. No fancy code or other things required. Use NuMenuCommonLogic.as for this.
+//3. Seperate menu class and menu option. OR add a method to check what class the class is. So you can cast it easier. Maybe add a method that casts it for you.
+//4. Fix CustomButton.as
+//5. Before the first tick, the checkbox in menuholder runs away from it's owner.
 
 
 //
@@ -2496,13 +2501,52 @@ Check mark option on right
 
     
     
-    void onTick( CRules@ rules )
+    void onTick(CRules@ rules)
     {
+        if(!isClient())
+        {
+            return;
+        }
+
         FRAME_TIME = 0.0f;
     }
 
-    void onRender( CRules@ rules )
+    void MenuTick(array<NuMenu::IMenu@> menus)
+    {
+        if(!isClient())
+        {
+            return;
+        }
+        
+        u16 i;
+        for(i = 0; i < menus.size(); i++)
+        {
+            if(menus[i] == null)
+            {
+                continue;
+            }
+            
+            menus[i].Tick();
+        }
+    }
+
+    void onRender(CRules@ rules)
     {
         FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
+    }
+
+    void MenuRender(array<NuMenu::IMenu@> menus)
+    {
+        //Render::SetAlphaBlend(true);
+        
+        for(u16 i = 0; i < menus.size(); i++)
+        {
+            if(menus[i] == null)
+            {
+                continue;
+            }
+
+            menus[i].Render();
+        }
     }
 }
