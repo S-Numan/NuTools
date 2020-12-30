@@ -22,7 +22,7 @@ bool canSeeButtons(CBlob@ this, CBlob@ caller, bool team_only = false, f32 max_d
 
 void initButton(NuMenu::MenuButton@ button)
 {
-    button.kill_on_press = true;//The button will be removed on press. (logic for this happens outside the button class)
+    button.kill_on_release = true;//The button will be removed on press. (logic for this happens outside the button class)
     button.instant_press = true;//Button is Pressed when hovering over. Button is instantly released upon pressing.
     button.draw_text = false;//Don't initially draw text.
     button.reposition_text = true;//Make sure the text is constantly under the button in the correct position.

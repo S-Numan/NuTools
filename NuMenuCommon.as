@@ -58,6 +58,7 @@ Check mark option on right
 //3. Seperate menu class and menu option. OR add a method to check what class the class is. So you can cast it easier. Maybe add a method that casts it for you.
 //4. Fix CustomButton.as
 //5. Before the first tick, the checkbox in menuholder runs away from it's owner.
+//6. Move repeated constructor stuff to init vars
 
 
 //
@@ -1943,7 +1944,7 @@ Check mark option on right
         {
             MenuBaseExEx::initVars();
             send_to_rules = false;
-            kill_on_press = false;
+            kill_on_release = false;
             instant_press = false;
 
             func = @null;
@@ -1959,7 +1960,7 @@ Check mark option on right
         CBitStream params;//The params to accompany above
 
 
-        bool kill_on_press;//Does nothing. Just holds a value in case someone wants to use it.
+        bool kill_on_release;//Does nothing. Just holds a value in case someone wants to use it.
 
         bool instant_press;//If this is true, the button will trigger upon being just pressed.
 
@@ -2065,6 +2066,8 @@ Check mark option on right
     //Menu setup to function like an check box. Click once and it's state changes.
     class MenuCheckBox : MenuBaseExEx
     {
+        string test_name;
+
         MenuCheckBox(string _name)
         {
             if(!isClient())
@@ -2088,10 +2091,43 @@ Check mark option on right
             render_background = false;
         }
 
+        
+
+        void Setup()
+        {
+            test_name = "_haha_fishy_fish_fishers";
+            //ensure texture for our use exists
+            if(!Texture::exists(test_name))
+            {
+                if(!Texture::createBySize(test_name, 8, 8))
+                {
+                    warn("texture creation failed");
+                }
+                else
+                {
+                    ImageData@ edit = Texture::data(test_name);
+
+                    for(int i = 0; i < edit.size(); i++)
+                    {
+                        edit[i] = SColor((((i + i / 8) % 2) == 0) ? 0xff707070 : 0xff909090);
+                    }
+
+                    if(!Texture::update(test_name, edit))
+                    {
+                        warn("texture update failed");
+                    }
+                }
+            }
+
+            int hud_cb_id = Render::addScript(Render::layer_prehud, "NuMenuCommon.as", "RulesHUDRenderFunction", 0.0f);
+        }
+
         void initVars() override
         {
             MenuBaseExEx::initVars();
             menu_checked = false;
+
+            Setup();
         }
 
         bool menu_checked;
@@ -2123,6 +2159,15 @@ Check mark option on right
             return true;
         }
 
+        Vec2f[] v_pos;
+        Vec2f[] v_uv;
+        SColor[] v_col;
+
+        u16[] v_i;
+
+        //this is the highest performance option
+        Vertex[] v_raw;
+
         bool Render() override
         {
             if(!MenuBaseExEx::Render())
@@ -2130,16 +2175,41 @@ Check mark option on right
                 return false;
             }
 
-            InterpolatePositions();
+            //InterpolatePositions();
 
-            if(menu_checked == true)
+            v_pos.clear();
+            v_uv.clear();
+            v_col.clear();
+            v_i.clear();
+            v_raw.clear();
+            Render::SetTransformScreenspace();
+
+
+            Vec2f p = Vec2f_zero;//getUpperLeftInterpolated();
+            CMap@ map = getMap();
+
+            float x_size = 32;
+            float y_size = 32;
+            
+            f32 z = -0.1;
+
+
+
+            v_pos.push_back(p + Vec2f(-x_size,-y_size)); v_uv.push_back(Vec2f(0,0));
+            v_pos.push_back(p + Vec2f( x_size,-y_size)); v_uv.push_back(Vec2f(1,0));
+            v_pos.push_back(p + Vec2f( x_size, y_size)); v_uv.push_back(Vec2f(1,1));
+            v_pos.push_back(p + Vec2f(-x_size, y_size)); v_uv.push_back(Vec2f(0,1));
+
+            Render::Quads(test_name, z, v_pos, v_uv);
+
+            /*if(menu_checked == true)
             {
                 GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), SColor(255, 25,127,25));
             }
             else
             {
                 GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), SColor(255, 127,25,25));
-            }
+            }*/
 
             return true;
         }
@@ -2499,8 +2569,145 @@ Check mark option on right
 
 
 
+    //This adds a menu to the list on the end.
+    bool addMenuToList(NuMenu::IMenu@ _menu)
+    {
+        CRules@ rules = getRules();
+
+        array<NuMenu::IMenu@>@ menus;
+        if(!rules.get("NuMenus", @menus))
+        {
+            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
+        }
+        menus.push_back(_menu);
+
+        return true;
+    }
+
+    //This removes the menu on a certain position in the list.
+    bool removeMenuFromList(u16 i)
+    {
+        CRules@ rules = getRules();
+
+        array<NuMenu::IMenu@>@ menus;
+        if(!rules.get("NuMenus", @menus))
+        {
+            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
+        }
+        if(i >= menus.size())
+        {
+            error("Tried to remove menu equal to or above the menu size."); return false;
+        }
+
+        menus.removeAt(i);
+
+        return true;
+    }
+    //This removes all menus with the same name as the argument on the list.
+    bool removeMenuFromList(string _name)
+    {
+        CRules@ rules = getRules();
+
+        array<NuMenu::IMenu@>@ menus;
+        if(!rules.get("NuMenus", @menus))
+        {
+            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
+        }
+
+        int _namehash = _name.getHash();
+        for(u16 i = 0; i < menus.size(); i++)
+        {
+            if(menus[i].getNameHash() == _namehash)
+            {
+                menus.removeAt(i);
+                i--;
+            }
+        }
+
+        return true;
+    }
     
-    
+    IMenu@ getMenuFromList(u16 i)
+    {
+        CRules@ rules = getRules();
+
+        array<NuMenu::IMenu@>@ menus;
+        if(!rules.get("NuMenus", @menus))
+        {
+            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return @null;
+        }
+        if(i >= menus.size())
+        {
+            error("Tried to get menu equal to or above the menu size."); return @null;
+        }
+
+        return @menus[i];
+    }
+
+    IMenu@ getMenuFromList(string _name)
+    {
+        array<NuMenu::IMenu@> _menus();
+        _menus = getMenusFromList(_name);
+        if(_menus.size() > 0)
+        {
+            return _menus[0];
+        }
+        else
+        {
+            return @null;
+        }
+    }
+
+    array<NuMenu::IMenu@> getMenusFromList(string _name)
+    {
+        CRules@ rules = getRules();
+
+        array<NuMenu::IMenu@>@ menus;
+        
+        array<NuMenu::IMenu@> _menus();
+
+        if(!rules.get("NuMenus", @menus))
+        {
+            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return _menus;
+        }
+        
+        int _namehash = _name.getHash();
+        for(u16 i = 0; i < menus.size(); i++)
+        {
+            if(menus[i].getNameHash() == _namehash)
+            {
+                _menus.push_back(@menus[i]);
+            }
+        }
+
+        return _menus;
+    }
+
+    u16 getMenuListSize()
+    {
+        CRules@ rules = getRules();
+
+        array<NuMenu::IMenu@>@ menus;
+        if(!rules.get("NuMenus", @menus))
+        {
+            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return 0;
+        }
+
+        return menus.size();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
     void onTick(CRules@ rules)
     {
         if(!isClient())
@@ -2511,7 +2718,7 @@ Check mark option on right
         FRAME_TIME = 0.0f;
     }
 
-    void MenuTick(array<NuMenu::IMenu@> menus)
+    void MenuTick(array<NuMenu::IMenu@>@ menus)
     {
         if(!isClient())
         {
@@ -2527,6 +2734,23 @@ Check mark option on right
             }
             
             menus[i].Tick();
+            
+            if(menus[i].getMenuState() == NuMenu::Released && menus[i].getMenuOption() == NuMenu::Button)
+            {
+                NuMenu::MenuButton@ button = cast<NuMenu::MenuButton@>(menus[i]);
+                
+                print("really? something should show up below.");
+
+                if(button != null)//If you try to put the button inside
+                {
+                    print("okay, I showed up below. all good.");
+                    if(button.kill_on_release)
+                    {
+                        menus.removeAt(i);
+                        i--;
+                    }
+                }
+            }
         }
     }
 
@@ -2535,9 +2759,9 @@ Check mark option on right
         FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
     }
 
-    void MenuRender(array<NuMenu::IMenu@> menus)
+    void MenuRender(array<NuMenu::IMenu@>@ menus)
     {
-        //Render::SetAlphaBlend(true);
+        Render::SetAlphaBlend(true);
         
         for(u16 i = 0; i < menus.size(); i++)
         {
@@ -2549,4 +2773,15 @@ Check mark option on right
             menus[i].Render();
         }
     }
+
+
+    /*void RulesHUDRenderFunction(int id)
+    {
+        CBlob@[] players;
+        getBlobsByTag("player", @players);
+        for (uint i = 0; i < players.length; i++)
+        {
+            RenderHUDWidgetFor(players[i]);
+        }
+    }*/
 }

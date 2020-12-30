@@ -111,7 +111,7 @@ void onTick( CRules@ rules )
 
             if(buttons[i].getMenuState() == NuMenu::Released)
             {
-                if(buttons[i].kill_on_press)
+                if(buttons[i].kill_on_release)
                 {
                     buttons.removeAt(i);
                     if(e_key_release)

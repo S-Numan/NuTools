@@ -1,15 +1,11 @@
 #include "NuMenuCommon.as";
 
-array<NuMenu::IMenu@> menus();
-
 void onInit( CRules@ this )
 {
     if(!isClient())
     {
         return;
     }
-
-    menus.clear();
 
     print("creation");
 
@@ -69,15 +65,51 @@ void onInit( CRules@ this )
     }
     button1.func = @ButtonTestFunction;//We can now use button functions and all it's derivatives.
 
+
+    {
+        array<NuMenu::IMenu@> _menus();
+        array<NuMenu::IMenu@>@ menus = _menus;
+            
+        menus.push_back(option1);
+
+        NuMenu::MenuButton@ buttony = cast<NuMenu::MenuButton@>(menus[0]);
+            
+        if(buttony == null)//If you try to put the button inside
+        {
+            print("no worky");
+        }
+        else
+        {
+            print("yes worky");
+        }
+    }
+
     //option1.setRelationPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));
     random_menu.setOptionalMenuPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y), option1);//*/
+    NuMenu::addMenuToList(random_menu);
 
-    menus.push_back(random_menu);
+
+
+    NuMenu::MenuButton to_remove_button = NuMenu::MenuButton(
+        Vec2f(500, 500),//Top left
+        Vec2f(600, 600),//Bottom right
+        "RemoveButton");//Menu name
+    
+    to_remove_button.kill_on_release = true;
+
+
+    NuMenu::IMenu@ _to_remove_button = cast<NuMenu::IMenu@>(to_remove_button);
+    NuMenu::addMenuToList(_to_remove_button);
 
     /*NuMenu::MenuButton menu_button_dunno = NuMenu::MenuButton(Vec2f(64,64), Vec2f(72, 72), "well_then");
     menu_button_dunno.setIsWorldPos(true);
 
     menus.push_back(menu_button_dunno);*/
+}
+
+void onReload( CRules@ this )
+{
+    onInit(this);
 }
 
 void ButtonTestFunction(CBitStream lol)
@@ -87,26 +119,10 @@ void ButtonTestFunction(CBitStream lol)
 
 void onTick( CRules@ this )
 {
-    NuMenu::onTick(this);
-    
-    NuMenu::MenuTick(menus);
-    
-    if(menus.size() > 0)
+    if(NuMenu::getMenuListSize() > 0)
     {
-        MenuOptionChanger(menus[0]);
+        MenuOptionChanger(NuMenu::getMenuFromList(0));
     }
-}
-
-void onRender( CRules@ this )
-{
-    NuMenu::onRender(this);
-    
-    NuMenu::MenuRender(menus);
-}
-
-void onReload( CRules@ this )
-{
-    onInit(this);
 }
 
 
