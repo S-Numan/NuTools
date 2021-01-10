@@ -43,7 +43,16 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
     initButton(button);//Sets up things easily.
 
     
-    button.setText(getTranslatedString("Turn Saw " + (getSawOn(this) ? "Off" : "On")), NuMenu::POSUnder);//The text on the button..
+    button.setText(getTranslatedString("Turn Saw " + (getSawOn(this) ? "Off" : "On")), NuMenu::POSUnder);//The text on the button.
+
+    //Icon
+    NuMenu::MenuImage@ icon = button.setIcon("GUI/InteractionIcons.png",//Image name
+        Vec2f(32, 32),//Icon frame size
+        8,//Default frame
+        8,//Hover frame 
+        8,//Pressing frame
+        NuMenu::POSCenter);//Image position
+    icon.color_on[NuMenu::Disabled].setAlpha(80);//Get the color of the icon when it is disabled, and change it to fade out when disabled.
 
     button.command_string = toggle_id;//This command will be sent to this blob when this button is pressed.
 

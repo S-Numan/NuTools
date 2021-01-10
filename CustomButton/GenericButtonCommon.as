@@ -56,11 +56,13 @@ void initButton(NuMenu::MenuButton@ button)
         0,//Default frame
         1,//Hover frame 
         1,//Pressing frame
-        NuMenu::POSCenter);//Image position
-    if(icon != null)//If the icon was properly made.
-    {
-        icon.color_on[NuMenu::Disabled].setAlpha(80);//Get the color of the icon when it is disabled, and change it to fade out when disabled.
-    }
+        0);//Image position
+
+    Vec2f icon_pos;
+    button.getDesiredPosOnSize(NuMenu::POSCenter, button.getSize(), icon.frame_size, button.default_buffer, icon_pos);
+    icon.pos = icon_pos;
+
+    icon.color_on[NuMenu::Disabled].setAlpha(80);//Get the color of the icon when it is disabled, and change it to fade out when disabled.
 }
 
 void addButton(CBlob@ caller, NuMenu::MenuButton@ button)
