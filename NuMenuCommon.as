@@ -1,5 +1,122 @@
-f32 FRAME_TIME = 0.0f; // last frame time
-const float MARGIN = 255.0f;//How many pixels away will things stop drawing from outside the screen.
+
+
+//I'm making a public announcement.
+class CRulesBad
+{
+    CRulesBad()
+    {
+        Setup();
+    }
+    
+    void Setup()
+    {
+        menus = array<NuMenu::IMenu@>();
+        buttons = array<NuMenu::MenuButton@>();
+    }
+
+    bool addMenuToList(NuMenu::IMenu@ _menu)
+    {
+        menus.push_back(_menu);
+        buttons.push_back(@null);
+
+        return true;
+    }
+
+
+    bool addMenuToList(NuMenu::MenuButton@ _menu)
+    {
+        menus.push_back(_menu);
+        buttons.push_back(_menu);
+
+        return true;
+    }
+
+    bool removeMenuFromList(u16 i)
+    {
+        if(i >= menus.size())
+        {
+            error("Tried to remove menu equal to or above the menu size."); return false;
+        }
+
+        menus.removeAt(i);
+        buttons.removeAt(i);
+
+        return true;
+    }
+    
+    bool removeMenuFromList(string _name)
+    {
+        int _namehash = _name.getHash();
+        for(u16 i = 0; i < menus.size(); i++)
+        {
+            if(menus[i].getNameHash() == _namehash)
+            {
+                menus.removeAt(i);
+                buttons.removeAt(i);
+                i--;
+            }
+        }
+
+        return true;
+    }
+
+    array<NuMenu::IMenu@> getMenusFromList(string _name)
+    {   
+        array<NuMenu::IMenu@> _menus();
+        
+        int _namehash = _name.getHash();
+        for(u16 i = 0; i < menus.size(); i++)
+        {
+            if(menus[i].getNameHash() == _namehash)
+            {
+                _menus.push_back(@menus[i]);
+            }
+        }
+
+        return _menus;
+    }
+
+    u16 getMenuListSize()
+    {
+        return menus.size();
+    }
+
+    NuMenu::IMenu@ getMenuFromList(u16 i)
+    {
+        if(i >= menus.size())
+        {
+            error("Tried to get menu equal to or above the menu size."); return @null;
+        }
+
+        return @menus[i];
+    }
+
+    NuMenu::IMenu@ getMenuFromList(string _name)
+    {
+        array<NuMenu::IMenu@> _menus();
+        _menus = getMenusFromList(_name);
+        if(_menus.size() > 0)
+        {
+            return _menus[0];
+        }
+        else
+        {
+            return @null;
+        }
+    }
+
+    void ClearMenuList()
+    {
+        menus.clear();
+        buttons.clear();
+    }
+
+    array<NuMenu::IMenu@> menus;//CRules touching this array makes casting impossible. Save the array from molestation; Remain a wizard!
+
+    array<NuMenu::MenuButton@> buttons;//Since casting is very broken, this is a way to sidestep the issue.
+}
+//Don't let more of one of this exist at once. This is our class. Communism, not capitalism.
+//I think I'm going crazy.
 
 
 namespace NuMenu
@@ -46,6 +163,13 @@ Check mark option on right
 //Rotate value. Only for if I'm really bored. Since it probably wont ever get used. Plus you cannot rotate GUI.
 //Editable text while the game is running. Think naming something.
 //See if the icon repositioning is actually required for CustomButton.as stuff. Figure out how to not make it required if it is. It shouldn't be.
+//Test does not reposition when not interpolated. Look into this
+
+//Option list for debugging blobs.
+//Surround blobs in a red box.
+//Clicking a blob selects it and shows it's info. OR always show info.
+//Type in tags to show details of those tags.
+
 
 
 //1. Switch to Render:: instead of gui draw.
@@ -59,11 +183,25 @@ Check mark option on right
 //4. Fix CustomButton.as
 //5. Before the first tick, the checkbox in menuholder runs away from it's owner.
 //6. Move repeated constructor stuff to init vars
-
+//7. Remake text. All text. Add shaky text. And different color text for each induvidual letter.
 
 //
 //TODO LIST
 //
+    //Only one of this class should exist at a time.
+    class GlobalVariables
+    {
+        GlobalVariables()
+        {
+            FRAME_TIME = 0.0f;
+            MARGIN = 255.0f;
+            MenuOptionHolder = 100;
+        }
+        f32 FRAME_TIME; // last frame time
+        float MARGIN;//How many pixels away will things stop drawing from outside the screen.
+        u8 MenuOptionHolder;//Menu holder option. starts at 100 in case you want to add another MenuOptions enum to it to explain that this holder holds these menu types only.
+    }
+
 
     float getDistance(Vec2f point1, Vec2f point2)//Add to NumanLib later
     {
@@ -91,8 +229,6 @@ Check mark option on right
         POSPositionsCount,//Always last, this specifies the amount of positions.
     }
 
-
-    u8 MenuOptionHolder = 100;//Menu holder option. starts at 100 in case you want to add another MenuOptions enum to it to explain that this holder holds these menu types only.
 
     enum MenuOptions
     {
@@ -125,14 +261,15 @@ Check mark option on right
     enum ButtonState
     {
         Idle,//Mouse is scared of button. Is not near and has not touched.
-        Hover,//Mouse is hovering over the button without doing anything. Mouse has anxiety of what will happen if it touches the button.
+        Hover,//Mouse is hovering over the button without doing anything. The mouse has anxiety of what will happen if it touches the button.
         JustHover,//Mouse has only just started stalking this button.
         UnHover,//Mouse has just stopped stalking this button, a shame.
-        JustPressed,//Mouse just pressed the button.
-        Pressed,//Mouse is currently holding down the left mouse button over the button. Good job mouse.
+        JustPressed,//Mouse just pressed the button. The mouse says "Hello!" to the button.
+        Pressed,//Mouse is currently pressing the button. Good job mouse.
         Selected,//Mouse has touched this button first, but is still nervous and is not over the button. Still holding left mouse button though.
         Released,//Mouse has released while over the button. ( ͡° ͜ʖ ͡°)
         FalseRelease,//Mouse released while not over the button. (when the ButtonState was Selected and the mouse let go)
+        AfterRelease,//This happens after the button has been released on. However, if the mouse is still pressing down on the button on the next tick, the button must stay in this state and cannot escape this state until the mouse stops pressing it about government conspiracies. 
         Disabled,//The mouse has shown dominance over the button by breaking it's knees with a crowbar
         
         ButtonStateCount,//Always last, this specifies the amount of button states.
@@ -299,6 +436,11 @@ Check mark option on right
 
         void initVars()
         {
+            if(!getRules().get("NuGlobalVars", @globalvars))
+            {
+                error("NuMenuCommonLogic.as must be before anything else that uses NuMenu in gamemode.cfg");
+            }
+
             default_buffer = 4.0f;
             is_world_pos = false;
 
@@ -322,6 +464,8 @@ Check mark option on right
 
             radius = 0.0f;
         }
+
+        GlobalVariables@ globalvars;
 
         float default_buffer;
 
@@ -536,9 +680,9 @@ Check mark option on right
         {
             upper_left[0] = value;
             menu_size = Vec2f(lower_right[0].x - upper_left[0].x, lower_right[0].y - upper_left[0].y);
-            if(getCollisionSetter())//If the collision is not disabled.
+            if(getCollisionSetter())//If the collision setter is not disabled.
             {
-                upper_left[3] = Vec2f_zero;
+                upper_left[3] = Vec2f_zero;//Reset collisinos
             }
 
             setMenuJustMoved(true);
@@ -560,9 +704,11 @@ Check mark option on right
         //Not in relation to the menu
         Vec2f getMiddle(bool get_raw_pos = false)
         {
-            return getUpperLeft(get_raw_pos)//Upper left
-            + (isWorldPos() ? getDriver().getScreenPosFromWorldPos(getSize() / 2) ://Plus if world pos size divided by two converted.
-            getSize() / 2);//Plus if not world pos just size divided by two.
+            Vec2f _upper_left = getUpperLeft(get_raw_pos);//Upper left
+
+            _upper_left += getSize() / 2;//Add the size divided by two.
+
+            return _upper_left;
         }
 
         private array<Vec2f> lower_right(3);//Lower right of menu. [0] is normal; [1] is old; [2] is interpolated; [3] is collision
@@ -580,9 +726,9 @@ Check mark option on right
             lower_right[0] = value;
             menu_size = Vec2f(lower_right[0].x - upper_left[0].x, lower_right[0].y - upper_left[0].y);
 
-            if(getCollisionSetter())//If the collision is not disabled.
+            if(getCollisionSetter())//If the collision setter is not disabled.
             {
-                lower_right[3] = menu_size;
+                lower_right[3] = menu_size;//Reset collisinos
             }
 
             setMenuJustMoved(true);
@@ -850,7 +996,7 @@ Check mark option on right
 
         bool isPointInMenu(Vec2f value)//Is the vec2f value within the menu?
         {
-            if(getCollisionUpperLeft() != Vec2f_zero && getCollisionLowerRight() != Vec2f_zero//If these values aren't nothing
+            if((getCollisionUpperLeft() != Vec2f_zero || getCollisionLowerRight() != Vec2f_zero)//If there is a collision box.
             && value.x <= getCollisionLowerRight().x
             && value.x >= getCollisionUpperLeft().x 
             && value.y <= getCollisionLowerRight().y
@@ -860,9 +1006,9 @@ Check mark option on right
             }
             else if(getRadius() != 0.0f)//Try checking for radius instead
             {
-                if(getDistance(getMiddle(), value) < getRadius())//If the distance between the middle and value is less than the radius 
+                if(getDistance(getMiddle(), value) < getRadius() * (isWorldPos() ? getCamera().targetDistance : 1))//If the distance between the middle and value is less than the radius 
                 {
-                    return true;
+                    return true;//Yes but radius.
                 }
             }
             return false;//No
@@ -974,9 +1120,9 @@ Check mark option on right
                     }
                     else//*/
                     {
-                        upper_left[2] = Vec2f_lerp(getUpperLeftOld(), getUpperLeft(), FRAME_TIME);
+                        upper_left[2] = Vec2f_lerp(getUpperLeftOld(), getUpperLeft(), globalvars.FRAME_TIME);
 
-                        lower_right[2] = Vec2f_lerp(getLowerRightOld(), getLowerRight(), FRAME_TIME);
+                        lower_right[2] = Vec2f_lerp(getLowerRightOld(), getLowerRight(), globalvars.FRAME_TIME);
                     }
                     //print(FRAME_TIME+'');
                 
@@ -1018,10 +1164,10 @@ Check mark option on right
             Driver@ driver = getDriver();
 
             //If this cannot be seen. This is out of range. 
-            if(getUpperLeft().x  - MARGIN > driver.getScreenWidth()
-            || getUpperLeft().y  - MARGIN > driver.getScreenHeight()
-            || getLowerRight().x + MARGIN < 0
-            || getLowerRight().y + MARGIN < 0 )
+            if(getUpperLeft().x  - globalvars.MARGIN > driver.getScreenWidth()
+            || getUpperLeft().y  - globalvars.MARGIN > driver.getScreenHeight()
+            || getLowerRight().x + globalvars.MARGIN < 0
+            || getLowerRight().y + globalvars.MARGIN < 0 )
             {
                 return false;//Don't draw it then.
             }
@@ -1050,6 +1196,9 @@ Check mark option on right
                         break;
                     case FalseRelease:
                         rec_color = SColor(255, 30, 50, 255);
+                        break;
+                    case AfterRelease:
+                        rec_color = SColor(255, 50, 50, 50);
                         break;
                     case Pressed:
                         rec_color = SColor(255, 127,25,25);
@@ -1178,7 +1327,12 @@ Check mark option on right
         {
             if(isPointInMenu(point))//Is the mouse within the menu?
             {
-                if(initial_press)//If the button was initially pressed.
+                if(_button_state == Released//If the button is Released.
+                || (_button_state == AfterRelease && left_button))//Or if the button is AfterRelease and left_button is still true.
+                {
+                    _button_state = AfterRelease;//The button is AfterRelease.
+                }
+                else if(initial_press)//If the button was initially pressed.
                 {
                     if(left_button)//Left button held?
                     {
@@ -1651,7 +1805,7 @@ Check mark option on right
             
                     Vec2f text_dimensions;
                     GUI::GetTextDimensions(text, text_dimensions);
-                    
+
                     if(!getDesiredPosOnSize(i, size, text_dimensions, default_buffer, text_pos))//Move that pos.
                     {
                         error("Text position went above the text_positions array max size");
@@ -1947,6 +2101,8 @@ Check mark option on right
             kill_on_release = false;
             instant_press = false;
 
+            enableRadius = 0.0f;
+
             func = @null;
 
             command_string = "";
@@ -1964,7 +2120,7 @@ Check mark option on right
 
         bool instant_press;//If this is true, the button will trigger upon being just pressed.
 
-        float enableRadius = 0.0f;//The radius at which the button can be pressed
+        float enableRadius;//The radius at which the button can be pressed
 
 
         bool Tick() override
@@ -2016,10 +2172,15 @@ Check mark option on right
                 _button_state = Disabled;//The button is disabled
             }
 
-            if(_button_state == Released//If the button was released.
-            || (instant_press && _button_state == JustPressed))//Or if the button is supposed to be released instantly upon press.
+            if(_button_state == Released)//If the button was released.
             {
                 sendCommand();//Send the command.
+            }
+
+            if(instant_press && _button_state == JustPressed)//If the button is supposed to be released instantly upon press.
+            {
+                sendCommand();//Send the command.
+                _button_state = Released;//The button was basically released, so tell it to actually release. To prevent it from sending the command twice.
             }
 
             if(_button_state != getButtonState())//Was the button state changed.
@@ -2211,6 +2372,8 @@ Check mark option on right
                 GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), SColor(255, 127,25,25));
             }*/
 
+            Render::SetTransformWorldspace();//Have to do this or kag gets cranky as it forgot to do it itself.
+
             return true;
         }
     }
@@ -2232,7 +2395,7 @@ Check mark option on right
             {
                 return;
             }
-            super(_name, MenuOptionHolder);
+            super(_name, 100);//TODO MenuOptionHolder global var
         }
 
         MenuHolder(Vec2f _upper_left, Vec2f _lower_right, string _name)
@@ -2241,7 +2404,7 @@ Check mark option on right
             {
                 return;
             }
-            super(_upper_left, _lower_right, _name, MenuOptionHolder);
+            super(_upper_left, _lower_right, _name, 100);//TODO MenuOptionHolder global var
         }
 
         void initVars() override
@@ -2262,7 +2425,7 @@ Check mark option on right
             moveHeldMenus();
         }
 
-        void setPos(Vec2f value)
+        void setPos(Vec2f value) override
         {
             MenuBaseExEx::setPos(value);
             moveHeldMenus();
@@ -2574,14 +2737,24 @@ Check mark option on right
     {
         CRules@ rules = getRules();
 
-        array<NuMenu::IMenu@>@ menus;
-        if(!rules.get("NuMenus", @menus))
+        CRulesBad@ rulesbad;
+        if(!rules.get("NuMenus", @rulesbad))
         {
             error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
         }
-        menus.push_back(_menu);
+        return rulesbad.addMenuToList(_menu);
+    }
+    //If this is a button, add it to the button array to.
+    bool addMenuToList(NuMenu::MenuButton@ _menu)
+    {
+        CRules@ rules = getRules();
 
-        return true;
+        CRulesBad@ rulesbad;
+        if(!rules.get("NuMenus", @rulesbad))
+        {
+            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
+        }
+        return rulesbad.addMenuToList(_menu);
     }
 
     //This removes the menu on a certain position in the list.
@@ -2589,59 +2762,42 @@ Check mark option on right
     {
         CRules@ rules = getRules();
 
-        array<NuMenu::IMenu@>@ menus;
-        if(!rules.get("NuMenus", @menus))
+        CRulesBad@ rulesbad;
+        if(!rules.get("NuMenus", @rulesbad))
         {
             error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
         }
-        if(i >= menus.size())
-        {
-            error("Tried to remove menu equal to or above the menu size."); return false;
-        }
-
-        menus.removeAt(i);
-
-        return true;
+        return rulesbad.removeMenuFromList(i);
     }
     //This removes all menus with the same name as the argument on the list.
     bool removeMenuFromList(string _name)
     {
         CRules@ rules = getRules();
 
-        array<NuMenu::IMenu@>@ menus;
-        if(!rules.get("NuMenus", @menus))
+        CRulesBad@ rulesbad;
+        if(!rules.get("NuMenus", @rulesbad))
         {
             error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
         }
 
-        int _namehash = _name.getHash();
-        for(u16 i = 0; i < menus.size(); i++)
-        {
-            if(menus[i].getNameHash() == _namehash)
-            {
-                menus.removeAt(i);
-                i--;
-            }
-        }
-
-        return true;
+        return rulesbad.removeMenuFromList(_name);
     }
     
     IMenu@ getMenuFromList(u16 i)
     {
         CRules@ rules = getRules();
 
-        array<NuMenu::IMenu@>@ menus;
-        if(!rules.get("NuMenus", @menus))
+        CRulesBad@ rulesbad;
+        if(!rules.get("NuMenus", @rulesbad))
         {
             error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return @null;
         }
-        if(i >= menus.size())
+        if(i >= rulesbad.menus.size())
         {
             error("Tried to get menu equal to or above the menu size."); return @null;
         }
 
-        return @menus[i];
+        return @rulesbad.menus[i];
     }
 
     IMenu@ getMenuFromList(string _name)
@@ -2661,39 +2817,42 @@ Check mark option on right
     array<NuMenu::IMenu@> getMenusFromList(string _name)
     {
         CRules@ rules = getRules();
-
-        array<NuMenu::IMenu@>@ menus;
         
         array<NuMenu::IMenu@> _menus();
 
-        if(!rules.get("NuMenus", @menus))
+        CRulesBad@ rulesbad;
+        if(!rules.get("NuMenus", @rulesbad))
         {
             error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return _menus;
         }
         
-        int _namehash = _name.getHash();
-        for(u16 i = 0; i < menus.size(); i++)
-        {
-            if(menus[i].getNameHash() == _namehash)
-            {
-                _menus.push_back(@menus[i]);
-            }
-        }
-
-        return _menus;
+        return rulesbad.getMenusFromList(_name);
     }
 
     u16 getMenuListSize()
     {
         CRules@ rules = getRules();
 
-        array<NuMenu::IMenu@>@ menus;
-        if(!rules.get("NuMenus", @menus))
+        CRulesBad@ rulesbad;
+        if(!rules.get("NuMenus", @rulesbad))
         {
             error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return 0;
         }
 
-        return menus.size();
+        return rulesbad.getMenuListSize();
+    }
+
+    void ClearMenuList()
+    {
+        CRules@ rules = getRules();
+
+        CRulesBad@ rulesbad;
+        if(!rules.get("NuMenus", @rulesbad))
+        {
+            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return;
+        }
+
+        rulesbad.ClearMenuList();
     }
 
 
@@ -2706,7 +2865,16 @@ Check mark option on right
 
 
 
+    void onInit(CRules@ rules)
+    {
+        if(!isClient())
+        {
+            return;
+        }
+        GlobalVariables@ globalvars = GlobalVariables();
 
+        rules.set("NuGlobalVars", @globalvars);
+    }
 
     void onTick(CRules@ rules)
     {
@@ -2715,10 +2883,17 @@ Check mark option on right
             return;
         }
 
-        FRAME_TIME = 0.0f;
+        GlobalVariables@ globalvars;
+
+        if(!rules.get("NuGlobalVars", @globalvars))
+        {
+            error("NuMenuCommonLogic.as must be before anything else that uses NuMenu in gamemode.cfg"); return;
+        }
+
+        globalvars.FRAME_TIME = 0.0f;
     }
 
-    void MenuTick(array<NuMenu::IMenu@>@ menus)
+    void MenuTick(CRulesBad@ rulesbad)
     {
         if(!isClient())
         {
@@ -2726,51 +2901,57 @@ Check mark option on right
         }
         
         u16 i;
-        for(i = 0; i < menus.size(); i++)
+        for(i = 0; i < rulesbad.menus.size(); i++)
         {
-            if(menus[i] == null)
+            if(rulesbad.menus[i] == null)
             {
                 continue;
             }
             
-            menus[i].Tick();
-            
-            if(menus[i].getMenuState() == NuMenu::Released && menus[i].getMenuOption() == NuMenu::Button)
+            rulesbad.menus[i].Tick();
+        
+        
+            if(rulesbad.menus[i].getMenuState() == NuMenu::Released)
             {
-                NuMenu::MenuButton@ button = cast<NuMenu::MenuButton@>(menus[i]);
-                
-                print("really? something should show up below.");
-
-                if(button != null)//If you try to put the button inside
+                if(rulesbad.buttons[i] == null)
                 {
-                    print("okay, I showed up below. all good.");
-                    if(button.kill_on_release)
-                    {
-                        menus.removeAt(i);
-                        i--;
-                    }
+                    error("Button desync somewhere."); continue;
+                }
+                if(rulesbad.buttons[i].kill_on_release)
+                {                       
+                    rulesbad.menus.removeAt(i);
+                    rulesbad.buttons.removeAt(i);
+                    i--;
                 }
             }
         }
+
     }
 
     void onRender(CRules@ rules)
     {
-        FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
+        GlobalVariables@ globalvars;
+
+        if(!rules.get("NuGlobalVars", @globalvars))
+        {
+            error("NuMenuCommonLogic.as must be before anything else that uses NuMenu in gamemode.cfg"); return;
+        }
+
+        globalvars.FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
     }
 
-    void MenuRender(array<NuMenu::IMenu@>@ menus)
+    void MenuRender(CRulesBad@ rulesbad)
     {
         Render::SetAlphaBlend(true);
         
-        for(u16 i = 0; i < menus.size(); i++)
+        for(u16 i = 0; i < rulesbad.menus.size(); i++)
         {
-            if(menus[i] == null)
+            if(rulesbad.menus[i] == null)
             {
-                continue;
+                error("Menu was somehow null in rendering. This should not happen."); continue;
             }
 
-            menus[i].Render();
+            rulesbad.menus[i].Render();
         }
     }
 

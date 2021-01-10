@@ -60,24 +60,18 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
     {
         return;
     }
-
-
-	NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);
-    
-    button.setSize(Vec2f(8, 8));
+	
+    NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
 
     initButton(button);//Sets up things easily.
 
+    
+    button.setText(getTranslatedString("Open"), NuMenu::POSUnder);//The text on the button.
 
     CBitStream params;
 	params.write_u16(caller.getNetworkID());
     button.params = params;
     button.command_string = "activate";
-
-    button.default_buffer = 12.0f;//Buffer between bottom of the button and the text.
-    button.setText(getTranslatedString("Open"), NuMenu::POSUnder);//The text on the button..
-
-    button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
 
     addButton(caller, button);
 }

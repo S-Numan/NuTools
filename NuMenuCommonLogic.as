@@ -1,21 +1,25 @@
-//test
-#include "NuMenuCommon.as";
+//This file should go before all other files that use NuMenu in gamemode.cfg
 
-array<NuMenu::IMenu@>@ menus;
+#include "NuMenuCommon.as";
 
 bool init;
 
+CRulesBad@ rulesbad;
+
 void onInit( CRules@ rules )
 {
+    NuMenu::onInit(rules);
+
+
     init = true;
 
-    array<NuMenu::IMenu@> _menus = array<NuMenu::IMenu@>();
+    CRulesBad@ _rulesbad = CRulesBad();
 
-    @menus = @_menus;
+    rules.set("NuMenus", @_rulesbad);
+
+    rules.get("NuMenus", @rulesbad);
     
-    rules.set("NuMenus", @menus);
-
-    //rules.get("NuMenus", menus);//Example for getting the menu list.
+    //NuMenu::addMenuToList(buttonhere);//Add buttons like this
 }
 
 void onReload( CRules@ rules )
@@ -27,7 +31,7 @@ void onTick( CRules@ rules )
 {
     NuMenu::onTick(rules);//Important NuMenu things.
     
-    NuMenu::MenuTick(@menus);//Run logic for the menus.
+    NuMenu::MenuTick(@rulesbad);//Run logic for the menus.
 }
 
 void onRender( CRules@ rules )
@@ -35,5 +39,5 @@ void onRender( CRules@ rules )
     if(!init) { return; }//Kag renders before onInit. Stop this.
     NuMenu::onRender(rules);//Important NuMenu things.
     
-    NuMenu::MenuRender(@menus);//Render the menus.
+    NuMenu::MenuRender(@rulesbad);//Render the menus.
 }

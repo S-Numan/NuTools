@@ -1,6 +1,12 @@
 #include "NuMenuCommon.as";
 
+//TODO
+//1. Figure out how to outline selected blobs.
+
+
+
 u16 QUICK_PICK = 7;//Quickly tap e and let go before QUICK_PICK ticks pass to pick the closest button.
+float QUICK_PICK_MAX_RANGE = 26.0f;
 
 array<NuMenu::MenuButton@>@ buttons;
 
@@ -30,8 +36,6 @@ u16 e_key_time_old = e_key_time;
 
 void onTick( CRules@ rules )
 {
-    NuMenu::onTick(rules);
-    
     if(!isClient())
     {
         return;
@@ -96,16 +100,13 @@ void onTick( CRules@ rules )
             buttons[i].Tick(KEY, controls.getMouseScreenPos(), blob.getPosition());
 
             //Text
-            if(buttons[i].getMenuState() == NuMenu::Pressed)
+            if(buttons[i].getMenuState() == NuMenu::Hover)
             {
                 buttons[i].draw_text = true;
             }
-            else
+            else if(buttons[i].draw_text != false)
             {
-                if(buttons[i].draw_text != false)
-                {
-                    buttons[i].draw_text = false;
-                }
+                buttons[i].draw_text = false;
             }
             //Text
 
@@ -137,9 +138,9 @@ void onTick( CRules@ rules )
 
             for(j = 0; j < N; j++)
             {
-                distances[j] = NuMenu::getDistance(blob.getPosition(), buttons[j].getPos(true) + buttons[j].getSize() / 2);
+                distances[j] = NuMenu::getDistance(blob.getPosition(), buttons[j].getMiddle(true));
             }
-            if(buttons.size() == 1)//No need to sort only one button
+            if(buttons.size() != 1)//No need to sort through a single button 
             {
                 for (j=1; j<N; j++)
                 {
@@ -149,11 +150,11 @@ void onTick( CRules@ rules )
                         float temporary;
 
                         temporary = distances [i];
-                        _buttontemp = buttons[i];
+                        @_buttontemp = @buttons[i];
                         distances [i] = distances [i - 1];
-                        buttons[i] = buttons[i - 1];
+                        @buttons[i] = @buttons[i - 1];
                         distances [i - 1] = temporary;
-                        buttons[i - 1] = _buttontemp;
+                        @buttons[i - 1] = @_buttontemp;
                     }
                 }
             }
@@ -162,9 +163,12 @@ void onTick( CRules@ rules )
             {
                 if (buttons[i].enableRadius == 0.0f || distances[i] < buttons[i].enableRadius)
                 {
-                    buttons[i].sendCommand();
-                    buttons[i].setButtonState(NuMenu::Released);
-                    break;
+                    //if(distances[i] < QUICK_PICK_MAX_RANGE)
+                    {
+                        buttons[i].sendCommand();
+                        buttons[i].setButtonState(NuMenu::Released);
+                        break;
+                    }
                 }
             }
             //Sort with the closest on the bottom of the array farthest at the top.
@@ -186,7 +190,6 @@ void onTick( CRules@ rules )
 void onRender( CRules@ rules )
 {   
     if(!init){return;}
-    NuMenu::onRender(rules);
 
     for(u16 i = 0; i < buttons.size(); i++)
     {

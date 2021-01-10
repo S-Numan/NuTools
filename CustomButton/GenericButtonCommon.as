@@ -22,26 +22,41 @@ bool canSeeButtons(CBlob@ this, CBlob@ caller, bool team_only = false, f32 max_d
 
 void initButton(NuMenu::MenuButton@ button)
 {
-    button.kill_on_release = true;//The button will be removed on press. (logic for this happens outside the button class)
-    button.instant_press = true;//Button is Pressed when hovering over. Button is instantly released upon pressing.
-    button.draw_text = false;//Don't initially draw text.
-    button.reposition_text = true;//Make sure the text is constantly under the button in the correct position.
+    //button.setIsWorldPos(false);//Debug
+    
+    //MISC
+    button.kill_on_release = true;//Changes whether the button will be removed when it is pressed.(released) (logic for this happens outside the button class).
+    button.instant_press = true;//Button command/script is sent/called upon just pressing.
+    button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
 
+    //Collision
+    button.setRadius(16.0f);//Radius of button. The collision circle of the button.
+    button.setCollisionLowerRight(Vec2f(0,0));//Removes the collision box. In most cases.
+    button.setCollisionSetter(false);//By default, the button uses a collision box for collisions, not a radius. After changing the collision box, this will prevent the button from changing the collision box back to it's own size again.
+
+    //Position
     button.setRelationPos(-(button.getSize() / 2));//Where the button is in relation to it's OwnerBlob. This should center the button directly on the blob.
 
-    button.setTextColor(SColor(255, 255, 255, 255));//The color of the text of the button.
+    //Text
+    button.draw_text = false;//Don't initially draw text.
+    button.reposition_text = true;//Make sure the text is constantly under the button in the correct position when drawing.
+    button.default_buffer = 12.0f;//Buffer between bottom of the button and the text. Provided there is text.
+    button.setTextColor(SColor(255, 255, 255, 255));//The color of the text of the button of the blob of the game of the computer of the screen
+    //button.setFont("AveriaSerif-Regular1", 16);//debug todo
 
-    button.menu_sounds_on[NuMenu::Pressed] = "select.ogg";
-    button.menu_sounds_on[NuMenu::Released] = "buttonclick.ogg";
-    button.menu_volume = 3.0f;
+    //Sound
+    button.menu_sounds_on[NuMenu::JustHover] = "select.ogg";//Button sound played upon just hovering over the button.
+    button.menu_sounds_on[NuMenu::Released] = "buttonclick.ogg";//Button sound played upon releasing the button.
+    button.menu_volume = 3.0f;//Volume of sound from this button.
+    //button.play_sound_on_world = true;//This changes whether the sound is 2d or the sound is played on a point in the world.
 
+    //Icon
     NuMenu::MenuImage@ icon = button.setIcon("GUI/InteractionIconsBackground.png",//Image name
         Vec2f(32, 32),//Icon frame size
         0,//Default frame
         1,//Hover frame 
         1,//Pressing frame
         NuMenu::POSCenter);//Image position
-
     if(icon != null)//If the icon was properly made.
     {
         icon.color_on[NuMenu::Disabled].setAlpha(80);//Get the color of the icon when it is disabled, and change it to fade out when disabled.

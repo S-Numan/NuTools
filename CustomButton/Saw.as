@@ -40,19 +40,12 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
 	
     NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
 
-    button.setSize(Vec2f(8, 8));//Size of button. Changes how large the button is. Larger buttons are easier to press.
-    button.setRadius(10.0f);//Radius of button. Cicle around it where you can press the
-
     initButton(button);//Sets up things easily.
 
     
-
-    button.default_buffer = 12.0f;//Buffer between bottom of the button and the text.
     button.setText(getTranslatedString("Turn Saw " + (getSawOn(this) ? "Off" : "On")), NuMenu::POSUnder);//The text on the button..
 
     button.command_string = toggle_id;//This command will be sent to this blob when this button is pressed.
-
-    button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
 
     addButton(caller, button);
 }
