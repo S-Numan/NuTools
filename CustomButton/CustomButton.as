@@ -230,38 +230,24 @@ void onReload( CRules@ rules )
 /*
 void GetButtonsFor(CBlob@ this, CBlob@ caller)
 {
-    if (!canSeeButtons(this, caller)) { return; }
-
-    const float MAX_DISTANCE = 16;//Max distance the button can be from the caller. Any further and the button wont show up.
-
-	if (//caller.getTeamNum() != this.getTeamNum() ||//Uncomment if team only.
-        this.getDistanceTo(caller) > MAX_DISTANCE) { return; }//Max distance button is allowed from the caller.
-
+    if (!canSeeButtons(this, caller,
+    true,//Team only
+    16.0f))//Max distance
+    {
+        return;
+    }
+	
     NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
- 
-    button.setSize(Vec2f(8, 8));//Size of button. Changes how large the button is. Larger buttons are easier to press.
 
     initButton(button);//Sets up things easily.
 
-    button.setIcon("GUI/InteractionIconsBackground.png",//Image name
-            Vec2f(32, 32),//Icon frame size
-            0,//Default frame
-            1,//Hover frame (does not matter when instant_press = true)
-            1,//Pressing frame
-            NuMenu::POSCenter);//Image position
+    
+    button.setText(getTranslatedString("Open"), NuMenu::POSUnder);//The text on the button.
 
-    button.default_buffer = 12.0f;//Buffer between bottom of the button and the text.
-    button.setText(getTranslatedString("Description of button"), NuMenu::POSUnder);//The text on the button
-
-    //button.render_background = false;//Setting this to false prevents the usual debug square background from showing up.
-
-    //CBitStream params;//Params sent when the button is pressed.
-    //params.write_u16(caller.getNetworkID());//The caller, I.E the player blob is added as a param.
-    //button.params = params;//Set params
-    button.command_string = "activate";//This command will be sent to this blob when this button is pressed.
-    //button.send_to_rules = true;//If this is true, instead of sending the command to OwnerBlob, the the command will be sent to CRules.
-
-    button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
+    CBitStream params;
+	params.write_u16(caller.getNetworkID());
+    button.params = params;
+    button.command_string = "activate";
 
     addButton(caller, button);
 }
