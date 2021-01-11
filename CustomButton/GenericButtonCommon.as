@@ -28,6 +28,7 @@ void initButton(NuMenu::MenuButton@ button)
     //button.setInterpolated(false);
 
     //MISC
+    button.setRenderBackground(false);//Just in case this tries to render, stop it. This is more for preventing legacy code from doing a bad.
     button.kill_on_release = true;//Changes whether the button will be removed when it is pressed.(released) (logic for this happens outside the button class).
     button.instant_press = true;//Button command/script is sent/called upon just pressing.
     button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
