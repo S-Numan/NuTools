@@ -151,20 +151,16 @@ Check mark option on right
 
 //add params to Tick? such as Tick(CControls controls)
 //fix text/font size changing//Copy and paste several font files and fix text
-//fix things attached to blobs being a tick delayed
 //Stretchy ends for MenuBaseExEx. Drag the menu size around.
-//Circular collisions? Collisions atm are too boxy or small. Do distance from point. See bottom of button class.
 //Take another look at reposition_text. Optimise perhaps. Perhaps not. Improve it somehow, maybe.
 //Make more things in MenuBase methods for IMenu.
 //Stop button spazz when pushed against terrain with owner blob. Blob pos freaks out when attached to user while pushing against wall. Try an attachment point? Maybe try making your own with nothing on it to see if it smooths it. Use CShape pos?
-//Seperate draw and collision positions?
-//Add top right, bottom left, and bottom right to POSPositions
 //Confirm the distance calculation with buttons isn't that wonky. It feels wonky. Something has to be wonky
 //Rotate value. Only for if I'm really bored. Since it probably wont ever get used. Plus you cannot rotate GUI.
 //Editable text while the game is running. Think naming something.
 //See if the icon repositioning is actually required for CustomButton.as stuff. Figure out how to not make it required if it is. It shouldn't be.
 //Test does not reposition when not interpolated. Look into this
-//Menu opening/closing animations.
+//Menu opening/closing animations. Full animations that you can put in a sprite sheet and configure.
 
 
 //Option list for debugging blobs.
@@ -182,10 +178,9 @@ Check mark option on right
 //
 //2. Easier menu adding. Just make the menu and add it somewhere and it will run on it's own. No fancy code or other things required. Use NuMenuCommonLogic.as for this.
 //3. Seperate menu class and menu option. OR add a method to check what class the class is. So you can cast it easier. Maybe add a method that casts it for you.
-//4. Fix CustomButton.as
-//5. Before the first tick, the checkbox in menuholder runs away from it's owner.
-//6. Move repeated constructor stuff to init vars
-//7. Remake text. All text. Add shaky text. And different color text for each induvidual letter.
+//4. Before the first tick, the checkbox in menuholder runs away from it's owner. Fix plz.
+//5. Move repeated constructor stuff to init vars
+//6. Remake text. All text. Add shaky text. And different color text for each induvidual letter.
 
 //
 //TODO LIST
