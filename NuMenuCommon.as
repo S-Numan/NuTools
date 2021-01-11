@@ -164,7 +164,6 @@ Check mark option on right
 //Editable text while the game is running. Think naming something.
 //See if the icon repositioning is actually required for CustomButton.as stuff. Figure out how to not make it required if it is. It shouldn't be.
 //Test does not reposition when not interpolated. Look into this
-//Rename setRelationPos and stuff to offset?
 //Menu opening/closing animations.
 
 
@@ -373,8 +372,8 @@ Check mark option on right
         bool didMenuJustMove();
         void setMenuJustMoved(bool value);
 
-        Vec2f getRelationPos();
-        void setRelationPos(Vec2f value);
+        Vec2f getOffset();
+        void setOffset(Vec2f value);
 
         Vec2f getCollisionUpperLeft(bool get_raw_pos = false);
         Vec2f getCollisionLowerRight(bool get_raw_pos = false);
@@ -535,7 +534,7 @@ Check mark option on right
         {
             return owner_menu;
         }
-        bool setOwnerMenu(IMenu@ _menu)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setRelation. As in relation to it's owner.
+        bool setOwnerMenu(IMenu@ _menu)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setOffset. As in offset to it's owner.
         {
             if(_menu.getNameHash() == getNameHash())
             {
@@ -568,7 +567,7 @@ Check mark option on right
         {
             return owner_blob;
         }
-        bool setOwnerBlob(CBlob@ _blob)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setRelation. As in relation to it's owner.
+        bool setOwnerBlob(CBlob@ _blob)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setOffset. As in offset to it's owner.
         {
             if(getOwnerMenu() != null)
             {
@@ -583,7 +582,7 @@ Check mark option on right
         //Blob
         //
 
-        private bool move_to_owner;//If this is true, this menu will move itself to the position of it's owner with relation added to it. 
+        private bool move_to_owner;//If this is true, this menu will move itself to the position of it's owner with offset added to it. 
         bool getMoveToOwner()
         {
             return move_to_owner;
@@ -910,23 +909,23 @@ Check mark option on right
         //
         //Old Positions
 
-        //Relation positions
+        //Offset positions
         //
 
-        private Vec2f relation_pos;//For moving this in relation to something else
+        private Vec2f offset;//For moving this in relation to something else
 
-        Vec2f getRelationPos()
+        Vec2f getOffset()
         {
-            return relation_pos;
+            return offset;
         }
-        void setRelationPos(Vec2f value)
+        void setOffset(Vec2f value)
         {
-            relation_pos = value;
+            offset = value;
             //setMenuJustMoved(true);//Not sure if this should be here.
         }
 
         //
-        //Relation positions
+        //Offset positions
 
         //Collisions
         //
@@ -1056,7 +1055,7 @@ Check mark option on right
             CBlob@ _owner_blob = getOwnerBlob();
             if(_owner_blob != null && getMoveToOwner())
             {
-                setPos(_owner_blob.getPosition() + getRelationPos());
+                setPos(_owner_blob.getPosition() + getOffset());
             }  
 
             CPlayer@ player = getLocalPlayer();
@@ -1122,10 +1121,10 @@ Check mark option on right
                     CCamera@ camera = getCamera();
                     Driver@ driver = getDriver();//This might be even slower. - Todo numan
                     
-                    upper_left[2] = driver.getScreenPosFromWorldPos(_blob.getInterpolatedPosition() + getRelationPos());
+                    upper_left[2] = driver.getScreenPosFromWorldPos(_blob.getInterpolatedPosition() + getOffset());
 
                     lower_right[2] = driver.getScreenPosFromWorldPos(//To screen pos everything once they're done calculating.
-                    _blob.getInterpolatedPosition() + getRelationPos()//Upper left interpolated + the offset.
+                    _blob.getInterpolatedPosition() + getOffset()//Upper left interpolated + the offset.
                     + getSize()//+ the size.
                     );
                 }
@@ -2542,7 +2541,7 @@ Check mark option on right
         {
             if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
             {
-                return optional_menus[option_menu].getRelationPos();
+                return optional_menus[option_menu].getOffset();
             }
             return Vec2f_zero;
         }
@@ -2561,11 +2560,11 @@ Check mark option on right
             if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
             {
                 IMenu@ _menu = @optional_menus[option_menu];
-                _menu.setRelationPos(value);
+                _menu.setOffset(value);
                 
                 if(_menu.getMoveToOwner())
                 {
-                    _menu.setPos(getPos(true) + _menu.getRelationPos());
+                    _menu.setPos(getPos(true) + _menu.getOffset());
                 }
                 
                 return true;
@@ -2653,12 +2652,12 @@ Check mark option on right
                 added_menu.setSize(optional_menu_size);
                 added_menu.setInterpolated(isInterpolated());
 
-                //added_menu.setRelationPos(Vec2f(getSize().x - optional_menu_size.x - default_buffer, getSize().y/2 - optional_menu_size.y/2));
+                //added_menu.setOffset(Vec2f(getSize().x - optional_menu_size.x - default_buffer, getSize().y/2 - optional_menu_size.y/2));
 
                 added_menu.setOwnerMenu(this);
 
 
-                added_menu.setPos(getPos(true) + added_menu.getRelationPos());
+                added_menu.setPos(getPos(true) + added_menu.getOffset());
 
                 return @added_menu;
             }
@@ -2682,7 +2681,7 @@ Check mark option on right
                     continue;
                 }
                 
-                optional_menus[i].setPos(getPos(true) + optional_menus[i].getRelationPos());
+                optional_menus[i].setPos(getPos(true) + optional_menus[i].getOffset());
             }
         }
 

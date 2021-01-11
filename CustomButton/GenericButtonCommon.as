@@ -24,7 +24,7 @@ void initButton(NuMenu::MenuButton@ button)
 {
     //Debug
     //button.setSize(Vec2f(30,30));//Note as the start of a menu is the top left, unless compensated by setRelationPos, this will uncenter the button from the thing it's on.
-    //button.setRelationPos(-(button.getSize() / 2));//Where the button is in relation to it's OwnerBlob. This should center the button directly on the blob.
+    //button.setOffset(-(button.getSize() / 2));//Where the button is in relation to it's OwnerBlob. This should center the button directly on the blob.
     //button.setInterpolated(false);
 
     //MISC

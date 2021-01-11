@@ -132,7 +132,7 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
             NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
             initButton(button);//Sets up things easily.
 
-            button.setRelationPos(Vec2f(-16, 0));
+            button.setOffset(Vec2f(-16, 0));
 
             CBitStream params;
             params.write_u16(caller.getNetworkID());

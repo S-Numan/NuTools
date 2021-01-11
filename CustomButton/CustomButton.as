@@ -2,7 +2,7 @@
 
 //TODO
 //1. Figure out how to outline selected blobs.
-
+//2. Button appears behind things when you are also holding c to pick them up. Fix this. (remaking the rendering system would probably work).
 
 
 u16 QUICK_PICK = 7;//Quickly tap e and let go before QUICK_PICK ticks pass to pick the closest button.

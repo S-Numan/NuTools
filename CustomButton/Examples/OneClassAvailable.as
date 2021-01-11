@@ -52,7 +52,7 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
 		NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
         initButton(button);//Sets up things easily.
 
-        button.setRelationPos(_offset);
+        button.setOffset(_offset);
         
         button.setText(getTranslatedString("Swap Class"), NuMenu::POSUnder);//The text on the button.
 

@@ -69,7 +69,7 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
 
     button.enableRadius = this.get_u8("shop button radius");
 
-    button.setRelationPos(_offset);
+    button.setOffset(_offset);
     
     button.setText(getTranslatedString(this.get_string("shop description")), NuMenu::POSUnder);//The text on the button.
 

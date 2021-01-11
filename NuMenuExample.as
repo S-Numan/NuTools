@@ -66,7 +66,7 @@ void onInit( CRules@ this )
     }
     button1.func = @ButtonTestFunction;//We can now use button functions and all it's derivatives.
 
-    //option1.setRelationPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));
+    //option1.setOffset(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));
     random_menu.setOptionalMenuPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y), option1);//*/
     //*/
     
