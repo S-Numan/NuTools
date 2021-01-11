@@ -163,10 +163,10 @@ void onTick( CRules@ rules )
             {
                 if (buttons[i].enableRadius == 0.0f || distances[i] < buttons[i].enableRadius)
                 {
-                    //if(distances[i] < QUICK_PICK_MAX_RANGE)
+                    if(buttons[i].getButtonState() != NuMenu::Disabled && distances[i] < QUICK_PICK_MAX_RANGE)
                     {
                         buttons[i].sendCommand();
-                        buttons[i].setButtonState(NuMenu::Released);
+                        buttons[i].setButtonState(NuMenu::Released);//Button pressed twice or something. - To future numan.
                         break;
                     }
                 }
@@ -238,11 +238,10 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
     }
 	
     NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
-
     initButton(button);//Sets up things easily.
 
     
-    button.setText(getTranslatedString("Activate", NuMenu::POSUnder);//The text on the button.
+    button.setText(getTranslatedString("Activate"), NuMenu::POSUnder);//The text on the button.
 
     //Icon
     NuMenu::MenuImage@ icon = button.setIcon("GUI/InteractionIcons.png",//Image name

@@ -39,7 +39,6 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
     }
 	
     NuMenu::MenuButton@ button = NuMenu::MenuButton("", this);//Name of the button, and the button's owner. The button will automatically follow the owner unless specified not to.
-
     initButton(button);//Sets up things easily.
 
     
@@ -54,7 +53,7 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
         NuMenu::POSCenter);//Image position
     icon.color_on[NuMenu::Disabled].setAlpha(80);//Get the color of the icon when it is disabled, and change it to fade out when disabled.
 
-    button.command_string = toggle_id;//This command will be sent to this blob when this button is pressed.
+    button.setCommandID(toggle_id);//This command will be sent to this blob when this button is pressed.
 
     addButton(caller, button);
 }

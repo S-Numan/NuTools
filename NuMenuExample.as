@@ -2,7 +2,7 @@
 
 void onInit( CRules@ this )
 {
-    if(!isClient())
+    if(!isClient() || getRules().gamemode_name != "Testing")
     {
         return;
     }
@@ -90,13 +90,18 @@ void onReload( CRules@ this )
     onInit(this);
 }
 
-void ButtonTestFunction(CBitStream lol)
+void ButtonTestFunction(CBitStream lol, CBlob@ this, CBlob@ caller)
 {
     print("function: button was pressed.");
 }
 
 void onTick( CRules@ this )
 {
+    if(getRules().gamemode_name != "Testing")
+    {
+        return;
+    }
+    
     if(NuMenu::getMenuListSize() > 0)
     {
         MenuOptionChanger(NuMenu::getMenuFromList(0));
@@ -156,6 +161,11 @@ void MenuOptionChanger(NuMenu::IMenu@ _menu)
             {
                 _menu.setIsWorldPos(!_menu.isWorldPos());
                 print("IsWorldPos = " + _menu.isWorldPos());
+            }
+            if(controls.isKeyJustPressed(KEY_KEY_D))
+            {
+                NuMenu::removeMenuFromList(0);
+                print("Menu removed");
             }
         }
     }

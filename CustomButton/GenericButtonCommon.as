@@ -22,20 +22,23 @@ bool canSeeButtons(CBlob@ this, CBlob@ caller, bool team_only = false, f32 max_d
 
 void initButton(NuMenu::MenuButton@ button)
 {
-    //button.setIsWorldPos(false);//Debug
-    
+    //Debug
+    //button.setSize(Vec2f(30,30));//Note as the start of a menu is the top left, unless compensated by setRelationPos, this will uncenter the button from the thing it's on.
+    //button.setRelationPos(-(button.getSize() / 2));//Where the button is in relation to it's OwnerBlob. This should center the button directly on the blob.
+    //button.setInterpolated(false);
+
     //MISC
     button.kill_on_release = true;//Changes whether the button will be removed when it is pressed.(released) (logic for this happens outside the button class).
     button.instant_press = true;//Button command/script is sent/called upon just pressing.
     button.enableRadius = 36.0f;//How close you have to be to press the button. Out of this distance the button is greyed out and unpressable.
 
+    //Position
+    button.setIsWorldPos(true);//This button is on the world.
+
     //Collision
     button.setRadius(16.0f);//Radius of button. The collision circle of the button.
     button.setCollisionLowerRight(Vec2f(0,0));//Removes the collision box. In most cases.
     button.setCollisionSetter(false);//By default, the button uses a collision box for collisions, not a radius. After changing the collision box, this will prevent the button from changing the collision box back to it's own size again.
-
-    //Position
-    button.setRelationPos(-(button.getSize() / 2));//Where the button is in relation to it's OwnerBlob. This should center the button directly on the blob.
 
     //Text
     button.draw_text = false;//Don't initially draw text.
@@ -48,7 +51,7 @@ void initButton(NuMenu::MenuButton@ button)
     button.menu_sounds_on[NuMenu::JustHover] = "select.ogg";//Button sound played upon just hovering over the button.
     button.menu_sounds_on[NuMenu::Released] = "buttonclick.ogg";//Button sound played upon releasing the button.
     button.menu_volume = 3.0f;//Volume of sound from this button.
-    //button.play_sound_on_world = true;//This changes whether the sound is 2d or the sound is played on a point in the world.
+    button.play_sound_on_world = false;//This changes whether the sound is 2d or the sound is played on a point in the world.
 
     //Icon
     NuMenu::MenuImage@ icon = button.setIcon("GUI/InteractionIconsBackground.png",//Image name

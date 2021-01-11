@@ -164,6 +164,9 @@ Check mark option on right
 //Editable text while the game is running. Think naming something.
 //See if the icon repositioning is actually required for CustomButton.as stuff. Figure out how to not make it required if it is. It shouldn't be.
 //Test does not reposition when not interpolated. Look into this
+//Rename setRelationPos and stuff to offset?
+//Menu opening/closing animations.
+
 
 //Option list for debugging blobs.
 //Surround blobs in a red box.
@@ -704,11 +707,14 @@ Check mark option on right
         //Not in relation to the menu
         Vec2f getMiddle(bool get_raw_pos = false)
         {
-            Vec2f _upper_left = getUpperLeft(get_raw_pos);//Upper left
-
-            _upper_left += getSize() / 2;//Add the size divided by two.
-
-            return _upper_left;
+            if(isWorldPos() && !get_raw_pos)//If isWorldPos and we aren't getting a raw pos. (I.E convert world to screen)
+            {
+                return getDriver().getScreenPosFromWorldPos(getUpperLeft(true) + (getSize() / 2));//Get the world pos upper left, then add the size divided by two to it. Then convert it to screen pos. 
+            }
+            else
+            {
+                return getUpperLeft(get_raw_pos) + (getSize() / 2);//Add the size divided by two.
+            }
         }
 
         private array<Vec2f> lower_right(3);//Lower right of menu. [0] is normal; [1] is old; [2] is interpolated; [3] is collision
@@ -1100,40 +1106,39 @@ Check mark option on right
         //Put in onRender
         void InterpolatePositions()
         {
-            if(isInterpolated())
+            if(!isInterpolated())
             {
-                if(didMenuJustMove())
-                {
-                    CBlob@ _blob = getOwnerBlob();
-
-                    if(_blob != null && getMoveToOwner())//If this menu has an owner blob and it is supposed to move towards it.
-                    {
-                        CCamera@ camera = getCamera();
-                        Driver@ driver = getDriver();//This might be even slower. - Todo numan
-                        
-                        
-                        upper_left[2] = driver.getScreenPosFromWorldPos(_blob.getInterpolatedPosition())//Screen position of the blob plus
-                        + getRelationPos() * (camera.targetDistance * 2);//the relation pos times the camera distance times 2
-
-                        lower_right[2] = upper_left[2]//Upper left interpolated plus
-                        + (getSize()) * (camera.targetDistance * 2);//The menu size times the camera distance times 2
-                    }
-                    else//*/
-                    {
-                        upper_left[2] = Vec2f_lerp(getUpperLeftOld(), getUpperLeft(), globalvars.FRAME_TIME);
-
-                        lower_right[2] = Vec2f_lerp(getLowerRightOld(), getLowerRight(), globalvars.FRAME_TIME);
-                    }
-                    //print(FRAME_TIME+'');
-                
-                }
-                else if(isWorldPos())//Basically if the camera moved, Move the menu too.
-                {
-                    upper_left[2] = getUpperLeft();
-                    lower_right[2] = getLowerRight();
-                }
+                upper_left[2] = getUpperLeft();
+                lower_right[2] = getLowerRight();
+                return;
             }
-            else
+
+            if(didMenuJustMove())
+            {
+                CBlob@ _blob = getOwnerBlob();
+
+                if(_blob != null && getMoveToOwner())//If this menu has an owner blob and it is supposed to move towards it.
+                {
+                    CCamera@ camera = getCamera();
+                    Driver@ driver = getDriver();//This might be even slower. - Todo numan
+                    
+                    upper_left[2] = driver.getScreenPosFromWorldPos(_blob.getInterpolatedPosition() + getRelationPos());
+
+                    lower_right[2] = driver.getScreenPosFromWorldPos(//To screen pos everything once they're done calculating.
+                    _blob.getInterpolatedPosition() + getRelationPos()//Upper left interpolated + the offset.
+                    + getSize()//+ the size.
+                    );
+                }
+                else//Just interpolate
+                {
+                    upper_left[2] = Vec2f_lerp(getUpperLeftOld(), getUpperLeft(), globalvars.FRAME_TIME);
+
+                    lower_right[2] = Vec2f_lerp(getLowerRightOld(), getLowerRight(), globalvars.FRAME_TIME);
+                }
+                //print(FRAME_TIME+'');
+            
+            }
+            else if(isWorldPos())//Basically if the camera moved, Move the menu too.
             {
                 upper_left[2] = getUpperLeft();
                 lower_right[2] = getLowerRight();
@@ -1585,12 +1590,12 @@ Check mark option on right
                     continue;
                 }
                 
-
+                //print("icon x size = " + icons[i].pos.x + " icon y size = " + icons[i].pos.y);
                 GUI::DrawIcon(icons[i].name,//Icon name
                 icons[i].frame_on[button_state],//Icon frame
                 icons[i].frame_size,//Icon size
-                getUpperLeftInterpolated() + icons[i].pos * (isWorldPos() ? camera.targetDistance * 2: 1),//Icon position
-                isWorldPos() ? camera.targetDistance : 0.5,//Icon scale
+                getUpperLeftInterpolated() + (icons[i].pos - Vec2f(0,0)) * (isWorldPos() ? camera.targetDistance * 2 : 1),//Icon position//TODO, FIX.  (probably when rendering is done)
+                isWorldPos() ? camera.targetDistance: 0.5,//Icon scale
                 icons[i].color_on[button_state]);//Color
             }
         }
@@ -2056,7 +2061,7 @@ Check mark option on right
         }
     }
 
-    funcdef void BUTTONCALLBACK(CBitStream);
+    funcdef void BUTTONCALLBACK(CBitStream, CBlob@, CBlob@);
     //Menu set up to function like a button.
     class MenuButton : MenuBaseExEx
     {
@@ -2105,14 +2110,32 @@ Check mark option on right
 
             func = @null;
 
-            command_string = "";
+            command_id = 255;
         }
 
         BUTTONCALLBACK@ func;//The function called upon being pressed.
 
 
-        string command_string;//The command id sent out upon being pressed.
-        bool send_to_rules;//If this is false, it will attempt to send the command_string to the owner blob. Otherwise it will send it to CRules.
+        void setCommandID(u8 cmd)
+        {
+            command_id = cmd;
+        }
+        void setCommandID(string value)
+        {
+            CBlob@ _owner = getOwnerBlob();
+            if(!send_to_rules && _owner == null){ error("owner blob was null when setting command id for blob. Did you want to set send_to_rules to true and send the command to rules instead?"); return; }
+            if(send_to_rules)
+            {
+                command_id = getRules().getCommandID(value);
+            }
+            else
+            {
+                command_id = _owner.getCommandID(value);
+            }
+        }
+
+        u8 command_id;//The command id send out upon being pressed. But an actual id this time.
+        bool send_to_rules;//If this is false, it will attempt to send the command_id to the owner blob. Otherwise it will send it to CRules.
         CBitStream params;//The params to accompany above
 
 
@@ -2202,24 +2225,40 @@ Check mark option on right
 
         void sendCommand()
         {
-            if(command_string != "")//If there is a command_string to send.
+            if(command_id != 255)//If there is a command_id to send.
             {
                 if(send_to_rules)//if send_to_rules is true.
                 {
                     CRules@ _rules = getRules();
 
-                    _rules.SendCommand(_rules.getCommandID(command_string), params);
+                    _rules.SendCommand(command_id, params);
                 }
                 else if(getOwnerBlob() != null)//If send_to_rules is false, send it to the owner_blob. Provided it exists.
                 {
                     CBlob@ _owner = getOwnerBlob();
 
-                    _owner.SendCommand(_owner.getCommandID(command_string), params);
+                    _owner.SendCommand(command_id, params);
                 }
             }
             if(func != null)
             {
-                func(params);
+                CBlob@ _owner = getOwnerBlob();
+                if(_owner != null)
+                {
+                    CBlob@ player_blob = getLocalPlayer().getBlob();
+                    if(player_blob != null)
+                    {
+                        func(params, _owner, player_blob);
+                    }
+                    else
+                    {
+                        error("Player blob calling the button was null.");
+                    }
+                }
+                else
+                {
+                    error("Owner of button was null");
+                }
             }
         }
     }
