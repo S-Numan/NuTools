@@ -2,7 +2,7 @@
 
 void onInit( CRules@ this )
 {
-    if(!isClient() || getRules().gamemode_name != "Testing")
+    if(!isClient())
     {
         return;
     }
@@ -97,11 +97,7 @@ void ButtonTestFunction(CBitStream lol, CBlob@ this, CBlob@ caller)
 
 void onTick( CRules@ this )
 {
-    if(getRules().gamemode_name != "Testing")
-    {
-        return;
-    }
-    
+   
     if(NuMenu::getMenuListSize() > 0)
     {
         MenuOptionChanger(NuMenu::getMenuFromList(0));
