@@ -626,9 +626,13 @@ Check mark option on right
         {
             if(_button_state >= ButtonStateCount)
             {
-                error("STOP! YOU HAVE VIOLATED THE LAW! PAY THE COURT A FINE OR SERVE YOUR SENTENCE. YOUR HIGHER THAN POSSIBLE BUTTON STATE IS NOW FORFEIT");
-                return;
+                error("STOP! YOU HAVE VIOLATED THE LAW! PAY THE COURT A FINE OR SERVE YOUR SENTENCE. YOUR HIGHER THAN POSSIBLE BUTTON STATE IS NOW FORFEIT"); return;
             }
+            if(_button_state == button_state)
+            {
+                warning("Warning: Button state was set to the same button state the menu is. This should in most cases not happen. Please don't set the button state to the same state the menu is."); return;
+            }
+            
             button_state = _button_state;
         
             setTicksSinceStateChange(0);
