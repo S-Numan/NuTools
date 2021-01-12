@@ -336,6 +336,9 @@ Check mark option on right
         void setButtonState(u8 _button_state);
         void setMenuState(u8 _button_state);
 
+        void setTicksSinceStateChange(u32 value);
+        u32 getTicksSinceStateChange();
+
         bool isWorldPos();
         void setIsWorldPos(bool value);
 
@@ -449,6 +452,8 @@ Check mark option on right
             move_to_owner = true;
 
             button_state = Idle;
+
+            ticks_since_state_change = 0;
 
             render_background = true;
 
@@ -625,10 +630,22 @@ Check mark option on right
                 return;
             }
             button_state = _button_state;
+        
+            setTicksSinceStateChange(0);
         }
         void setMenuState(u8 _button_state)
         {
             setButtonState(_button_state);
+        }
+
+        private u32 ticks_since_state_change;
+        void setTicksSinceStateChange(u32 value)
+        {
+            ticks_since_state_change = value;
+        }
+        u32 getTicksSinceStateChange()
+        {
+            return ticks_since_state_change;
         }
 
         private bool button_interpolation;
@@ -1037,6 +1054,9 @@ Check mark option on right
                 setMenuJustMoved(false);//Well it didn't just move anymore.
             }
 
+            //One more tick has passed since the state was changed.
+            setTicksSinceStateChange(getTicksSinceStateChange() + 1);
+
             //Set the interpolated values to the positions.
             upper_left[2] = getUpperLeft();
             lower_right[2] = getLowerRight();
@@ -1100,6 +1120,7 @@ Check mark option on right
         //Put in onRender
         void InterpolatePositions()
         {
+            //No interpolation? Just set them to where they should be on the screen then.
             if(!isInterpolated())
             {
                 upper_left[2] = getUpperLeft();
@@ -1107,10 +1128,12 @@ Check mark option on right
                 return;
             }
 
+            //If the menu just moved, interpolate.
             if(didMenuJustMove())
             {
                 CBlob@ _blob = getOwnerBlob();
 
+                //Move towards owner blob
                 if(_blob != null && getMoveToOwner())//If this menu has an owner blob and it is supposed to move towards it.
                 {
                     CCamera@ camera = getCamera();
@@ -1130,9 +1153,8 @@ Check mark option on right
                     lower_right[2] = Vec2f_lerp(getLowerRightOld(), getLowerRight(), globalvars.FRAME_TIME);
                 }
                 //print(FRAME_TIME+'');
-            
             }
-            else if(isWorldPos())//Basically if the camera moved, Move the menu too.
+            else if(isWorldPos())//If the menu didn't move, but the camera may of(check not yet added). move the menu to where it should be.
             {
                 upper_left[2] = getUpperLeft();
                 lower_right[2] = getLowerRight();
@@ -2055,7 +2077,13 @@ Check mark option on right
         }
     }
 
-    funcdef void BUTTONCALLBACK(CBitStream, CBlob@, CBlob@);
+    //In order: caller, params, self.
+    funcdef void RELEASE_CALLBACK(CPlayer@, CBitStream, IMenu@);
+    //In order: caller, params, self, owner.
+    funcdef void RELEASE_CALLBACK_OWNER(CPlayer@, CBitStream, IMenu@, CBlob@);
+    //In order: caller, self.
+    funcdef void STATE_CHANGED_CALLBACK(CPlayer@, IMenu@);
+
     //Menu set up to function like a button.
     class MenuButton : MenuBaseExEx
     {
@@ -2102,12 +2130,43 @@ Check mark option on right
 
             enableRadius = 0.0f;
 
-            func = @null;
+            release_func_owner = @null;
+            release_func = @null;
+            state_changed_func = @null;
 
             command_id = 255;
         }
 
-        BUTTONCALLBACK@ func;//The function called upon being pressed.
+        //The function called upon being pressed.
+        private RELEASE_CALLBACK@ release_func;
+        private RELEASE_CALLBACK_OWNER@ release_func_owner;
+
+        //Function called upon the button state being changed.
+        private STATE_CHANGED_CALLBACK@ state_changed_func;
+
+
+        void addReleaseListener(RELEASE_CALLBACK@ value)
+        {
+            @release_func = @value;
+        }
+        void addReleaseListener(RELEASE_CALLBACK_OWNER@ value)
+        {
+            @release_func_owner = @value;
+        }
+        void addStateChangedListener(STATE_CHANGED_CALLBACK@ value)
+        {
+            @state_changed_func = @value;
+        }
+
+        void setButtonState(u8 _button_state) override
+        {
+            MenuBaseExEx::setButtonState(_button_state);
+
+            if(state_changed_func != null)
+            {
+                state_changed_func(getLocalPlayer(), @this);            
+            }
+        }
 
 
         void setCommandID(u8 cmd)
@@ -2191,12 +2250,12 @@ Check mark option on right
 
             if(_button_state == Released)//If the button was released.
             {
-                sendCommand();//Send the command.
+                sendReleaseCommand();//Send the command.
             }
 
             if(instant_press && _button_state == JustPressed)//If the button is supposed to be released instantly upon press.
             {
-                sendCommand();//Send the command.
+                sendReleaseCommand();//Send the command.
                 _button_state = Released;//The button was basically released, so tell it to actually release. To prevent it from sending the command twice.
             }
 
@@ -2217,8 +2276,9 @@ Check mark option on right
             return true;
         }
 
-        void sendCommand()
+        void sendReleaseCommand()
         {
+            //Send command.
             if(command_id != 255)//If there is a command_id to send.
             {
                 if(send_to_rules)//if send_to_rules is true.
@@ -2234,20 +2294,20 @@ Check mark option on right
                     _owner.SendCommand(command_id, params);
                 }
             }
-            if(func != null)
+
+            //Call function.
+            if(release_func != null)
             {
-                CBlob@ _owner = getOwnerBlob();
-                if(_owner != null)
+                release_func(getLocalPlayer(), params, @this);
+            }
+
+            //Call function and include the owner blob.
+            if(release_func_owner != null)
+            {
+                if(getOwnerBlob() != null)
                 {
-                    CBlob@ player_blob = getLocalPlayer().getBlob();
-                    if(player_blob != null)
-                    {
-                        func(params, _owner, player_blob);
-                    }
-                    else
-                    {
-                        error("Player blob calling the button was null.");
-                    }
+                    CBlob@ _owner = getOwnerBlob();
+                    release_func_owner(getLocalPlayer(), params, @this, _owner);
                 }
                 else
                 {

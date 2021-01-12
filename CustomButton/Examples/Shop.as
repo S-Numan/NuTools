@@ -85,7 +85,7 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
         NuMenu::POSCenter);//Image position
     icon.color_on[NuMenu::Disabled].setAlpha(80);//Get the color of the icon when it is disabled, and change it to fade out when disabled.
 
-    button.func = @delayedCreateMenu;
+    button.addReleaseListener(@delayedCreateMenu);
 
     addButton(caller, button);
 }
@@ -99,15 +99,15 @@ void onTick(CBlob@ this)
         u16 callerID = this.get_u16("s_caller");
         if(callerID != 0)
         {
-            CBlob@ caller = getBlobByNetworkID(callerID);
-            if(caller != null)
+            CPlayer@ caller = getPlayerByNetworkId(callerID);
+            if(caller != null && caller.getBlob() != null)
             {
-                this.set_u16("s_caller", 0);
-
-                CBitStream params;
-                this.get_CBitStream("s_params", params);
-                createMenu(params, this, caller);           
+                //CBitStream params;
+                //this.get_CBitStream("s_params", params);
+                createMenu(this, caller.getBlob());           
             }
+
+            this.set_u16("s_caller", 0);
         }
     }
     else
@@ -118,14 +118,14 @@ void onTick(CBlob@ this)
 }
 
 
-void delayedCreateMenu(CBitStream params, CBlob@ this, CBlob@ caller)
+void delayedCreateMenu(CPlayer@ caller, CBitStream params, NuMenu::IMenu@ menu, CBlob@ owner)
 {
-    this.set_CBitStream("s_params", params);
-    this.set_u16("s_caller", caller.getNetworkID());
-    this.set_u8("s_delay", 1);
+    //this.set_CBitStream("s_params", params);
+    owner.set_u16("s_caller", caller.getNetworkID());
+    owner.set_u8("s_delay", 1);
 }
 
-void createMenu(CBitStream params, CBlob@ this, CBlob@ caller)
+void createMenu(CBlob@ this, CBlob@ caller)
 {
 	if (this.hasTag("shop disabled"))
 		return;

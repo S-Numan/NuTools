@@ -64,7 +64,7 @@ void onInit( CRules@ this )
     {
         @button1 = cast<NuMenu::MenuButton@>(option1);//Cast into button1. 
     }
-    button1.func = @ButtonTestFunction;//We can now use button functions and all it's derivatives.
+    button1.addReleaseListener(@ButtonTestFunction);//We can now use button functions and all it's derivatives.
 
     //option1.setOffset(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y));
     random_menu.setOptionalMenuPos(Vec2f(random_menu.getSize().x/2, random_menu.getSize().y - option1.getSize().y), option1);//*/
@@ -89,8 +89,8 @@ void onReload( CRules@ this )
 {
     onInit(this);
 }
-
-void ButtonTestFunction(CBitStream lol, CBlob@ this, CBlob@ caller)
+//                    -Caller of button-     -Params-     -Menu pressed-
+void ButtonTestFunction(CPlayer@ caller, CBitStream params, NuMenu::IMenu@ menu)
 {
     print("function: button was pressed.");
 }
