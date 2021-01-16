@@ -55,7 +55,7 @@ void GetButtonsFor(CBlob@ this, CBlob@ caller)
 
 
 	if (!canSeeButtons(this, caller,
-    true,//Team only
+    false,//Team only
     16.0f))//Max distance
     {
         return;
