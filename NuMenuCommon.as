@@ -2349,6 +2349,20 @@ Check mark option on right
             render_background = false;
         }
 
+        void initVars() override
+        {
+            MenuBaseExEx::initVars();
+            render_script_id = 0;
+            render_script_z = 0.0f;
+
+            menu_checked = false;
+
+            Setup();
+        }
+
+
+        int render_script_id;
+        float render_script_z;
         
 
         void Setup()
@@ -2377,15 +2391,7 @@ Check mark option on right
                 }
             }
 
-            int hud_cb_id = Render::addScript(Render::layer_prehud, "NuMenuCommon.as", "RulesHUDRenderFunction", 0.0f);
-        }
-
-        void initVars() override
-        {
-            MenuBaseExEx::initVars();
-            menu_checked = false;
-
-            Setup();
+            render_script_id = Render::addScript(Render::layer_prehud, "NuMenuCommon.as", "RulesHUDRenderFunction", render_script_z);
         }
 
         bool menu_checked;
@@ -2510,6 +2516,14 @@ Check mark option on right
         }
 
         
+
+        //This allows someone to += an IMenu into MenuHolder. It's mostly just for looks, and it looks nice, so I added it. 
+        MenuHolder@ opAddAssign(IMenu@ menu)
+        {
+            //TODO - Put menu in MenuHolder
+            
+            return this;//Handle to self for chaining assignments.
+        }
 
 
         //
