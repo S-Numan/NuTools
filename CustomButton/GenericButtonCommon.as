@@ -75,5 +75,10 @@ void addButton(CBlob@ caller, NuMenu::MenuButton@ button)
 
     array<NuMenu::MenuButton@>@ buttons;//Init array.
     getRules().get("CustomButtons", @buttons);//Grab array.
-    buttons.push_back(button);//Put button in CustomButtons array.
+    if(buttons == null)
+    {
+        error("Tried to add button when CustomButtons array was null.");
+        return;
+    }
+        buttons.push_back(button);//Put button in CustomButtons array.
 }

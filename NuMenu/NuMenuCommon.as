@@ -2525,6 +2525,9 @@ Check mark option on right
             return this;//Handle to self for chaining assignments.
         }
 
+        IMenu@ get_opIndex(int idx) const       { return @null; }//Return IMenu at the position.
+        void set_opIndex(int idx, IMenu@ value) { }//Set IMenu at position. (stop if out of bounds)
+
 
         //
         //Overrides
