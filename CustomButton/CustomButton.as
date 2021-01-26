@@ -100,13 +100,48 @@ void onTick( CRules@ rules )
             buttons[i].Tick(KEY, controls.getMouseScreenPos(), blob.getPosition());
 
             //Text
-            if(buttons[i].getMenuState() == NuMenu::Hover)
+            if(buttons[i].getMenuState() == NuMenu::Hover || buttons[i].getMenuState() == NuMenu::JustHover)
             {
                 buttons[i].draw_text = true;
+                
+                CBlob@ owner_blob = buttons[i].getOwnerBlob();
+                if(owner_blob != null)
+                {
+                    CSprite@ owner_sprite = owner_blob.getSprite();
+                    if(owner_sprite != null)
+                    {
+                        CSpriteLayer@ outline = owner_sprite.getSpriteLayer("outli");
+                        if(outline == null)//Outline not yet created (Happens once).
+                        {
+                            CSpriteLayer@ _outline = owner_sprite.addSpriteLayer("outli", owner_sprite.getFilename(), owner_sprite.getFrameWidth(), owner_sprite.getFrameHeight(), owner_blob.getTeamNum(), 0);
+                            _outline.setRenderStyle(RenderStyle::outline);
+                            _outline.ScaleBy((owner_sprite.getFrameWidth() + 2.0f) / owner_sprite.getFrameWidth(), (owner_sprite.getFrameHeight() + 2.0f) / owner_sprite.getFrameHeight());
+                            _outline.SetRelativeZ(-0.01f);
+                            _outline.SetFrame(owner_sprite.getFrame());
+                        }
+                        else//Outline not null. (happens every tick after the first)
+                        {
+                            outline.SetFrame(owner_sprite.getFrame());
+                        }
+                    }
+                }
             }
             else if(buttons[i].draw_text != false)
             {
                 buttons[i].draw_text = false;
+            
+                CBlob@ owner_blob = buttons[i].getOwnerBlob();
+                if(owner_blob != null)
+                {
+                    CSprite@ owner_sprite = owner_blob.getSprite();
+                    if(owner_sprite != null)
+                    {
+                        if(owner_sprite.getSpriteLayer("outli") != null)
+                        {
+                            owner_sprite.RemoveSpriteLayer("outli");
+                        }
+                    }
+                }
             }
             //Text
 
