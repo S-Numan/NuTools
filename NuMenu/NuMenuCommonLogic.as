@@ -22,7 +22,7 @@ void onInit( CRules@ rules )
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
 
 
-    if(!rules.AddScript("CustomButton.as"))
+    if(!rules.AddScript("NuButton.as"))
     {
         error("The mod CustomButton is not added. This is not a problem; This is a notice.");
     }
