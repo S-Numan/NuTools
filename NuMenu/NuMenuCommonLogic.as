@@ -20,6 +20,12 @@ void onInit( CRules@ rules )
     rules.get("NuMenus", @rulesbad);
     
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
+
+
+    if(!rules.AddScript("CustomButton.as"))
+    {
+        error("The mod CustomButton is not added. This is not a problem; This is a notice.");
+    }
 }
 
 void onReload( CRules@ rules )
