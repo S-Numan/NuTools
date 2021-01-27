@@ -60,7 +60,7 @@ void onInit( CRules@ this )
     NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::Button, Vec2f(30, 40));
 
     NuMenu::MenuButton@ button1;//We will cast option1 into button1 as an example.
-    if(option1.getMenuOption() == NuMenu::Button)//While it is known the above is a button, this is just as an example for how to check if it can be casted.
+    if(option1.getMenuClass() == NuMenu::Button)//While it is known the above is a button, this is just as an example for how to check if it can be casted.
     {
         @button1 = cast<NuMenu::MenuButton@>(option1);//Cast into button1. 
     }

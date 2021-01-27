@@ -11,8 +11,6 @@ void onInit( CRules@ rules )
     NuMenu::onInit(rules);
 
 
-    init = true;
-
     CRulesBad@ _rulesbad = CRulesBad();
 
     rules.set("NuMenus", @_rulesbad);
@@ -22,14 +20,20 @@ void onInit( CRules@ rules )
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
 
 
-    if(!rules.AddScript("NuButton.as"))
+    if(!init &&//First time init.
+        sv_gamemode == "Testing")//Provided the gamemode name is Testing.
     {
-        error("The mod CustomButton is not added. This is not a problem; This is a notice.");
+        print("=====NuButton.as attempt to add=====");
+        rules.AddScript("NuButton.as");//Add the NuButton script to the gamemode.
+        print("=====If an error is above, ignore it.=====");
     }
+
+    init = true;
 }
 
 void onReload( CRules@ rules )
 {
+    print("NuMenu Reloaded");
     onInit(rules);
 }
 

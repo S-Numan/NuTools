@@ -209,10 +209,10 @@ Check mark option on right
     
     enum POSPositions//Stores all positions that stuff can be in.
     {
-        POSTopLeft,
-        POSTopRight,
-        POSBottomLeft,
-        POSBottomRight,
+        POSTopLeft,//top left
+        POSTopRight,//top right
+        POSBottomLeft,//bottom left
+        POSBottomRight,//bottom right
         POSCenter,//in the center of the menu
         POSTop,//positioned on the top of the menu
         POSAbove,//above the top of the menu
@@ -226,12 +226,19 @@ Check mark option on right
         POSPositionsCount,//Always last, this specifies the amount of positions.
     }
 
-
-    enum MenuOptions
+    //Actual classes.
+    enum MenuClasses
     {
-        Blank,//Nothing
-        Custom,//Custom button.
+        MenuClassNotSet,//When you haven't set the class.
+
+        Base,//TODO comment
+        
+        BaseEx,//TODO comment
+        
+        BaseExEx,//TODO comment
+
         Button,//Press a button. Buttons have many states. Catch em all!
+        
         Slider,//Slide a slider left and right. Choose color of each side. Increments instead of smoothness is possible too. Both vertical and horizontal. Option to act more like the traditional kag heart system instead of a bar.
         //Option to drag if held or only move if pressed once.
         //Left/right top/down buttons. (buttons appaer to the left and right of the slider. Can press to move slider.)
@@ -239,20 +246,32 @@ Check mark option on right
 
         //CheckBox,//Remove my class. Replace with button
 
-        TextBox,//Click this box, and you can type in text! Other options for selecting too.
         TextWriter,//Features such as slowly writing in text. Scrollable text is not drawn if it goes under the menu. If this happens, a scrollbar will appear. (Slider basically)
 
-        MenuOptionsCount,//Always last, this specifies the amount of menu options.
+        Holder,//Holds their child menus and spoils them by positioning them to themself without extra work.
+
+        MenuClassesCount,//Always last, this specifies the amount of menu classes.
     }
 
-    enum MenuConfiguration//Extension to MenuOptions. For example you can have a Slider with the On off configuration or the Statusbar configuration. For more complicated
+    enum MenuConfiguration//Configuration for specific classes. For example you can have a Slider with the On off configuration or the Statusbar configuration.
     {   
         //TODO, figure out how to make an auto-configeration system for slider and other classes. Maybe a global method or something. Make a method that allows you to pick the cofiguration you want too.
         
-        StatusBar = MenuOptionsCount,//Slider: Give a max value and current value. Choose color of each side. This works like a Slider but is automatically configured for ease of use. No draggy bit.
-        OnOffSwitch,//Slider: 
-        TraditionalSlider,//Slider: (E.G choose a circle. 1-5 circles.)
+        //Any
+        Custom,
+
+        //Slider
+        StatusBar,//Give a max value and current value. Choose color of each side. This works like a Slider but is automatically configured for ease of use. No draggy bit.
+        OnOffSwitch,//Slider between 0 and 1. Increments by 0 and 1.
+        TraditionalSlider,//(E.G choose a circle. 1-5 circles. 2 and a half health would only fill two and a half circles.)
+        
+        //Button
         CheckBox,//Button: Press once and the button is pressed. Press again and the button is unpressed.
+        
+        //TextWriter
+        TextBox,//Click this box, and you can type in text! Other options for selecting too.
+
+        MenuConfigCount,//Always last, this specifies the amount of configuration options for menus. Does this have a use? Not that I know of.
     }
 
     enum ButtonState
@@ -315,7 +334,7 @@ Check mark option on right
 
     interface IMenu
     {
-        void initVars();
+        void initVars(string name, Vec2f upper_left = Vec2f(0,0), Vec2f lower_right = Vec2f(0,0));
 
         string getName();
         int getNameHash();
@@ -328,8 +347,10 @@ Check mark option on right
         bool getMoveToOwner();
         void setMoveToOwner(bool value);
 
-        u8 getMenuOption();
-        void setMenuOption(u8 value);
+        u8 getMenuConfig();
+        void setMenuConfig(u8 value);
+        u8 getMenuClass();
+        void setMenuClass(u8 value);
 
         u8 getMenuState();
         u8 getButtonState();
@@ -348,16 +369,16 @@ Check mark option on right
         bool isInterpolated();
         void setInterpolated(bool value);
 
-        Vec2f getUpperLeftInterpolated();
-        Vec2f getPosInterpolated();
+        Vec2f getUpperLeftInterpolated();//Gets the interpolated upper left
+        Vec2f getPosInterpolated();//Gets the upper left interpolated.
         Vec2f getUpperLeft(bool get_raw_pos = false);
-        void setUpperLeft(Vec2f value);
+        void setUpperLeft(Vec2f value, bool menu_just_move = true);//Assigning menu_just_move to false will tell the menu that nothing moved. No other positions should update, no sound, nothing should change besides the position.
         Vec2f getPos(bool get_raw_pos = false);
-        void setPos(Vec2f value);
+        void setPos(Vec2f value, bool menu_just_move = true);
         Vec2f getMiddle(bool get_raw_pos = false);
         Vec2f getLowerRightInterpolated();
         Vec2f getLowerRight(bool get_raw_pos = false);
-        void setLowerRight(Vec2f value);
+        void setLowerRight(Vec2f value, bool menu_just_move = true);
         Vec2f getSize();
         void setSize(Vec2f value);
 
@@ -396,45 +417,33 @@ Check mark option on right
     //Base of all menus.
     class MenuBase : IMenu
     {
-        MenuBase(string _name, u8 _menu_option = Custom)// add default option for world pos/screen pos? - Todo numan
+        MenuBase(string _name, u8 _menu_config = NuMenu::Custom)// add default option for world pos/screen pos? - Todo numan
         {
             if(!isClient())
             {
                 return;
             }
 
-            initVars();
+            initVars(_name);
             
-            setMenuOption(_menu_option);
-
-            setUpperLeft(Vec2f_zero);
-            setLowerRight(Vec2f_zero);
-
-            setInterpolated(true);
-
-            setName(_name);
+            setMenuClass(Base);
+            setMenuConfig(_menu_config);
         }
         
-        MenuBase(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option = Custom)// add default option for world pos/screen pos? - Todo numan
+        MenuBase(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)// add default option for world pos/screen pos? - Todo numan
         {
             if(!isClient())
             {
                 return;
             }
 
-            initVars();
+            initVars(_name, _upper_left, _lower_right);
             
-            setMenuOption(_menu_option);
-
-            setUpperLeft(_upper_left);
-            setLowerRight(_lower_right);
-
-            setInterpolated(true);
-
-            setName(_name);
+            setMenuClass(Base);
+            setMenuConfig(_menu_config);
         }
 
-        void initVars()
+        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0))
         {
             if(!getRules().get("NuGlobalVars", @globalvars))
             {
@@ -465,6 +474,15 @@ Check mark option on right
             collision_setter = true;
 
             radius = 0.0f;
+        
+    
+
+            setUpperLeft(_upper_left, false);
+            setLowerRight(_lower_right, false);
+
+            setInterpolated(true);
+
+            setName(_name);
         }
 
         GlobalVariables@ globalvars;
@@ -602,14 +620,29 @@ Check mark option on right
         //Options and States
         //
 
-        private u8 menu_option;//Menu option. (Does this menu has a slider? is it a regular button? does it have a check box?)
-        u8 getMenuOption()
+        private u8 menu_class;
+        u8 getMenuClass()
         {
-            return menu_option;
+            if(menu_class == MenuClassNotSet)
+            {
+                error("menu_class not set");
+            }
+            
+            return menu_class;
         }
-        void setMenuOption(u8 value)
+        void setMenuClass(u8 value)
         {
-            menu_option = value;
+            menu_class = value;
+        }
+
+        private u8 menu_config;//Menu config.
+        u8 getMenuConfig()
+        {
+            return menu_config;
+        }
+        void setMenuConfig(u8 value)
+        {
+            menu_config = value;
         }
 
 
@@ -694,7 +727,7 @@ Check mark option on right
             
             return upper_left[0];
         }
-        void setUpperLeft(Vec2f value)
+        void setUpperLeft(Vec2f value, bool menu_just_move = true)
         {
             upper_left[0] = value;
             menu_size = Vec2f(lower_right[0].x - upper_left[0].x, lower_right[0].y - upper_left[0].y);
@@ -703,16 +736,16 @@ Check mark option on right
                 upper_left[3] = Vec2f_zero;//Reset collisinos
             }
 
-            setMenuJustMoved(true);
+            setMenuJustMoved(menu_just_move);
         }
 
         //Changes the upper left position and lower right at the same time. No changes to the size of the menu.
-        void setPos(Vec2f value)
+        void setPos(Vec2f value, bool menu_just_move = true)
         {
             upper_left[0] = value;
             lower_right[0] = upper_left[0] + menu_size;
 
-            setMenuJustMoved(true);
+            setMenuJustMoved(menu_just_move);
         }
         Vec2f getPos(bool get_raw_pos = false)
         {
@@ -742,7 +775,7 @@ Check mark option on right
 
             return lower_right[0];
         }
-        void setLowerRight(Vec2f value)
+        void setLowerRight(Vec2f value, bool menu_just_move = true)
         { 
             lower_right[0] = value;
             menu_size = Vec2f(lower_right[0].x - upper_left[0].x, lower_right[0].y - upper_left[0].y);
@@ -752,7 +785,7 @@ Check mark option on right
                 lower_right[3] = menu_size;//Reset collisinos
             }
 
-            setMenuJustMoved(true);
+            setMenuJustMoved(menu_just_move);
         }
 
         
@@ -1261,23 +1294,29 @@ Check mark option on right
 
     class MenuBaseEx : MenuBase
     {
-        MenuBaseEx(string _name, u8 _menu_option = Custom)
+        MenuBaseEx(string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient()) { return; }
 
-            super(_name, _menu_option);
+            initVars(_name);
+
+            setMenuClass(BaseEx);
+            setMenuConfig(_menu_config);
         }
 
-        MenuBaseEx(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option = Custom)
+        MenuBaseEx(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient()) { return; }
 
-            super(_upper_left, _lower_right, _name, _menu_option);
+            initVars(_name, _upper_left, _lower_right);
+
+            setMenuClass(BaseEx);
+            setMenuConfig(_menu_config);
         }
 
-        void initVars() override
+        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
         {
-            MenuBase::initVars();
+            MenuBase::initVars(_name, _upper_left, _lower_right);
 
             icons_used = false;
             draw_icons = true;
@@ -1456,7 +1495,7 @@ Check mark option on right
         
         MenuImage@ setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
         {
-            if(icons.size() <= position){ error("In setIcon : tried to get past the highest element in the icons array."); return @null; }
+            if(icons.size() <= position){ error("In setIcon : tried to get past the highest element in the icons array. Attempted to get icon " + position ); return @null; }
             
             MenuImage@ icon = MenuImage();
             
@@ -1487,7 +1526,7 @@ Check mark option on right
         
         MenuImage@ getIcon(u16 position = 0)
         {
-            if(icons.size() <= position){ error("In getIcon : tried to get past the highest element in the icons array."); return null; }
+            if(icons.size() <= position){ error("In getIcon : tried to get past the highest element in the icons array. Attempted to get icon " + position); return null; }
 
             return icons[position];
         }
@@ -1499,7 +1538,7 @@ Check mark option on right
 
         void setIconPos(Vec2f icon_pos, u16 position = 0)
         {
-            if(icons.size() <= position){ error("In setIconPos : tried to get past the highest element in the icons array."); return; }
+            if(icons.size() <= position){ error("In setIconPos : tried to get past the highest element in the icons array. Attempted to get icon " + position); return; }
 
             icons[position].pos = icon_pos;
 
@@ -1629,31 +1668,37 @@ Check mark option on right
     //Base of all menus + previous ex + this. Includes text, and a titlebar (can be hidden and simply used for dragging the menu.)
     class MenuBaseExEx : MenuBaseEx
     {
-        MenuBaseExEx(string _name, u8 _menu_option = Custom)
+        MenuBaseExEx(string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient()) { return; }
 
-            super(_name, _menu_option);
+            initVars(_name);
             
+            setMenuClass(BaseExEx);
+            setMenuConfig(_menu_config);
+
             setTextColor(SColor(255, 0, 0, 0));
 
             setFont("AveriaSerif-Bold.ttf", 4);
         }
 
-        MenuBaseExEx(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_option = Custom)
+        MenuBaseExEx(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient()) { return; }
 
-            super(_upper_left, _lower_right, _name, _menu_option);
+            initVars(_name, _upper_left, _lower_right);
+
+            setMenuClass(BaseExEx);
+            setMenuConfig(_menu_config);
 
             setTextColor(SColor(255, 0, 0, 0));
 
             setFont("AveriaSerif-Bold.ttf", 4);
         }
 
-        void initVars() override
+        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
         {
-            MenuBaseEx::initVars();
+            MenuBaseEx::initVars(_name, _upper_left, _lower_right);
             
             titlebar_ignore_press = false;
             draw_titlebar = true;
@@ -1783,13 +1828,13 @@ Check mark option on right
 
         string getText(u16 array_position)
         {
-            if(array_position >= text_strings.size()){error("getText : Tried to get text out of array bounds"); return ""; }
+            if(array_position >= text_strings.size()){error("getText : Tried to get text out of array bounds. Attempted to get text at the position " + array_position); return ""; }
 
             return text_strings[array_position];
         }
         void setText(string text, u16 array_position)
         {
-            if(array_position >= text_strings.size()){error("setText : Tried to get text out of array bounds"); return; }
+            if(array_position >= text_strings.size()){error("setText : Tried to get text out of array bounds. Attempted to get text at the position " + array_position); return; }
             
             GUI::SetFont(font);
             Vec2f text_pos;
@@ -1846,13 +1891,13 @@ Check mark option on right
         
         Vec2f getTextPos(u16 array_position)
         {
-            if(array_position >= text_strings.size()){error("getTextPos : Tried to get text out of array bounds"); return Vec2f_zero; }
+            if(array_position >= text_strings.size()){error("getTextPos : Tried to get text out of array bounds at pos " + array_position); return Vec2f_zero; }
 
             return text_positions[array_position];
         }
         void setTextPos(Vec2f value, u16 array_position)
         {
-            if(array_position >= text_strings.size()){error("setTextPos : Tried to get text out of array bounds"); return; }
+            if(array_position >= text_strings.size()){error("setTextPos : Tried to get text out of array bounds at pos " + array_position); return; }
             
             text_positions[array_position] = value;
         }
@@ -2091,43 +2136,52 @@ Check mark option on right
     //Menu set up to function like a button.
     class MenuButton : MenuBaseExEx
     {
-        MenuButton(string _name)
+        MenuButton(string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient())
             {
                 return;
             }
 
-            super(_name, Button);
+            initVars(_name);
+        
+            setMenuClass(Button);
+            setMenuConfig(_menu_config);
         }
 
-        MenuButton(string _name, CBlob@ blob)
+        MenuButton(string _name, CBlob@ blob, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient())
             {
                 return;
             }
 
-            super(_name, Button);
+            initVars(_name);
+
+            setMenuClass(Button);
+            setMenuConfig(_menu_config);
             
             setOwnerBlob(blob);//This is the button's owner. The button will follow this blob (can be disabled).
             setIsWorldPos(true);//The position of the button is in the world, not the screen as the button is following a blob, a thing in the world. Therefor isWorldPos should be true.
             //Remove this and see what happens for funzies. - TODO Numan
         }
 
-        MenuButton(Vec2f _upper_left, Vec2f _lower_right, string _name)
+        MenuButton(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient())
             {
                 return;
             }
 
-            super(_upper_left, _lower_right, _name, Button);
+            initVars(_name, _upper_left, _lower_right);
+        
+            setMenuClass(Button);
+            setMenuConfig(_menu_config);
         }
 
-        void initVars() override
+        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
         {
-            MenuBaseExEx::initVars();
+            MenuBaseExEx::initVars(_name, _upper_left, _lower_right);
             send_to_rules = false;
             kill_on_release = false;
             instant_press = false;
@@ -2333,7 +2387,7 @@ Check mark option on right
                 return;
             }
 
-            super(_name, CheckBox);
+            initVars(_name);
 
             render_background = false;
         }
@@ -2344,14 +2398,14 @@ Check mark option on right
                 return;
             }
 
-            super(_upper_left, _lower_right, _name, CheckBox);
+            initVars(_name, _upper_left, _lower_right);
 
             render_background = false;
         }
 
-        void initVars() override
+        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
         {
-            MenuBaseExEx::initVars();
+            MenuBaseExEx::initVars(_name, _upper_left, _lower_right);
             render_script_id = 0;
             render_script_z = 0.0f;
 
@@ -2492,27 +2546,35 @@ Check mark option on right
     //This menu is designed to hold other menu's and keep them attached to it.
     class MenuHolder : MenuBaseExEx
     {
-        MenuHolder(string _name)
+        MenuHolder(string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient())
             {
                 return;
             }
-            super(_name, 100);//TODO MenuOptionHolder global var
+            
+            initVars(_name);
+        
+            setMenuClass(Holder);
+            setMenuConfig(_menu_config);
         }
 
-        MenuHolder(Vec2f _upper_left, Vec2f _lower_right, string _name)
+        MenuHolder(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient())
             {
                 return;
             }
-            super(_upper_left, _lower_right, _name, 100);//TODO MenuOptionHolder global var
+            
+            initVars(_name, _upper_left, _lower_right);
+
+            setMenuClass(Holder);
+            setMenuConfig(_menu_config);
         }
 
-        void initVars() override
+        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
         {
-            MenuBaseExEx::initVars();
+            MenuBaseExEx::initVars(_name, _upper_left, _lower_right);
         }
 
         
@@ -2533,20 +2595,20 @@ Check mark option on right
         //Overrides
         //
 
-        void setUpperLeft(Vec2f value) override
+        void setUpperLeft(Vec2f value, bool menu_just_move = true) override
         {
-            MenuBaseExEx::setUpperLeft(value);
+            MenuBaseExEx::setUpperLeft(value, menu_just_move);
             moveHeldMenus();
         }
 
-        void setPos(Vec2f value) override
+        void setPos(Vec2f value, bool menu_just_move = true) override
         {
-            MenuBaseExEx::setPos(value);
+            MenuBaseExEx::setPos(value, menu_just_move);
             moveHeldMenus();
         }
-        void setLowerRight(Vec2f value) override
+        void setLowerRight(Vec2f value, bool menu_just_move = true) override
         { 
-            MenuBaseExEx::setLowerRight(value);
+            MenuBaseExEx::setLowerRight(value, menu_just_move);
             moveHeldMenus();
         }
 
@@ -2705,15 +2767,16 @@ Check mark option on right
                     optional_menus.push_back(@_menu);
                     break;
                 }
-                case CheckBox:
+                /*case CheckBox:
                 {
                     MenuCheckBox@ _menu = MenuCheckBox(_name + "_chk");
 
 
                     optional_menus.push_back(@_menu);
                     break;
-                }
+                }*/
                 default:
+                    error("Menu option " + value + " not found.");
                     break;
             }
 
@@ -2803,7 +2866,7 @@ Check mark option on right
 
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
-                /*switch(optional_menus[i].getMenuOption())
+                /*switch(optional_menus[i].getMenuClass())
                 {
                     case CheckBox:
                     {
@@ -2812,7 +2875,7 @@ Check mark option on right
                     }
 
                     default:
-                    error("Menu option not found in render\n menu option is " + optional_menus[i].getMenuOption());
+                    error("Menu option not found in render\n menu option is " + optional_menus[i].getMenuClass());
                     //GUI::DrawRectangle(upper_left + optional_menus[i].getUpperLeftRelation(), upper_left + optional_menus[i].getLowerRightRelation());
                     break;
                 }*/
