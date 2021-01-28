@@ -256,9 +256,9 @@ Check mark option on right
     enum MenuConfiguration//Configuration for specific classes. For example you can have a Slider with the On off configuration or the Statusbar configuration.
     {   
         //TODO, figure out how to make an auto-configeration system for slider and other classes. Maybe a global method or something. Make a method that allows you to pick the cofiguration you want too.
-        
+
         //Any
-        Custom,
+        Custom = MenuClassesCount + 1,//To prevent accidently using MenuClasses or MenuConfiguration when the other is required, this is done.
 
         //Slider
         StatusBar,//Give a max value and current value. Choose color of each side. This works like a Slider but is automatically configured for ease of use. No draggy bit.
@@ -270,8 +270,6 @@ Check mark option on right
         
         //TextWriter
         TextBox,//Click this box, and you can type in text! Other options for selecting too.
-
-        MenuConfigCount,//Always last, this specifies the amount of configuration options for menus. Does this have a use? Not that I know of.
     }
 
     enum ButtonState
@@ -350,7 +348,7 @@ Check mark option on right
         u8 getMenuConfig();
         void setMenuConfig(u8 value);
         u8 getMenuClass();
-        void setMenuClass(u8 value);
+        //void setMenuClass(u8 value);//Don't touch this.
 
         u8 getMenuState();
         u8 getButtonState();
@@ -2767,14 +2765,14 @@ Check mark option on right
                     optional_menus.push_back(@_menu);
                     break;
                 }
-                /*case CheckBox:
+                case CheckBox:
                 {
                     MenuCheckBox@ _menu = MenuCheckBox(_name + "_chk");
 
 
                     optional_menus.push_back(@_menu);
                     break;
-                }*/
+                }
                 default:
                     error("Menu option " + value + " not found.");
                     break;
