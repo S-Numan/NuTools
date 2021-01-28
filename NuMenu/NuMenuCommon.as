@@ -231,24 +231,24 @@ Check mark option on right
     {
         MenuClassNotSet,//When you haven't set the class.
 
-        Base,//TODO comment
+        BaseClass,//TODO comment
         
-        BaseEx,//TODO comment
+        BaseExClass,//TODO comment
         
-        BaseExEx,//TODO comment
+        BaseExExClass,//TODO comment
 
-        Button,//Press a button. Buttons have many states. Catch em all!
+        ButtonClass,//Press a button. Buttons have many states. Catch em all!
         
-        Slider,//Slide a slider left and right. Choose color of each side. Increments instead of smoothness is possible too. Both vertical and horizontal. Option to act more like the traditional kag heart system instead of a bar.
+        SliderClass,//Slide a slider left and right. Choose color of each side. Increments instead of smoothness is possible too. Both vertical and horizontal. Option to act more like the traditional kag heart system instead of a bar.
         //Option to drag if held or only move if pressed once.
         //Left/right top/down buttons. (buttons appaer to the left and right of the slider. Can press to move slider.)
         //Can cut texture in half or other amounts to display exact loss of health.
 
         //CheckBox,//Remove my class. Replace with button
 
-        TextWriter,//Features such as slowly writing in text. Scrollable text is not drawn if it goes under the menu. If this happens, a scrollbar will appear. (Slider basically)
+        TextWriterClass,//Features such as slowly writing in text. Scrollable text is not drawn if it goes under the menu. If this happens, a scrollbar will appear. (Slider basically)
 
-        Holder,//Holds their child menus and spoils them by positioning them to themself without extra work.
+        HolderClass,//Holds their child menus and spoils them by positioning them to themself without extra work.
 
         MenuClassesCount,//Always last, this specifies the amount of menu classes.
     }
@@ -426,7 +426,7 @@ Check mark option on right
 
             initVars(_name);
             
-            setMenuClass(Base);
+            setMenuClass(BaseClass);
             setMenuConfig(_menu_config);
         }
         
@@ -439,7 +439,7 @@ Check mark option on right
 
             initVars(_name, _upper_left, _lower_right);
             
-            setMenuClass(Base);
+            setMenuClass(BaseClass);
             setMenuConfig(_menu_config);
         }
 
@@ -1300,7 +1300,7 @@ Check mark option on right
 
             initVars(_name);
 
-            setMenuClass(BaseEx);
+            setMenuClass(BaseExClass);
             setMenuConfig(_menu_config);
         }
 
@@ -1310,7 +1310,7 @@ Check mark option on right
 
             initVars(_name, _upper_left, _lower_right);
 
-            setMenuClass(BaseEx);
+            setMenuClass(BaseExClass);
             setMenuConfig(_menu_config);
         }
 
@@ -1674,7 +1674,7 @@ Check mark option on right
 
             initVars(_name);
             
-            setMenuClass(BaseExEx);
+            setMenuClass(BaseExExClass);
             setMenuConfig(_menu_config);
 
             setTextColor(SColor(255, 0, 0, 0));
@@ -1688,7 +1688,7 @@ Check mark option on right
 
             initVars(_name, _upper_left, _lower_right);
 
-            setMenuClass(BaseExEx);
+            setMenuClass(BaseExExClass);
             setMenuConfig(_menu_config);
 
             setTextColor(SColor(255, 0, 0, 0));
@@ -2145,7 +2145,7 @@ Check mark option on right
 
             initVars(_name);
         
-            setMenuClass(Button);
+            setMenuClass(ButtonClass);
             setMenuConfig(_menu_config);
         }
 
@@ -2158,7 +2158,7 @@ Check mark option on right
 
             initVars(_name);
 
-            setMenuClass(Button);
+            setMenuClass(ButtonClass);
             setMenuConfig(_menu_config);
             
             setOwnerBlob(blob);//This is the button's owner. The button will follow this blob (can be disabled).
@@ -2175,7 +2175,7 @@ Check mark option on right
 
             initVars(_name, _upper_left, _lower_right);
         
-            setMenuClass(Button);
+            setMenuClass(ButtonClass);
             setMenuConfig(_menu_config);
         }
 
@@ -2555,7 +2555,7 @@ Check mark option on right
             
             initVars(_name);
         
-            setMenuClass(Holder);
+            setMenuClass(HolderClass);
             setMenuConfig(_menu_config);
         }
 
@@ -2568,7 +2568,7 @@ Check mark option on right
             
             initVars(_name, _upper_left, _lower_right);
 
-            setMenuClass(Holder);
+            setMenuClass(HolderClass);
             setMenuConfig(_menu_config);
         }
 
@@ -2759,7 +2759,7 @@ Check mark option on right
 
             switch(value)
             {
-                case Button:
+                case ButtonClass:
                 {
                     MenuButton@ _menu = MenuButton(_name + "_but");
 
