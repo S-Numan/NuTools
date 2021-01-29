@@ -4,20 +4,13 @@
 
 bool init;
 
-CRulesBad@ rulesbad;
-
 void onInit( CRules@ rules )
 {
-    NuMenu::onInit(rules);
-
-
-    CRulesBad@ _rulesbad = CRulesBad();
-
-    rules.set("NuMenus", @_rulesbad);
-
-    rules.get("NuMenus", @rulesbad);
     
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
+
+
+    NuMenu::onInit(rules);
 
 
     if(!init &&//First time init.
@@ -41,13 +34,18 @@ void onTick( CRules@ rules )
 {
     NuMenu::onTick(rules);//Important NuMenu things.
     
-    NuMenu::MenuTick(@rulesbad);//Run logic for the menus.
+    NuMenu::MenuTick();//Run logic for the menus.
 }
 
 void onRender( CRules@ rules )
 {
     if(!init) { return; }//Kag renders before onInit. Stop this.
+
+    CMenuTransporter@ _transporter;
+
+    rules.get("NuMenus", @_transporter);
+
     NuMenu::onRender(rules);//Important NuMenu things.
     
-    NuMenu::MenuRender(@rulesbad);//Render the menus.
+    NuMenu::MenuRender(@_transporter);//Render the menus.
 }

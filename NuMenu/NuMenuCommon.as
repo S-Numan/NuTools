@@ -1,18 +1,47 @@
 
-
-//I'm making a public announcement.
-class CRulesBad
+class CMenuTransporter
 {
-    CRulesBad()
+    CMenuTransporter()
     {
-        Setup();
+        SetupArrays();
+        SetupRendering();
+        SetupGlobalVars();
     }
     
-    void Setup()
+    void SetupArrays()
     {
         menus = array<NuMenu::IMenu@>();
         buttons = array<NuMenu::MenuButton@>();
     }
+
+
+    int posthudid;
+    int prehudid;
+    int postworldid;
+    int objectsid;
+    int tilesid;
+    int backgroundid;
+    void SetupRendering()
+    {
+        posthudid = Render::addScript(Render::layer_posthud, "NuMenuCommon.as", "MenusPostHud", 0.0f);
+        prehudid = Render::addScript(Render::layer_prehud, "NuMenuCommon.as", "MenusPreHud", 0.0f);
+        postworldid = Render::addScript(Render::layer_postworld, "NuMenuCommon.as", "MenusPostWorld", 0.0f);
+        objectsid = Render::addScript(Render::layer_objects, "NuMenuCommon.as", "MenusObjects", 0.0f);
+        tilesid = Render::addScript(Render::layer_tiles, "NuMenuCommon.as", "MenusTiles", 0.0f);
+        backgroundid = Render::addScript(Render::layer_background, "NuMenuCommon.as", "MenusBackground", 0.0f);
+    }
+
+
+    f32 FRAME_TIME; // last frame time
+    float MARGIN;//How many pixels away will things stop drawing from outside the screen.
+    void SetupGlobalVars()
+    {
+        FRAME_TIME = 0.0f;
+        MARGIN = 255.0f;
+    }
+
+
+
 
     bool addMenuToList(NuMenu::IMenu@ _menu)
     {
@@ -21,7 +50,6 @@ class CRulesBad
 
         return true;
     }
-
 
     bool addMenuToList(NuMenu::MenuButton@ _menu)
     {
@@ -111,12 +139,14 @@ class CRulesBad
         buttons.clear();
     }
 
-    array<NuMenu::IMenu@> menus;//CRules touching this array makes casting impossible. Save the array from molestation; Remain a wizard!
+
+    
+
+    array<NuMenu::IMenu@> menus;
 
     array<NuMenu::MenuButton@> buttons;//Since casting is very broken, this is a way to sidestep the issue.
 }
-//Don't let more of one of this exist at once. This is our class. Communism, not capitalism.
-//I think I'm going crazy.
+//Don't let more of one of this exist at once.
 
 
 namespace NuMenu
@@ -185,20 +215,6 @@ Check mark option on right
 //
 //TODO LIST
 //
-    //Only one of this class should exist at a time.
-    class GlobalVariables
-    {
-        GlobalVariables()
-        {
-            FRAME_TIME = 0.0f;
-            MARGIN = 255.0f;
-            MenuOptionHolder = 100;
-        }
-        f32 FRAME_TIME; // last frame time
-        float MARGIN;//How many pixels away will things stop drawing from outside the screen.
-        u8 MenuOptionHolder;//Menu holder option. starts at 100 in case you want to add another MenuOptions enum to it to explain that this holder holds these menu types only.
-    }
-
 
     float getDistance(Vec2f point1, Vec2f point2)//Add to NumanLib later
     {
@@ -256,6 +272,7 @@ Check mark option on right
     enum MenuConfiguration//Configuration for specific classes. For example you can have a Slider with the On off configuration or the Statusbar configuration.
     {   
         //TODO, figure out how to make an auto-configeration system for slider and other classes. Maybe a global method or something. Make a method that allows you to pick the cofiguration you want too.
+        //New -> Create a new file, add auto configs there as methods. Each method has the same name but a different argument type. The IMenu input type checks what class it is, then refers to the correct method.
 
         //Any
         Custom = MenuClassesCount + 1,//To prevent accidently using MenuClasses or MenuConfiguration when the other is required, this is done.
@@ -270,6 +287,10 @@ Check mark option on right
         
         //TextWriter
         TextBox,//Click this box, and you can type in text! Other options for selecting too.
+
+        //Holder
+        DropDownOptions,//Click this box to get a bunch of different boxes below it.
+        //Can choose if this menu opens up or down.
     }
 
     enum ButtonState
@@ -443,7 +464,7 @@ Check mark option on right
 
         void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0))
         {
-            if(!getRules().get("NuGlobalVars", @globalvars))
+            if(!getRules().get("NuMenus", @transporter))
             {
                 error("NuMenuCommonLogic.as must be before anything else that uses NuMenu in gamemode.cfg");
             }
@@ -483,7 +504,7 @@ Check mark option on right
             setName(_name);
         }
 
-        GlobalVariables@ globalvars;
+        CMenuTransporter@ transporter;
 
         float default_buffer;
 
@@ -1183,9 +1204,9 @@ Check mark option on right
                 }
                 else//Just interpolate
                 {
-                    upper_left[2] = Vec2f_lerp(getUpperLeftOld(), getUpperLeft(), globalvars.FRAME_TIME);
+                    upper_left[2] = Vec2f_lerp(getUpperLeftOld(), getUpperLeft(), transporter.FRAME_TIME);
 
-                    lower_right[2] = Vec2f_lerp(getLowerRightOld(), getLowerRight(), globalvars.FRAME_TIME);
+                    lower_right[2] = Vec2f_lerp(getLowerRightOld(), getLowerRight(), transporter.FRAME_TIME);
                 }
                 //print(FRAME_TIME+'');
             }
@@ -1220,13 +1241,14 @@ Check mark option on right
             Driver@ driver = getDriver();
 
             //If this cannot be seen. This is out of range. 
-            if(getUpperLeft().x  - globalvars.MARGIN > driver.getScreenWidth()
-            || getUpperLeft().y  - globalvars.MARGIN > driver.getScreenHeight()
-            || getLowerRight().x + globalvars.MARGIN < 0
-            || getLowerRight().y + globalvars.MARGIN < 0 )
+            /*if(getUpperLeft().x  - transporter.MARGIN > driver.getScreenWidth()
+            || getUpperLeft().y  - transporter.MARGIN > driver.getScreenHeight()
+            || getLowerRight().x + transporter.MARGIN < 0
+            || getLowerRight().y + transporter.MARGIN < 0 )
             {
                 return false;//Don't draw it then.
-            }
+            }*/
+            //TODO, re add this.
 
             InterpolatePositions();//Don't forget this if you want interpolation.
 
@@ -2406,6 +2428,8 @@ Check mark option on right
             MenuBaseExEx::initVars(_name, _upper_left, _lower_right);
             render_script_id = 0;
             render_script_z = 0.0f;
+            scriptfunction = "MenusPreHud";
+            render_layer = Render::layer_prehud;
 
             menu_checked = false;
 
@@ -2415,11 +2439,12 @@ Check mark option on right
 
         int render_script_id;
         float render_script_z;
-        
+        string scriptfunction;
+        Render::ScriptLayer render_layer;
 
         void Setup()
         {
-            test_name = "_haha_fishy_fish_fishers";
+            test_name = "fish_fishers";
             //ensure texture for our use exists
             if(!Texture::exists(test_name))
             {
@@ -2442,8 +2467,6 @@ Check mark option on right
                     }
                 }
             }
-
-            render_script_id = Render::addScript(Render::layer_prehud, "NuMenuCommon.as", "RulesHUDRenderFunction", render_script_z);
         }
 
         bool menu_checked;
@@ -2526,8 +2549,6 @@ Check mark option on right
             {
                 GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), SColor(255, 127,25,25));
             }*/
-
-            Render::SetTransformWorldspace();//Have to do this or kag gets cranky as it forgot to do it itself.
 
             return true;
         }
@@ -2912,24 +2933,24 @@ Check mark option on right
     {
         CRules@ rules = getRules();
 
-        CRulesBad@ rulesbad;
-        if(!rules.get("NuMenus", @rulesbad))
+        CMenuTransporter@ transporter;
+        if(!rules.get("NuMenus", @transporter))
         {
-            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
+            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
         }
-        return rulesbad.addMenuToList(_menu);
+        return transporter.addMenuToList(_menu);
     }
     //If this is a button, add it to the button array to.
     bool addMenuToList(NuMenu::MenuButton@ _menu)
     {
         CRules@ rules = getRules();
 
-        CRulesBad@ rulesbad;
-        if(!rules.get("NuMenus", @rulesbad))
+        CMenuTransporter@ transporter;
+        if(!rules.get("NuMenus", @transporter))
         {
-            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
+            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
         }
-        return rulesbad.addMenuToList(_menu);
+        return transporter.addMenuToList(_menu);
     }
 
     //This removes the menu on a certain position in the list.
@@ -2937,42 +2958,42 @@ Check mark option on right
     {
         CRules@ rules = getRules();
 
-        CRulesBad@ rulesbad;
-        if(!rules.get("NuMenus", @rulesbad))
+        CMenuTransporter@ transporter;
+        if(!rules.get("NuMenus", @transporter))
         {
-            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
+            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
         }
-        return rulesbad.removeMenuFromList(i);
+        return transporter.removeMenuFromList(i);
     }
     //This removes all menus with the same name as the argument on the list.
     bool removeMenuFromList(string _name)
     {
         CRules@ rules = getRules();
 
-        CRulesBad@ rulesbad;
-        if(!rules.get("NuMenus", @rulesbad))
+        CMenuTransporter@ transporter;
+        if(!rules.get("NuMenus", @transporter))
         {
-            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
+            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
         }
 
-        return rulesbad.removeMenuFromList(_name);
+        return transporter.removeMenuFromList(_name);
     }
     
     IMenu@ getMenuFromList(u16 i)
     {
         CRules@ rules = getRules();
 
-        CRulesBad@ rulesbad;
-        if(!rules.get("NuMenus", @rulesbad))
+        CMenuTransporter@ transporter;
+        if(!rules.get("NuMenus", @transporter))
         {
-            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return @null;
+            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return @null;
         }
-        if(i >= rulesbad.menus.size())
+        if(i >= transporter.menus.size())
         {
             error("Tried to get menu equal to or above the menu size."); return @null;
         }
 
-        return @rulesbad.menus[i];
+        return @transporter.menus[i];
     }
 
     IMenu@ getMenuFromList(string _name)
@@ -2995,39 +3016,39 @@ Check mark option on right
         
         array<NuMenu::IMenu@> _menus();
 
-        CRulesBad@ rulesbad;
-        if(!rules.get("NuMenus", @rulesbad))
+        CMenuTransporter@ transporter;
+        if(!rules.get("NuMenus", @transporter))
         {
-            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return _menus;
+            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return _menus;
         }
         
-        return rulesbad.getMenusFromList(_name);
+        return transporter.getMenusFromList(_name);
     }
 
     u16 getMenuListSize()
     {
         CRules@ rules = getRules();
 
-        CRulesBad@ rulesbad;
-        if(!rules.get("NuMenus", @rulesbad))
+        CMenuTransporter@ transporter;
+        if(!rules.get("NuMenus", @transporter))
         {
-            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return 0;
+            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return 0;
         }
 
-        return rulesbad.getMenuListSize();
+        return transporter.getMenuListSize();
     }
 
     void ClearMenuList()
     {
         CRules@ rules = getRules();
 
-        CRulesBad@ rulesbad;
-        if(!rules.get("NuMenus", @rulesbad))
+        CMenuTransporter@ transporter;
+        if(!rules.get("NuMenus", @transporter))
         {
-            error("Failed to get menu. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return;
+            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return;
         }
 
-        rulesbad.ClearMenuList();
+        transporter.ClearMenuList();
     }
 
 
@@ -3038,7 +3059,7 @@ Check mark option on right
 
 
 
-
+    CMenuTransporter@ transporter;
 
     void onInit(CRules@ rules)
     {
@@ -3046,9 +3067,13 @@ Check mark option on right
         {
             return;
         }
-        GlobalVariables@ globalvars = GlobalVariables();
 
-        rules.set("NuGlobalVars", @globalvars);
+        CMenuTransporter@ _transporter = CMenuTransporter();
+
+        rules.set("NuMenus", @_transporter);
+
+        rules.get("NuMenus", @transporter);
+        
     }
 
     void onTick(CRules@ rules)
@@ -3058,44 +3083,47 @@ Check mark option on right
             return;
         }
 
-        GlobalVariables@ globalvars;
-
-        if(!rules.get("NuGlobalVars", @globalvars))
+        if(transporter == @null)
         {
-            error("NuMenuCommonLogic.as must be before anything else that uses NuMenu in gamemode.cfg"); return;
+            error("transporter was null"); return;
         }
 
-        globalvars.FRAME_TIME = 0.0f;
+        transporter.FRAME_TIME = 0.0f;
     }
 
-    void MenuTick(CRulesBad@ rulesbad)
+    void MenuTick()
     {
         if(!isClient())
         {
             return;
         }
+
+        if(transporter == @null)
+        {
+            error("transporter was null"); return;
+        }
         
         u16 i;
-        for(i = 0; i < rulesbad.menus.size(); i++)
+        for(i = 0; i < transporter.menus.size(); i++)
         {
-            if(rulesbad.menus[i] == null)
+            if(transporter.menus[i] == null)
             {
                 continue;
             }
             
-            rulesbad.menus[i].Tick();
+            transporter.menus[i].Tick();
         
         
-            if(rulesbad.menus[i].getMenuState() == NuMenu::Released)
+            if(transporter.menus[i].getMenuState() == NuMenu::Released)
             {
-                if(rulesbad.buttons[i] == null)
+                if(transporter.buttons[i] == null)
                 {
                     error("Button desync somewhere."); continue;
                 }
-                if(rulesbad.buttons[i].kill_on_release)
+                if(transporter.buttons[i].kill_on_release)
                 {                       
-                    rulesbad.menus.removeAt(i);
-                    rulesbad.buttons.removeAt(i);
+                    transporter.menus.removeAt(i);
+                    transporter.buttons.removeAt(i);
                     i--;
                 }
             }
@@ -3105,39 +3133,94 @@ Check mark option on right
 
     void onRender(CRules@ rules)
     {
-        GlobalVariables@ globalvars;
-
-        if(!rules.get("NuGlobalVars", @globalvars))
+        if(transporter == @null)
         {
-            error("NuMenuCommonLogic.as must be before anything else that uses NuMenu in gamemode.cfg"); return;
+            error("transporter was null"); return;
         }
 
-        globalvars.FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
+        transporter.FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
     }
 
-    void MenuRender(CRulesBad@ rulesbad)
+    void MenuRender(CMenuTransporter@ transporter)
     {
         Render::SetAlphaBlend(true);
         
-        for(u16 i = 0; i < rulesbad.menus.size(); i++)
+        for(u16 i = 0; i < transporter.menus.size(); i++)
         {
-            if(rulesbad.menus[i] == null)
+            if(transporter.menus[i] == null)
             {
                 error("Menu was somehow null in rendering. This should not happen."); continue;
             }
 
-            rulesbad.menus[i].Render();
+            transporter.menus[i].Render();
+        }
+
+        Render::SetTransformWorldspace();//Have to do this or kag gets cranky as it forgot to do it itself.
+    }
+}
+
+CMenuTransporter@ o_transporter = @null;//Outer transporter.
+
+bool TransporterInit()
+{
+    if(o_transporter == null)//Init.
+    {
+        getRules().get("NuMenus", @o_transporter);
+        print("rules got");
+        if(o_transporter == null)//Still equal to null?
+        {
+            error("Render function failed to get things to render.");
+            return false;
         }
     }
+    return true;
+}
 
+void MenusPreHud(int id)
+{
+    TransporterInit();
+    
+    NuMenu::MenuRender(@o_transporter);
 
-    /*void RulesHUDRenderFunction(int id)
-    {
-        CBlob@[] players;
-        getBlobsByTag("player", @players);
-        for (uint i = 0; i < players.length; i++)
-        {
-            RenderHUDWidgetFor(players[i]);
-        }
-    }*/
+    //CBlob@[] players;
+    //getBlobsByTag("player", @players);
+    //for (uint i = 0; i < players.length; i++)
+    //{
+    //    RenderHUDWidgetFor(players[i]);
+    //}
+}
+
+void MenusPostHud(int id)
+{
+    if(!TransporterInit()) { return; }
+    
+    NuMenu::MenuRender(@o_transporter);
+}
+
+void MenusPostWorld(int id)
+{
+    if(!TransporterInit()) { return; }
+    
+    NuMenu::MenuRender(@o_transporter);
+}
+
+void MenusObjects(int id)
+{
+    if(!TransporterInit()) { return; }
+    
+    NuMenu::MenuRender(@o_transporter);
+}
+
+void MenusTiles(int id)
+{
+    if(!TransporterInit()) { return; }
+    
+    NuMenu::MenuRender(@o_transporter);
+}
+
+void MenusBackground(int id)
+{
+    if(!TransporterInit()) { return; }
+    
+    NuMenu::MenuRender(@o_transporter);
 }
