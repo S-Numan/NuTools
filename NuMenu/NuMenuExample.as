@@ -27,20 +27,20 @@ void onInit( CRules@ this )
     
     //random_menu.setFont("AveriaSerif-Bold.ttf", 8);
 
-    random_menu.setText("ZCenter textZ", NuMenu::POSCenter);
+    random_menu.setText("ZCenter textZ", Nu::POSCenter);
 
-    random_menu.setText("ZTop textZ"   , NuMenu::POSTop);
-    random_menu.setText("ZAbove textZ" , NuMenu::POSAbove);
+    random_menu.setText("ZTop textZ"   , Nu::POSTop);
+    random_menu.setText("ZAbove textZ" , Nu::POSAbove);
 
-    random_menu.setText("ZLeft textZ"  , NuMenu::POSLeft);
-    random_menu.setText("ZLefter textZ"  , NuMenu::POSLefter);
+    random_menu.setText("ZLeft textZ"  , Nu::POSLeft);
+    random_menu.setText("ZLefter textZ"  , Nu::POSLefter);
 
-    random_menu.setText("ZRight textZ" , NuMenu::POSRight);
-    random_menu.setText("ZRighter textZ" , NuMenu::POSRighter);
+    random_menu.setText("ZRight textZ" , Nu::POSRight);
+    random_menu.setText("ZRighter textZ" , Nu::POSRighter);
 
 
-    random_menu.setText("ZBottom textZ", NuMenu::POSBottom);
-    random_menu.setText("ZUnder textZ" , NuMenu::POSUnder);
+    random_menu.setText("ZBottom textZ", Nu::POSBottom);
+    random_menu.setText("ZUnder textZ" , Nu::POSUnder);
     
 
     random_menu.reposition_text = true;
@@ -52,7 +52,7 @@ void onInit( CRules@ this )
         19,//Image frame
         18,//Image frame while hovered
         18,//Image frame while presseds
-        NuMenu::POSTopLeft);//Position
+        Nu::POSTopLeft);//Position
 
     //random_menu.reposition_icons = true;
 

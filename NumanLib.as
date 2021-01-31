@@ -1,5 +1,5 @@
-//V1.0
-namespace Num//TODO - Rename to just Nu
+//V1.1
+namespace Nu
 {
 
     //Returns every player in the server in an array.
@@ -439,7 +439,7 @@ namespace Num//TODO - Rename to just Nu
     //Returns false if the inserted position enum was not found. This method works just like getPosOnSize, but takes in dimensions of the point you want on the thing too. See param 2 for an example of what this does.
     bool getPosOnSizeFull(u16 position, Vec2f size, Vec2f dimensions, Vec2f &out pos, float buffer = 0.0f)
     {
-        if(!getPosOnSize(position, size, buffer, pos))
+        if(!getPosOnSize(position, size, pos, buffer))
         {
             return false;
         }

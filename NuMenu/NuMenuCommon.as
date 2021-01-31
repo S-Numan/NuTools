@@ -1,3 +1,5 @@
+#include "NumanLib.as";
+
 
 class CMenuTransporter
 {
@@ -397,9 +399,6 @@ Check mark option on right
 
         Vec2f getUpperLeftOld(bool get_raw_pos = false);
         Vec2f getLowerRightOld(bool get_raw_pos = false);
-
-        bool getPosOnSize(u16 position, Vec2f size, float buffer, Vec2f &out vec_pos);
-        bool getDesiredPosOnSize(u16 position, Vec2f size, Vec2f dimensions, float buffer, Vec2f &out pos);
 
         bool didMenuJustMove();
         void setMenuJustMoved(bool value);
@@ -1261,7 +1260,7 @@ Check mark option on right
 
             initial_press = false;
         
-            icons = array<NuMenu::MenuImage@>(POSPositionsCount);
+            icons = array<NuMenu::MenuImage@>(Nu::POSPositionsCount);
 
             menu_sounds_on = array<string>(ButtonStateCount, "");
             menu_volume = 1.0f;
@@ -1445,7 +1444,7 @@ Check mark option on right
             
             Vec2f icon_pos;
             
-            if(!getDesiredPosOnSize(position, getSize(), icon.frame_size, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/, icon_pos))//Move that pos.
+            if(!Nu::getPosOnSizeFull(position, getSize(), icon.frame_size, icon_pos, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/))//Move that pos.
             {
                 error("setIcon position was an unknown position");
                 return @null;
@@ -1491,7 +1490,7 @@ Check mark option on right
                     @camera = @getCamera();
                 }
                 
-                for(u16 i = 0; i < POSPositionsCount; i++)
+                for(u16 i = 0; i < Nu::POSPositionsCount; i++)
                 {
                     MenuImage@ icon = getIcon(i);
                         
@@ -1502,7 +1501,7 @@ Check mark option on right
 
                     Vec2f icon_pos;
                     
-                    if(!getDesiredPosOnSize(i, size, icon.frame_size, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/, icon_pos))//Move that pos.
+                    if(!Nu::getPosOnSizeFull(i, size, icon.frame_size, icon_pos, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/))//Move that pos.
                     {
                         error("Icon position went above the icons array max size");
                         return;
@@ -1648,8 +1647,8 @@ Check mark option on right
             resize_text = false;
             text_used = false;
 
-            text_strings = array<string>(POSPositionsCount, "");
-            text_positions = array<Vec2f>(POSPositionsCount);
+            text_strings = array<string>(Nu::POSPositionsCount, "");
+            text_positions = array<Vec2f>(Nu::POSPositionsCount);
             font_size = 4;
             font = "";
             text_color = SColor(255, 0, 0, 0);
@@ -1779,7 +1778,7 @@ Check mark option on right
             Vec2f text_dimensions;
             GUI::GetTextDimensions(text, text_dimensions);
             
-            if(!getDesiredPosOnSize(array_position, getSize(), text_dimensions, default_buffer, text_pos))//Move that pos.
+            if(!Nu::getPosOnSizeFull(array_position, getSize(), text_dimensions, text_pos, default_buffer))//Move that pos.
             {
                 error("Text position went above the text_positions array max size");
                 return;
@@ -1799,7 +1798,7 @@ Check mark option on right
             {
                 GUI::SetFont(font);
                 
-                for(u16 i = 0; i < POSPositionsCount; i++)
+                for(u16 i = 0; i < Nu::POSPositionsCount; i++)
                 {
                     string text = getText(i);
                         
@@ -1813,7 +1812,7 @@ Check mark option on right
                     Vec2f text_dimensions;
                     GUI::GetTextDimensions(text, text_dimensions);
 
-                    if(!getDesiredPosOnSize(i, size, text_dimensions, default_buffer, text_pos))//Move that pos.
+                    if(!Nu::getPosOnSizeFull(i, size, text_dimensions, text_pos, default_buffer))//Move that pos.
                     {
                         error("Text position went above the text_positions array max size");
                         return;
