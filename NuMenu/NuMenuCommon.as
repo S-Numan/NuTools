@@ -88,20 +88,22 @@ class CMenuTransporter
         return true;
     }
 
-    array<NuMenu::IMenu@> getMenusFromList(string _name)
+
+    //Returns an array of all the positions of menus with _name in the menu array. 
+    array<u16> getMenuPositions(string _name)
     {   
-        array<NuMenu::IMenu@> _menus();
+        array<u16> _menu_positions();
         
         int _namehash = _name.getHash();
         for(u16 i = 0; i < menus.size(); i++)
         {
             if(menus[i].getNameHash() == _namehash)
             {
-                _menus.push_back(@menus[i]);
+                _menu_positions.push_back(i);
             }
         }
 
-        return _menus;
+        return _menu_positions;
     }
 
     u16 getMenuListSize()
@@ -109,27 +111,30 @@ class CMenuTransporter
         return menus.size();
     }
 
-    NuMenu::IMenu@ getMenuFromList(u16 i)
+    //False being returned means the code tried to get past the max menu size.
+    bool getMenuFromList(u16 i, NuMenu::IMenu@ &out imenu)
     {
-        if(i >= menus.size())
-        {
-            error("Tried to get menu equal to or above the menu size."); return @null;
-        }
+        if(i >= menus.size()) { error("Tried to get menu equal to or above the menu size."); @imenu = @null; return false; }
 
-        return @menus[i];
+        @imenu = @menus[i];
+
+        return true;
     }
 
-    NuMenu::IMenu@ getMenuFromList(string _name)
+    //Get the first IMenu from the menus array with _name.
+    //False being returned means no menus were found.
+    bool getMenuFromList(string _name, NuMenu::IMenu@ &out imenu)
     {
-        array<NuMenu::IMenu@> _menus();
-        _menus = getMenusFromList(_name);
+        array<u16> _menus();
+        _menus = getMenuPositions(_name);
         if(_menus.size() > 0)
         {
-            return _menus[0];
+            @imenu = @menus[_menus[0]];
+            return true;
         }
         else
         {
-            return @null;
+            return false;
         }
     }
 
@@ -139,7 +144,12 @@ class CMenuTransporter
         buttons.clear();
     }
 
-
+    //Return IMenu at the position.
+    NuMenu::IMenu@ get_opIndex(int idx) const
+    {
+        if(idx >= menus.size()) { error("Tried to get menu out of bounds."); return @null; }
+        return @menus[idx];
+    }
     
 
     array<NuMenu::IMenu@> menus;
@@ -355,6 +365,9 @@ Check mark option on right
     {
         void initVars(string name, Vec2f upper_left = Vec2f(0,0), Vec2f lower_right = Vec2f(0,0));
 
+        void setKillMenu(bool value);
+        bool getKillMenu();
+
         string getName();
         int getNameHash();
         void setName(string value);
@@ -429,9 +442,15 @@ Check mark option on right
 
         void InterpolatePositions();
         
+        void setRenderFunction(RENDER_CALLBACK@ value);
+        RENDER_CALLBACK@ getRenderFunction();
+        bool DefaultRenderCaller();
+
         bool Render();
 
     }
+
+    funcdef bool RENDER_CALLBACK();
 
     //Base of all menus.
     class MenuBase : IMenu
@@ -472,6 +491,8 @@ Check mark option on right
             default_buffer = 4.0f;
             is_world_pos = false;
 
+            kill_menu = false;
+
             name = "";
             name_hash = 0;
 
@@ -493,6 +514,8 @@ Check mark option on right
             collision_setter = true;
 
             radius = 0.0f;
+
+            render_func = @RENDER_CALLBACK(DefaultRenderCaller);
         
     
 
@@ -507,6 +530,17 @@ Check mark option on right
         CMenuTransporter@ transporter;
 
         float default_buffer;
+
+        private bool kill_menu;
+
+        void setKillMenu(bool value)
+        {
+            kill_menu = value;
+        }
+        bool getKillMenu()
+        {
+            return kill_menu;
+        }
 
         //
         //World
@@ -1235,6 +1269,24 @@ Check mark option on right
         {
             render_background = value;
         }
+
+        private RENDER_CALLBACK@ render_func;
+
+
+        void setRenderFunction(RENDER_CALLBACK@ value)
+        {
+            @render_func = @value;
+        }
+
+        RENDER_CALLBACK@ getRenderFunction()
+        {
+            return @render_func;
+        }
+
+        bool DefaultRenderCaller()
+        {
+            return Render();
+        }
        
         bool Render()//Overwrite this method if you want a different look.
         {
@@ -1291,7 +1343,7 @@ Check mark option on right
                         rec_color = SColor(255, 255, 255, 255);
                         break;
                 }
-                
+
                 GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), rec_color);
             }
 
@@ -2215,6 +2267,7 @@ Check mark option on right
             command_id = 255;
         }
 
+
         //The function called upon being pressed.
         private RELEASE_CALLBACK@ release_func;
         private RELEASE_CALLBACK_OWNER@ release_func_owner;
@@ -2356,6 +2409,11 @@ Check mark option on right
 
         void sendReleaseCommand()
         {
+            if(kill_on_release)//If this button is suppose to be killed on release.
+            {
+                setKillMenu(true);//Tell the menu to die.
+            }
+
             //Send command.
             if(command_id != 255)//If there is a command_id to send.
             {
@@ -2898,7 +2956,12 @@ Check mark option on right
                     //GUI::DrawRectangle(upper_left + optional_menus[i].getUpperLeftRelation(), upper_left + optional_menus[i].getLowerRightRelation());
                     break;
                 }*/
-                optional_menus[i].Render();
+                RENDER_CALLBACK@ func = optional_menus[i].getRenderFunction();
+                if(func == null)
+                {
+                    error("rendercallback function was null."); return true;
+                }
+                func();
             }
 
 
@@ -2925,131 +2988,6 @@ Check mark option on right
 
         }
     }*/
-
-
-
-    //This adds a menu to the list on the end.
-    bool addMenuToList(NuMenu::IMenu@ _menu)
-    {
-        CRules@ rules = getRules();
-
-        CMenuTransporter@ transporter;
-        if(!rules.get("NuMenus", @transporter))
-        {
-            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
-        }
-        return transporter.addMenuToList(_menu);
-    }
-    //If this is a button, add it to the button array to.
-    bool addMenuToList(NuMenu::MenuButton@ _menu)
-    {
-        CRules@ rules = getRules();
-
-        CMenuTransporter@ transporter;
-        if(!rules.get("NuMenus", @transporter))
-        {
-            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
-        }
-        return transporter.addMenuToList(_menu);
-    }
-
-    //This removes the menu on a certain position in the list.
-    bool removeMenuFromList(u16 i)
-    {
-        CRules@ rules = getRules();
-
-        CMenuTransporter@ transporter;
-        if(!rules.get("NuMenus", @transporter))
-        {
-            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
-        }
-        return transporter.removeMenuFromList(i);
-    }
-    //This removes all menus with the same name as the argument on the list.
-    bool removeMenuFromList(string _name)
-    {
-        CRules@ rules = getRules();
-
-        CMenuTransporter@ transporter;
-        if(!rules.get("NuMenus", @transporter))
-        {
-            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return false;
-        }
-
-        return transporter.removeMenuFromList(_name);
-    }
-    
-    IMenu@ getMenuFromList(u16 i)
-    {
-        CRules@ rules = getRules();
-
-        CMenuTransporter@ transporter;
-        if(!rules.get("NuMenus", @transporter))
-        {
-            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return @null;
-        }
-        if(i >= transporter.menus.size())
-        {
-            error("Tried to get menu equal to or above the menu size."); return @null;
-        }
-
-        return @transporter.menus[i];
-    }
-
-    IMenu@ getMenuFromList(string _name)
-    {
-        array<NuMenu::IMenu@> _menus();
-        _menus = getMenusFromList(_name);
-        if(_menus.size() > 0)
-        {
-            return _menus[0];
-        }
-        else
-        {
-            return @null;
-        }
-    }
-
-    array<NuMenu::IMenu@> getMenusFromList(string _name)
-    {
-        CRules@ rules = getRules();
-        
-        array<NuMenu::IMenu@> _menus();
-
-        CMenuTransporter@ transporter;
-        if(!rules.get("NuMenus", @transporter))
-        {
-            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return _menus;
-        }
-        
-        return transporter.getMenusFromList(_name);
-    }
-
-    u16 getMenuListSize()
-    {
-        CRules@ rules = getRules();
-
-        CMenuTransporter@ transporter;
-        if(!rules.get("NuMenus", @transporter))
-        {
-            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return 0;
-        }
-
-        return transporter.getMenuListSize();
-    }
-
-    void ClearMenuList()
-    {
-        CRules@ rules = getRules();
-
-        CMenuTransporter@ transporter;
-        if(!rules.get("NuMenus", @transporter))
-        {
-            error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return;
-        }
-
-        transporter.ClearMenuList();
-    }
 
 
 
@@ -3104,28 +3042,24 @@ Check mark option on right
         }
         
         u16 i;
-        for(i = 0; i < transporter.menus.size(); i++)
+        for(i = 0; i < transporter.getMenuListSize(); i++)
         {
             if(transporter.menus[i] == null)
             {
-                continue;
+                error("menu should not be null."); continue;
             }
             
             transporter.menus[i].Tick();
         
-        
-            if(transporter.menus[i].getMenuState() == NuMenu::Released)
+            if(transporter.menus[i].getMenuClass() == NuMenu::ButtonClass && transporter.buttons[i] == null)//Debug check only. TODO remove.
             {
-                if(transporter.buttons[i] == null)
-                {
-                    error("Button desync somewhere."); continue;
-                }
-                if(transporter.buttons[i].kill_on_release)
-                {                       
-                    transporter.menus.removeAt(i);
-                    transporter.buttons.removeAt(i);
-                    i--;
-                }
+                error("Button desync somewhere."); continue;
+            }
+
+            if(transporter.menus[i].getKillMenu())//Kill the menu?
+            {
+                transporter.removeMenuFromList(i);//Remove it.
+                i--;//One step back.
             }
         }
 
@@ -3151,8 +3085,12 @@ Check mark option on right
             {
                 error("Menu was somehow null in rendering. This should not happen."); continue;
             }
-
-            transporter.menus[i].Render();
+            RENDER_CALLBACK@ func = transporter[i].getRenderFunction();
+            if(func == null)
+            {
+                error("rendercallback function was null."); return;
+            }
+            func();
         }
 
         Render::SetTransformWorldspace();//Have to do this or kag gets cranky as it forgot to do it itself.
@@ -3193,34 +3131,34 @@ void MenusPreHud(int id)
 void MenusPostHud(int id)
 {
     if(!TransporterInit()) { return; }
-    
-    NuMenu::MenuRender(@o_transporter);
+    //When readding, make sure this doesn't re-render already renedered menus. TODO.
+    //NuMenu::MenuRender(@o_transporter);
 }
 
 void MenusPostWorld(int id)
 {
     if(!TransporterInit()) { return; }
     
-    NuMenu::MenuRender(@o_transporter);
+    //NuMenu::MenuRender(@o_transporter);
 }
 
 void MenusObjects(int id)
 {
     if(!TransporterInit()) { return; }
     
-    NuMenu::MenuRender(@o_transporter);
+    //NuMenu::MenuRender(@o_transporter);
 }
 
 void MenusTiles(int id)
 {
     if(!TransporterInit()) { return; }
     
-    NuMenu::MenuRender(@o_transporter);
+    //NuMenu::MenuRender(@o_transporter);
 }
 
 void MenusBackground(int id)
 {
     if(!TransporterInit()) { return; }
     
-    NuMenu::MenuRender(@o_transporter);
+    //NuMenu::MenuRender(@o_transporter);
 }

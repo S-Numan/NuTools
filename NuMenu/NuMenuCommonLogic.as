@@ -6,7 +6,7 @@ bool init;
 
 void onInit( CRules@ rules )
 {
-    
+    print("NuMenu Loaded");   
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
 
 
@@ -26,7 +26,6 @@ void onInit( CRules@ rules )
 
 void onReload( CRules@ rules )
 {
-    print("NuMenu Reloaded");
     onInit(rules);
 }
 

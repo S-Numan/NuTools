@@ -7,9 +7,12 @@ void onInit( CRules@ this )
         return;
     }
 
+    CMenuTransporter@ transporter;
+    if(!this.get("NuMenus", @transporter)) { error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return; }
+
     print("creation");
 
-    NuMenu::MenuHolder random_menu = NuMenu::MenuHolder(
+    NuMenu::MenuHolder@ random_menu = NuMenu::MenuHolder(
         Vec2f(64, 64),//Top left
         Vec2f(128 * 2, 128 * 2),//Bottom right
         "TestMenu");//Menu name
@@ -71,7 +74,7 @@ void onInit( CRules@ this )
     //*/
     
     
-    NuMenu::addMenuToList(random_menu);
+    transporter.addMenuToList(random_menu);
 
 
 
@@ -82,7 +85,7 @@ void onInit( CRules@ this )
     
     to_remove_button.kill_on_release = true;
 
-    NuMenu::addMenuToList(to_remove_button);
+    transporter.addMenuToList(to_remove_button);
 }
 
 void onReload( CRules@ this )
@@ -97,11 +100,11 @@ void ButtonTestFunction(CPlayer@ caller, CBitStream params, NuMenu::IMenu@ menu)
 
 void onTick( CRules@ this )
 {
+    CMenuTransporter@ transporter;
+    if(!this.get("NuMenus", @transporter)) { error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return; }
    
-    if(NuMenu::getMenuListSize() > 0)
-    {
-        MenuOptionChanger(NuMenu::getMenuFromList(0));
-    }
+
+    DebugOptionChanger(transporter);
 }
 
 
@@ -109,59 +112,82 @@ void onTick( CRules@ this )
 
 
 
-void MenuOptionChanger(NuMenu::IMenu@ _menu)
+void DebugOptionChanger(CMenuTransporter@ transporter)
 {
+    NuMenu::IMenu@ _menu = @null;
+    if(transporter.getMenuListSize() > 0)
+    {
+        transporter.getMenuFromList(0, _menu);
+    }
+
     CPlayer@ player = getLocalPlayer();
     if(player != null)
     {
         CControls@ controls = player.getControls();
         if(controls.isKeyPressed(KEY_LCONTROL))
         {
-            if(controls.isKeyPressed(KEY_LBUTTON))
+            if(_menu != null)
             {
-                Vec2f _pos;
-                if(_menu.isWorldPos())
+                
+                if(controls.isKeyPressed(KEY_LBUTTON))
                 {
-                    _pos = controls.getMouseWorldPos();
-                    //Driver@ driver = getDriver();
-                    //_pos += driver.getScreenCenterPos();
+                    Vec2f _pos;
+                    if(_menu.isWorldPos())
+                    {
+                        _pos = controls.getMouseWorldPos();
+                        //Driver@ driver = getDriver();
+                        //_pos += driver.getScreenCenterPos();
+                    }
+                    else
+                    {
+                        _pos = controls.getMouseScreenPos();
+                    }
+                    _menu.setUpperLeft(_pos);
+                    print("upperleft mouse = " + _pos);
                 }
-                else
+                if(controls.isKeyPressed(KEY_RBUTTON))
                 {
-                    _pos = controls.getMouseScreenPos();
-                }
-                _menu.setUpperLeft(_pos);
-                print("upperleft mouse = " + _pos);
-            }
-            if(controls.isKeyPressed(KEY_RBUTTON))
-            {
-                Vec2f _pos;
-                if(_menu.isWorldPos())
-                {
-                    _pos = controls.getMouseWorldPos();
-                }
-                else
-                {
-                    _pos = controls.getMouseScreenPos();
-                }
+                    Vec2f _pos;
+                    if(_menu.isWorldPos())
+                    {
+                        _pos = controls.getMouseWorldPos();
+                    }
+                    else
+                    {
+                        _pos = controls.getMouseScreenPos();
+                    }
 
-                _menu.setLowerRight(_pos);
-                print("lowerright mouse = " + _pos);
+                    _menu.setLowerRight(_pos);
+                    print("lowerright mouse = " + _pos);
+                }
+                if(controls.isKeyJustPressed(KEY_KEY_X))
+                {
+                    _menu.setInterpolated(!_menu.isInterpolated());
+                    print("Interpolation of menu = " + _menu.isInterpolated());
+                }
+                if(controls.isKeyJustPressed(KEY_KEY_Z))
+                {
+                    _menu.setIsWorldPos(!_menu.isWorldPos());
+                    print("IsWorldPos = " + _menu.isWorldPos());
+                }
+                if(controls.isKeyJustPressed(KEY_DELETE))
+                {
+                    transporter.removeMenuFromList(0);
+                    print("Menu removed");
+                }
             }
-            if(controls.isKeyJustPressed(KEY_KEY_X))
+            if(controls.isKeyJustPressed(KEY_INSERT))
             {
-                _menu.setInterpolated(!_menu.isInterpolated());
-                print("Interpolation of menu = " + _menu.isInterpolated());
-            }
-            if(controls.isKeyJustPressed(KEY_KEY_Z))
-            {
-                _menu.setIsWorldPos(!_menu.isWorldPos());
-                print("IsWorldPos = " + _menu.isWorldPos());
-            }
-            if(controls.isKeyJustPressed(KEY_KEY_D))
-            {
-                NuMenu::removeMenuFromList(0);
-                print("Menu removed");
+                int rnd_x = XORRandom(800) + 20;
+                int rnd_y = XORRandom(800) + 20;
+                NuMenu::MenuButton@ to_remove_button = NuMenu::MenuButton(
+                    Vec2f(rnd_x, rnd_y),//Top left
+                    Vec2f(rnd_x + rnd_x / 5, rnd_y + rnd_y / 5),//Bottom right
+                    "delety." + transporter.getMenuListSize());//Menu name
+                to_remove_button.kill_on_release = true;
+
+                transporter.addMenuToList(to_remove_button);
+                print("Menu added");
             }
         }
     }
