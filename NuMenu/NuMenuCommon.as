@@ -2424,6 +2424,8 @@ Check mark option on right
         Vec2f[] v_uv;
         SColor[] v_col;
 
+        Vertex[] v_raw;
+
         bool Render() override
         {
             if(!MenuBaseExEx::Render())
@@ -2436,6 +2438,7 @@ Check mark option on right
             v_pos.clear();
             v_uv.clear();
             v_col.clear();
+            v_raw.clear();
 
 
             v_pos.resize(4);
@@ -2466,12 +2469,34 @@ Check mark option on right
             //v_pos[2] = p + Vec2f( image_x, image_y); v_uv[2] = Vec2f(frame_end.x, frame_end.y);//Bottom right?
             //v_pos[3] = p + Vec2f(-image_x, image_y); v_uv[3] = Vec2f(frame_start.x, frame_end.y);//Bottom left?
 
-            v_col.push_back(SColor(255, 255, 0, 0));
-            v_col.push_back(SColor(255, 0, 255, 0));
-            v_col.push_back(SColor(255, 0, 0, 255));
-            v_col.push_back(SColor(255, 255, 0, 255));
+            //v_col.push_back(SColor(255, 255, 0, 0));
+            //v_col.push_back(SColor(255, 0, 255, 0));
+            //v_col.push_back(SColor(255, 0, 0, 255));
+            //v_col.push_back(SColor(255, 255, 0, 255));
 
-            Render::QuadsColored(test_name, z, v_pos, v_uv, v_col);
+
+            const float one_third_rotation = (Maths::Pi * 2.0f / 3.0f);
+			SColor col(0xffffffff);
+            for(u16 i = 0; i < 4; i++)
+            {
+                float t = (getGameTime() / 30.0f) * one_third_rotation * (i + 0.5f);
+
+                v_col.push_back(SColor(255, 255, 255, 255));
+                
+                v_col[i].setRed(v_col[i].getRed()/2 + v_col[i].getRed()/2 * Maths::Sin(t));
+                v_col[i].setGreen(v_col[i].getGreen()/2 + v_col[i].getGreen()/2 * Maths::Sin(t + one_third_rotation));
+                v_col[i].setBlue(v_col[i].getBlue()/2 + v_col[i].getBlue()/2 * Maths::Sin(t - one_third_rotation));
+            }
+			v_raw.push_back(Vertex(v_pos[0].x, v_pos[0].y, z, v_uv[0].x, v_uv[0].y, v_col[0]));
+			v_raw.push_back(Vertex(v_pos[1].x, v_pos[1].y, z, v_uv[1].x, v_uv[1].y, v_col[1]));
+			v_raw.push_back(Vertex(v_pos[2].x, v_pos[2].y, z, v_uv[2].x, v_uv[2].y, v_col[2]));
+			v_raw.push_back(Vertex(v_pos[3].x, v_pos[3].y, z, v_uv[3].x, v_uv[3].y, v_col[3]));
+
+            Render::RawQuads(test_name, v_raw);
+
+
+
+            //Render::QuadsColored(test_name, z, v_pos, v_uv, v_col);
 
             /*if(menu_checked == true)
             {
