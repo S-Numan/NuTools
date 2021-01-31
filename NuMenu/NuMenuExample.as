@@ -172,7 +172,7 @@ void DebugOptionChanger(CMenuTransporter@ transporter)
                 }
                 if(controls.isKeyJustPressed(KEY_DELETE))
                 {
-                    transporter.removeMenuFromList(0);
+                    _menu.KillMenu();
                     print("Menu removed");
                 }
             }
