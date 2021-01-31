@@ -2485,7 +2485,7 @@ Check mark option on right
 
 
     //This menu is designed to hold other menu's and keep them attached to it.
-    class MenuHolder : MenuBaseExEx
+    class MenuHolder : MenuBase
     {
         MenuHolder(string _name, u8 _menu_config = NuMenu::Custom)
         {
@@ -2515,7 +2515,7 @@ Check mark option on right
 
         void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
         {
-            MenuBaseExEx::initVars(_name, _upper_left, _lower_right);
+            MenuBase::initVars(_name, _upper_left, _lower_right);
         }
 
         
@@ -2538,30 +2538,30 @@ Check mark option on right
 
         void setUpperLeft(Vec2f value, bool menu_just_move = true) override
         {
-            MenuBaseExEx::setUpperLeft(value, menu_just_move);
+            MenuBase::setUpperLeft(value, menu_just_move);
             moveHeldMenus();
         }
 
         void setPos(Vec2f value, bool menu_just_move = true) override
         {
-            MenuBaseExEx::setPos(value, menu_just_move);
+            MenuBase::setPos(value, menu_just_move);
             moveHeldMenus();
         }
         void setLowerRight(Vec2f value, bool menu_just_move = true) override
         { 
-            MenuBaseExEx::setLowerRight(value, menu_just_move);
+            MenuBase::setLowerRight(value, menu_just_move);
             moveHeldMenus();
         }
 
         void setSize(Vec2f value) override
         {
-            MenuBaseExEx::setSize(value);
+            MenuBase::setSize(value);
             moveHeldMenus();
         }
         
         void setInterpolated(bool value) override
         {
-            MenuBaseExEx::setInterpolated(value);
+            MenuBase::setInterpolated(value);
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
                 if(optional_menus[i] == null)
@@ -2575,7 +2575,7 @@ Check mark option on right
 
         void setIsWorldPos(bool value) override
         {
-            MenuBaseExEx::setIsWorldPos(value);
+            MenuBase::setIsWorldPos(value);
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
                 if(optional_menus[i] == null)
@@ -2773,7 +2773,7 @@ Check mark option on right
         bool Tick() override
         {
             
-            if(!MenuBaseExEx::Tick())
+            if(!MenuBase::Tick())
             {
                 return false;
             }
@@ -2785,16 +2785,12 @@ Check mark option on right
                     optional_menus[i].Tick();
                 }
             }
-            if(titlebar_press_pos != Vec2f_zero)
-            {
-                moveHeldMenus();
-            }
             return true;
         }
 
         bool Render() override
         {
-            if(!MenuBaseExEx::Render())
+            if(!MenuBase::Render())
             {
                 return false;
             }

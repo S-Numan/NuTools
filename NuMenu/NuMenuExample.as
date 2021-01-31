@@ -24,7 +24,7 @@ void onInit( CRules@ this )
 
     random_menu.addMenuOption(NuMenu::CheckBox);
     random_menu.setOptionalMenuPos(Vec2f(0, 32), 0);
-    
+    /*
     //random_menu.setFont("AveriaSerif-Bold.ttf", 8);
 
     random_menu.setText("ZCenter textZ", Nu::POSCenter);
@@ -44,7 +44,7 @@ void onInit( CRules@ this )
     
 
     random_menu.reposition_text = true;
-
+    
 
     
     random_menu.setIcon("GUI/AccoladeBadges.png",//Image name
@@ -56,9 +56,9 @@ void onInit( CRules@ this )
 
     //random_menu.reposition_icons = true;
 
-    random_menu.setTitlebarHeight(16.0f);
+    //random_menu.setTitlebarHeight(16.0f);
     //random_menu.setTitlebarWidth(random_menu.getSize().x - 16.0f);
-
+    //*/
     
     NuMenu::IMenu@ option1 = random_menu.addMenuOption(NuMenu::ButtonClass, Vec2f(30, 40));
 
