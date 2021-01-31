@@ -353,6 +353,148 @@ namespace Num//TODO - Rename to just Nu
         return 0.0f;
     }
 
+    //Enum list of positions within 2 vec2fs.
+    enum POSPositions//Stores all positions that stuff can be in.
+    {
+        POSTopLeft,//top left
+        POSTopRight,//top right
+        POSBottomLeft,//bottom left
+        POSBottomRight,//bottom right
+        POSCenter,//in the center of the menu
+        POSTop,//positioned on the top of the menu
+        POSAbove,//above the top of the menu
+        POSBottom,//on the bottom of the menu
+        POSUnder,//under the bottom of the menu
+        POSLeft,//on the left of the menu
+        POSLefter,//left of the left side of the menu
+        POSRight,//to the right of the menu
+        POSRighter,//right of the right side of the menu
+
+        POSPositionsCount,//Always last, this specifies the amount of positions.
+    }
+
+    //1: Enum position you want the point to be on.
+    //2: Size of the thing you want the point to be on. Very important.
+    //3: The position you desire.
+    //4: Optional buffer. For example if you specify POSBottom and make the buffer 2.0f, it will push the position up by 2.
+    //Returns false if the inserted position enum was not found. Insert an enum for a position based on given size. This will then give you that position in the size plus buffer.
+    bool getPosOnSize(u16 position, Vec2f size, Vec2f &out vec_pos, float buffer = 0.0f)
+    {
+        switch(position)
+        {
+            case POSTopLeft:
+                vec_pos = Vec2f(0, 0);
+                break;
+            case POSTopRight:
+                vec_pos = Vec2f(size.x, 0);
+                break;
+            case POSBottomLeft:
+                vec_pos = Vec2f(0, size.y);
+                break;
+            case POSBottomRight:
+                vec_pos = Vec2f(size.x, size.y);
+                break;
+            case POSCenter:
+                vec_pos = Vec2f(size.x/2, size.y/2);
+                break;
+            case POSTop:
+                vec_pos = Vec2f(size.x/2, buffer);
+                break;
+            case POSAbove:
+                vec_pos = Vec2f(size.x/2, -buffer); 
+                break;
+            case POSBottom:
+                vec_pos = Vec2f(size.x/2, size.y - buffer);
+                break;
+            case POSUnder:
+                vec_pos = Vec2f(size.x/2, size.y + buffer);
+                break;
+            case POSLeft:
+                vec_pos = Vec2f(buffer, size.y/2);
+                break;
+            case POSLefter:
+                vec_pos = Vec2f(-buffer, size.y/2);
+                break;
+            case POSRight:
+                vec_pos = Vec2f(size.x - buffer, size.y/2);
+                break;
+            case POSRighter:
+                vec_pos = Vec2f(size.x + buffer, size.y/2);
+                break;
+            default://Position out of bounds
+            {
+                vec_pos = Vec2f_zero;//Just return 0,0
+                return false;//Nope.
+            }
+        }
+
+        return true;
+    }
+
+    //1: Enum position you want the point to be on.
+    //2: Size of the thing you want the point to be on. Very important.
+    //3: The size of the point you want on the thing. For example text, you would put text dimensions here. This would make sure that text is placed inside the menu by dividing it by 2 where needed, so it wont be both half way in and half way out.
+    //4: The desired position.
+    //5: Optional buffer. For example if you specify POSBottom and make the buffer 2.0f, it will push the position up by 2.
+    //Returns false if the inserted position enum was not found. This method works just like getPosOnSize, but takes in dimensions of the point you want on the thing too. See param 2 for an example of what this does.
+    bool getPosOnSizeFull(u16 position, Vec2f size, Vec2f dimensions, Vec2f &out pos, float buffer = 0.0f)
+    {
+        if(!getPosOnSize(position, size, buffer, pos))
+        {
+            return false;
+        }
+        
+        switch(position)
+        {
+            case POSTopLeft:
+                pos = Vec2f(pos.x                 , pos.y);
+                break;
+            case POSTopRight:
+                pos = Vec2f(pos.x - dimensions.x/2, pos.y);
+                break;
+            case POSBottomLeft:
+                pos = Vec2f(pos.x                 , pos.y - dimensions.y);
+                break;
+            case POSBottomRight:
+                pos = Vec2f(pos.x - dimensions.x/2, pos.y - dimensions.y);
+                break;
+            case POSCenter:
+                pos = Vec2f(pos.x - dimensions.x/2, pos.y - dimensions.y/2);
+                break;
+            case POSTop:
+                pos = Vec2f(pos.x - dimensions.x/2, pos.y);
+                break;
+            case POSAbove:
+                pos = Vec2f(pos.x - dimensions.x/2, pos.y - dimensions.y); 
+                break;
+            case POSBottom:
+                pos = Vec2f(pos.x - dimensions.x/2, pos.y - dimensions.y);
+                break;
+            case POSUnder:
+                pos = Vec2f(pos.x - dimensions.x/2, pos.y);
+                break;
+            case POSLeft:
+                pos = Vec2f(pos.x                 , pos.y - dimensions.y/2);
+                break;
+            case POSLefter:
+                pos = Vec2f(pos.x - dimensions.x  , pos.y - dimensions.y/2);
+                break;
+            case POSRight:
+                pos = Vec2f(pos.x - dimensions.x  , pos.y - dimensions.y/2);
+                break;
+            case POSRighter:
+                pos = Vec2f(pos.x                 , pos.y - dimensions.y/2);
+                break;
+            default:
+            {
+                pos = Vec2f_zero;
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 
 }
 
