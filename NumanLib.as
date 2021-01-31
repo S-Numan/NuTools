@@ -495,6 +495,79 @@ namespace Nu
         return true;
     }
 
+    //1: The size of the image.
+    //2: The size of the frame in the image
+    //3: The frame you want in the image.
+    //Returns the Vector of where the desired frame starts. (top left)
+    Vec2f getFrameStart(Vec2f image_size, Vec2f frame_size, u16 desired_frame)
+    {
+        Vec2f frame_start = Vec2f(0,0);
+
+        frame_start.x = frame_size.x * desired_frame % image_size.x;
+
+        frame_start.y = int(frame_size.x * desired_frame / image_size.x) * frame_size.y;
+
+        return frame_start;
+    }
+
+    //1: Where the frame starts
+    //2: How big the frame is
+    //3: Returns the end of a frame. (bottom right)
+    Vec2f getFrameEnd(Vec2f frame_start, Vec2f frame_size)
+    {
+        Vec2f frame_end = frame_start + frame_size;
+
+        return frame_end;
+    }
+
+    //1: The size of the image.
+    //2: The size of the frame in the image
+    //3: The frame you want in the image.
+    //Returns an array of the four positions .
+    array<Vec2f> getUVFrame(Vec2f image_size, Vec2f frame_size, u16 desired_frame)
+    {
+        Vec2f[] v_uv(4);
+
+
+        Vec2f frame_start = getFrameStart(image_size, frame_size, desired_frame);
+        Vec2f frame_end   = getFrameEnd(frame_start, frame_size);
+
+
+        frame_start.x = frame_start.x / image_size.x;
+        frame_start.y = frame_start.y / image_size.y;
+
+        frame_end.x = frame_end.x / image_size.x;
+        frame_end.y = frame_end.y / image_size.y;
+
+        v_uv[0] = Vec2f(frame_start.x,  frame_start.y   );//Top left
+        v_uv[1] = Vec2f(frame_end.x,    frame_start.y   );//Top right
+        v_uv[2] = Vec2f(frame_end.x,    frame_end.y     );//Bottom right
+        v_uv[3] = Vec2f(frame_start.x,  frame_end.y     );//Bottom left
+    
+        return v_uv;
+    }
+
+    
+    //1: The size of the image.
+    //2: The size of the frame in the image
+    //3: The frame you want in the image.
+    //4: Optional extra Vec2f applied to each Vector in the returned array for ease.
+    //Returns an array of the four positions of what frame you want in an image.
+    array<Vec2f> getPosFrame(Vec2f image_size, Vec2f frame_size, u16 desired_frame, Vec2f add_to = Vec2f(0,0))
+    {
+        Vec2f[] v_pos(4);
+
+        Vec2f frame_start = getFrameStart(image_size, frame_size, desired_frame);
+        Vec2f frame_end   = getFrameEnd(frame_start, frame_size);
+
+        v_pos[0] = add_to + Vec2f(-frame_start.x,   -frame_start.y  );//Top left
+        v_pos[1] = add_to + Vec2f( frame_end.x,     -frame_start.y  );//Top right
+        v_pos[2] = add_to + Vec2f( frame_end.x,     frame_end.y     );//Bottom right
+        v_pos[3] = add_to + Vec2f(-frame_start.x,   frame_end.y     );//Bottom left
+    
+        return v_pos;
+    }
+    
 
 }
 

@@ -2370,7 +2370,7 @@ Check mark option on right
             //ensure texture for our use exists
             if(!Texture::exists(test_name))
             {
-                if(!Texture::createBySize(test_name, 8, 8))
+                if(!Texture::createFromFile(test_name, "RenderExample.png"))//!Texture::createBySize(test_name, 8, 8))
                 {
                     warn("texture creation failed");
                 }
@@ -2380,7 +2380,7 @@ Check mark option on right
 
                     for(int i = 0; i < edit.size(); i++)
                     {
-                        edit[i] = SColor((((i + i / 8) % 2) == 0) ? 0xff707070 : 0xff909090);
+                        //edit[i] = SColor((((i + i / 8) % 2) == 0) ? 0xff707070 : 0xff909090);
                     }
 
                     if(!Texture::update(test_name, edit))
@@ -2424,11 +2424,6 @@ Check mark option on right
         Vec2f[] v_uv;
         SColor[] v_col;
 
-        u16[] v_i;
-
-        //this is the highest performance option
-        Vertex[] v_raw;
-
         bool Render() override
         {
             if(!MenuBaseExEx::Render())
@@ -2441,27 +2436,42 @@ Check mark option on right
             v_pos.clear();
             v_uv.clear();
             v_col.clear();
-            v_i.clear();
-            v_raw.clear();
+
+
+            v_pos.resize(4);
+            v_uv.resize(4);
+
             Render::SetTransformScreenspace();
 
+            f32 z = 0.0f;
 
-            Vec2f p = Vec2f_zero;//getUpperLeftInterpolated();
+            Vec2f p = Vec2f(500,500);//getUpperLeftInterpolated();
             CMap@ map = getMap();
 
-            float x_size = 32;
-            float y_size = 32;
-            
-            f32 z = -0.1;
+            v_uv = Nu::getUVFrame(
+                Vec2f(64, 64),//Image size
+                Vec2f(32, 32),//Frame size
+                3//Desired frame
+            );
 
+            v_pos = Nu::getPosFrame(
+                Vec2f(64, 64),//Image size
+                Vec2f(32, 32),//Frame size
+                3,//Desired frame
+                p//Extra position added
+            );
 
+            //v_pos[0] = p + Vec2f(-image_x,-image_y); v_uv[0] = Vec2f(frame_start.x, frame_start.y);//Top left?
+            //v_pos[1] = p + Vec2f( image_x,-image_y); v_uv[1] = Vec2f(frame_end.x, frame_start.y);//Top right?
+            //v_pos[2] = p + Vec2f( image_x, image_y); v_uv[2] = Vec2f(frame_end.x, frame_end.y);//Bottom right?
+            //v_pos[3] = p + Vec2f(-image_x, image_y); v_uv[3] = Vec2f(frame_start.x, frame_end.y);//Bottom left?
 
-            v_pos.push_back(p + Vec2f(-x_size,-y_size)); v_uv.push_back(Vec2f(0,0));
-            v_pos.push_back(p + Vec2f( x_size,-y_size)); v_uv.push_back(Vec2f(1,0));
-            v_pos.push_back(p + Vec2f( x_size, y_size)); v_uv.push_back(Vec2f(1,1));
-            v_pos.push_back(p + Vec2f(-x_size, y_size)); v_uv.push_back(Vec2f(0,1));
+            v_col.push_back(SColor(255, 255, 0, 0));
+            v_col.push_back(SColor(255, 0, 255, 0));
+            v_col.push_back(SColor(255, 0, 0, 255));
+            v_col.push_back(SColor(255, 255, 0, 255));
 
-            Render::Quads(test_name, z, v_pos, v_uv);
+            Render::QuadsColored(test_name, z, v_pos, v_uv, v_col);
 
             /*if(menu_checked == true)
             {
