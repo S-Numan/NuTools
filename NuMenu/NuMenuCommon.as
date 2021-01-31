@@ -365,7 +365,7 @@ Check mark option on right
     {
         void initVars(string name, Vec2f upper_left = Vec2f(0,0), Vec2f lower_right = Vec2f(0,0));
 
-        void setKillMenu(bool value);
+        void KillMenu();
         bool getKillMenu();
 
         string getName();
@@ -533,9 +533,9 @@ Check mark option on right
 
         private bool kill_menu;
 
-        void setKillMenu(bool value)
+        void KillMenu()
         {
-            kill_menu = value;
+            kill_menu = true;
         }
         bool getKillMenu()
         {
@@ -2411,7 +2411,7 @@ Check mark option on right
         {
             if(kill_on_release)//If this button is suppose to be killed on release.
             {
-                setKillMenu(true);//Tell the menu to die.
+                KillMenu();//Tell the menu to die.
             }
 
             //Send command.
