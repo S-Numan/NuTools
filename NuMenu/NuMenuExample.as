@@ -76,16 +76,6 @@ void onInit( CRules@ this )
     
     transporter.addMenuToList(random_menu);
 
-
-
-    NuMenu::MenuButton@ to_remove_button = NuMenu::MenuButton(
-        Vec2f(720, 720),//Top left
-        Vec2f(820, 820),//Bottom right
-        "RemoveButtonInit2-WhyAmIBroken");//Menu name
-    
-    to_remove_button.kill_on_release = true;
-
-    transporter.addMenuToList(to_remove_button);
 }
 
 void onReload( CRules@ this )
