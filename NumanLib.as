@@ -561,8 +561,8 @@ namespace Nu
     }
 
     
-    //2: The size of the frame
-    //4: Optional extra Vec2f applied to each Vector in the returned array for ease.
+    //1: The size of the frame
+    //2: Optional extra Vec2f applied to each Vector in the returned array for ease.
     //Returns an array of the four positions (top left. top right. bottom left. bottom right.) of the frame.
     array<Vec2f> getFrameSizes(Vec2f frame_size, Vec2f add_to = Vec2f(0,0))
     {
@@ -579,6 +579,17 @@ namespace Nu
         //v_pos[3] = add_to + Vec2f(-frame_start.x,   frame_end.y     );//Bottom left
     
         return v_pos;
+    }
+
+
+    //1: The first vector.
+    //2: The second Vector
+    //Returns a vector of two vector's x's and y's multiplied together. 
+    Vec2f MultVec(Vec2f value1, Vec2f value2)
+    {
+        value1.x = value1.x * value2.x;
+        value1.y = value1.y * value2.y;
+        return value1;
     }
     
 
@@ -627,7 +638,7 @@ namespace Nu
             name_id = 0;
             frame_on = array<u16>(state_count, 0);
             color_on = array<SColor>(state_count, SColor(255, 255, 255, 255));
-            Vec2f pos = Vec2f_zero;
+            Vec2f offset = Vec2f(0,0);
 
             is_texture = false;
             v_raw = array<Vertex>(4);
@@ -676,7 +687,7 @@ namespace Nu
                 image_size = value;
                 if(is_texture)
                 {
-                    RecalculatePositions();
+                    RecalculateUV();
                 }
             }
         }
@@ -693,7 +704,7 @@ namespace Nu
                 frame_size = value;
                 if(is_texture)
                 {
-                    RecalculatePositions();
+                    RecalculateUV();
                     if(auto_frame_points){
                     setDefaultPoints();
                     }
@@ -708,7 +719,7 @@ namespace Nu
 
         array<u16> frame_on;//Stores what frame the image is on depending on what state this is in
         array<SColor> color_on;//Color depending on the state
-        Vec2f pos;//Position of image in relation to something else.
+        Vec2f offset;//Position of image in relation to something else.
 
 
         //
@@ -734,7 +745,7 @@ namespace Nu
 
             image_size = Vec2f(_image.width(), _image.height());
             frame_size = image_size;
-            RecalculatePositions();
+            RecalculateUV();
             if(auto_frame_points){
                 setDefaultPoints();
             }
@@ -773,14 +784,14 @@ namespace Nu
             for(u16 i = 0; i < frame_points.size(); i++)
             {
                 frame_points = Nu::getFrameSizes(
-                    frame_size//Frame size
+                    MultVec(frame_size, scale)//Frame size
                 );
             }
         }
 
         array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
         
-        void RecalculatePositions()//Recalculates UV. Basically sets up all four points of each frame in the image and puts it all into one big array. Fancy stuff, don't touch it if you don't know what it does. I hardly know what it does.
+        void RecalculateUV()//Recalculates UV. Basically sets up all four points of each frame in the image and puts it all into one big array. Fancy stuff, don't touch it if you don't know what it does. I hardly know what it does.
         {
             array<array<Vec2f>> _uv_per_frame(Nu::getFramesInSize(image_size, frame_size));
             
@@ -815,6 +826,13 @@ namespace Nu
         void setScale(Vec2f _scale)//Sets the scale of the frame.
         {
             scale = _scale;
+            if(auto_frame_points){
+                setDefaultPoints();
+            }
+        }
+        void setScale(float _scale)//Sets the scale of the frame.
+        {
+            setScale(Vec2f(_scale, _scale));
         }
         Vec2f getScale()//Gets the scale of the frame.
         {
@@ -825,10 +843,14 @@ namespace Nu
         array<Vertex> v_raw;//For rendering.
         array<Vertex> getVertexsForFrameAndPos(u16 frame, Vec2f _pos = Vec2f(0,0), u16 state = 0)//Gets what this should render.
         {
-            v_raw[0] = Vertex(_pos + Vec2f(frame_points[0].x * scale.x, frame_points[0].y * scale.y), z[0], uv_per_frame[frame][0], color_on[state]);
-			v_raw[1] = Vertex(_pos + Vec2f(frame_points[1].x * scale.x, frame_points[1].y * scale.y), z[1], uv_per_frame[frame][1], color_on[state]);//Set the colors yourself.
-			v_raw[2] = Vertex(_pos + Vec2f(frame_points[2].x * scale.x, frame_points[2].y * scale.y), z[2], uv_per_frame[frame][2], color_on[state]);
-			v_raw[3] = Vertex(_pos + Vec2f(frame_points[3].x * scale.x, frame_points[3].y * scale.y), z[3], uv_per_frame[frame][3], color_on[state]);
+            if(!is_texture){ error("Tried getVertexsForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
+
+            Vec2f _offset = MultVec(offset, scale);
+
+            v_raw[0] = Vertex(_offset + _pos + frame_points[0], z[0], uv_per_frame[frame][0], color_on[state]);
+			v_raw[1] = Vertex(_offset + _pos + frame_points[1], z[1], uv_per_frame[frame][1], color_on[state]);//Set the colors yourself.
+			v_raw[2] = Vertex(_offset + _pos + frame_points[2], z[2], uv_per_frame[frame][2], color_on[state]);
+			v_raw[3] = Vertex(_offset + _pos + frame_points[3], z[3], uv_per_frame[frame][3], color_on[state]);
             return v_raw;
         }
         

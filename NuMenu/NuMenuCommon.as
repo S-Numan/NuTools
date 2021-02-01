@@ -208,7 +208,8 @@ Check mark option on right
 //Don't setMenuMoved(true) if no positions actually changed.
 //Moving interpolated when camera is moving isWorldPos(). it's shakey atm.
 //Add scale x/y to button, make it work with NuImage scale of course.
-
+//Remove the titlbar and replace with with an actual menu.
+//Have values for the first part of a sprite. The middle part. And the end part. Modify NuImage for this.
 
 
 //Option list for debugging blobs.
@@ -218,17 +219,8 @@ Check mark option on right
 
 
 
-//1. Switch to Render:: instead of gui draw.
-//With this, have values for the first part of a sprite. The middle part. And the end part. Modify NuImage for this.
-//Useful things to note:
-//Render::SetTransformScreenspace(); Render::SetTransformWorldspace();
-//UV is the scale/offset of the image or something? Like saying xy but for texture matrixes. 0.5 would be half image size?
-//
-//2. Easier menu adding. Just make the menu and add it somewhere and it will run on it's own. No fancy code or other things required. Use NuMenuCommonLogic.as for this.
-//3. Seperate menu class and menu option. OR add a method to check what class the class is. So you can cast it easier. Maybe add a method that casts it for you.
-//4. Before the first tick, the checkbox in menuholder runs away from it's owner. Fix plz.
-//5. Move repeated constructor stuff to init vars
-//6. Remake text. All text. Add shaky text. And different color text for each induvidual letter.
+//1. Before the first tick, the checkbox in menuholder runs away from it's owner. Fix plz.
+//2. Remake text. All text. Add shaky text. And different color text for each induvidual letter.
 
 //
 //TODO LIST
@@ -1025,7 +1017,8 @@ Check mark option on right
             }
             else if(getRadius() != 0.0f)//Try checking for radius instead
             {
-                if(getDistance(getMiddle(), value) < getRadius())//If the distance between the middle and value is less than the radius 
+                if(getDistance(getMiddle(), value) < getRadius()//If the distance between the middle and value is less than the radius
+                * (isWorldPos() ? 0.75 : 1))//That is multiplied by 0.75 if isWorldPos is true to keep them lining up. TODO replace with scale system.
                 {
                     return true;//Yes but radius.
                 }
@@ -1345,13 +1338,12 @@ Check mark option on right
         {
             MenuBase::initVars(_name, _upper_left, _lower_right);
 
-            icons_used = false;
-            draw_icons = true;
-            reposition_icons = false;
+            draw_images = true;
+            reposition_images = false;
 
             initial_press = false;
         
-            icons = array<Nu::NuImage@>(Nu::POSPositionsCount);
+            images = array<Nu::NuImage@>(Nu::POSPositionsCount);
 
             menu_sounds_on = array<string>(ButtonStateCount, "");
             menu_volume = 1.0f;
@@ -1369,9 +1361,9 @@ Check mark option on right
             MenuBase::setMenuJustMoved(value);
             if(value)//Menu just moved.
             {
-                if(reposition_icons)
+                if(reposition_images)
                 {
-                    RepositionAllIcons(getSize());
+                    RepositionAllImages(getSize());
                 }
             }
         }
@@ -1514,120 +1506,99 @@ Check mark option on right
 
 
         //
-        //Icon stuff
+        //Image stuff
         //
         
-        bool draw_icons;
-        bool reposition_icons;//If this is true, the icons's position will be reassigned every time the menu moves based on what icon position it is in. top will be put back on the top every movement.
+        bool draw_images;
+        bool reposition_images;//If this is true, the images's positions will be reassigned every time the menu moves based on what image position it is in. top will be put back on the top every movement.
         
         
-        private array<Nu::NuImage@> icons;
+        private array<Nu::NuImage@> images;
 
         
-        Nu::NuImage@ setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
+        Nu::NuImage@ setImage(string image_name, Vec2f image_frame_size, u16 image_frame_default, u16 image_frame_hover, u16 image_frame_press, u16 position = 0)
         {
-            if(icons.size() <= position){ error("In setIcon : tried to get past the highest element in the icons array. Attempted to get icon " + position ); return @null; }
+            if(images.size() <= position){ error("In setImage : tried to get past the highest element in the images array. Attempted to get image " + position ); return @null; }
             
-            Nu::NuImage@ icon = Nu::NuImage(ButtonStateCount);
-            
-            icon.name = icon_name;
-            icon.setFrameSize(icon_frame_size);
+            string render_name = image_name;
+            //render_name = render_name.substr(render_name.findLast("/"));
+            //print("render_name = " + render_name);
 
-            icon.setDefaultFrame(icon_frame_default);
+            Nu::NuImage@ image = Nu::NuImage(ButtonStateCount);
             
-            icon.setFourTwoFrames(JustHover, Hover, JustPressed, Pressed,
-                icon_frame_hover, icon_frame_press);
+            //image.CreateImage("_i", image_name);//Debug later
+            image.CreateImage(render_name, image_name);
+
+            image.setScale(0.75f);
+
+            image.setFrameSize(image_frame_size);
+
+            image.setDefaultFrame(image_frame_default);
             
-            Vec2f icon_pos;
+            image.setFourTwoFrames(JustHover, Hover, JustPressed, Pressed,
+                image_frame_hover, image_frame_press);
             
-            if(!Nu::getPosOnSizeFull(position, getSize(), icon_frame_size, icon_pos, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/))//Move that pos.
+            Vec2f image_offset;
+            
+            if(!Nu::getPosOnSizeFull(position, getSize(), image_frame_size, image_offset, default_buffer))//Move that pos.
             {
-                error("setIcon position was an unknown position");
+                error("setImage position was an unknown position");
                 return @null;
             }
             
-            icon.pos = icon_pos;// + getSize() / 2 - icon.frame_size;
+            image.offset = image_offset;// + getSize() / 2 - image.frame_size;
 
 
-            @icons[position] = @icon;
-
-            icons_used = UpdateAreIconsUsed();
+            @images[position] = @image;
         
-            return icon;
+            return image;
         }
         
-        Nu::NuImage@ getIcon(u16 position = 0)
+        Nu::NuImage@ getImage(u16 position = 0)
         {
-            if(icons.size() <= position){ error("In getIcon : tried to get past the highest element in the icons array. Attempted to get icon " + position); return null; }
+            if(images.size() <= position){ error("In getImage : tried to get past the highest element in the images array. Attempted to get image " + position); return null; }
 
-            return icons[position];
+            return images[position];
         }
 
-        u16 getIconCount()
+        u16 getImageCount()
         {
-            return icons.size();
+            return images.size();
         }
 
-        void setIconPos(Vec2f icon_pos, u16 position = 0)
+        void setImageOffset(Vec2f image_offset, u16 position = 0)
         {
-            if(icons.size() <= position){ error("In setIconPos : tried to get past the highest element in the icons array. Attempted to get icon " + position); return; }
+            if(images.size() <= position){ error("In setImageOffset : tried to get past the highest element in the images array. Attempted to get image " + position); return; }
 
-            icons[position].pos = icon_pos;
+            images[position].offset = image_offset;
 
         }
 
-        void RepositionAllIcons(Vec2f size)
+        void RepositionAllImages(Vec2f size)
         {
-            if(areIconsUsed())
+            for(u16 i = 0; i < Nu::POSPositionsCount; i++)
             {
-                
-                for(u16 i = 0; i < Nu::POSPositionsCount; i++)
-                {
-                    Nu::NuImage@ icon = getIcon(i);
-                        
-                    if(icon == null)
-                    {
-                        continue;
-                    }
-
-                    Vec2f icon_pos;
+                Nu::NuImage@ image = getImage(i);
                     
-                    if(!Nu::getPosOnSizeFull(i, size, icon.getFrameSize(), icon_pos, default_buffer))//Move that pos.
-                    {
-                        error("Icon position went above the icons array max size");
-                        return;
-                    }
-                    
-                    icon.pos = icon_pos;
-                }
-            }
-        }
-
-
-        
-        private bool icons_used;
-
-        private bool UpdateAreIconsUsed()//Updates the text_used bool.
-        {
-            for(u16 i = 0; i < icons.size(); i++)
-            {
-                if(icons[i] == null)
+                if(image == null)
                 {
                     continue;
                 }
-                
-                return true;
-            }
-            return false;
-        }
 
-        bool areIconsUsed()
-        {
-            return icons_used;
+                Vec2f image_offset;
+                
+                if(!Nu::getPosOnSizeFull(i, size, image.getFrameSize(), image_offset, default_buffer))//Move that pos.
+                {
+                    error("Image position went above the images array max size");
+                    return;
+                }
+                
+                image.offset = image_offset;
+            }
         }
 
         //
-        //Icon stuff
+        //Image stuff
         //
 
 
@@ -1642,42 +1613,42 @@ Check mark option on right
                 return false;
             }
             
-            if(draw_icons)
+            if(draw_images)
             {
-                DrawIcons();
+                DrawImages();
             }
 
             return true;
         }
 
-        void DrawIcons()
+        void DrawImages()
         {
-            if(!areIconsUsed())
-            {
-                return;
-            }
-
             //Reposition icons.
-            if(reposition_icons && isInterpolated()//If this menu is interpolated
+            if(reposition_images && isInterpolated()//If this menu is interpolated
             && didMenuJustMove())//And the menu just moved.
             {
-                RepositionAllIcons(getLowerRightInterpolated() - getUpperLeftInterpolated());
+                RepositionAllImages(getLowerRightInterpolated() - getUpperLeftInterpolated());
             }
 
-            for(u16 i = 0; i < icons.size(); i++)
+            for(u16 i = 0; i < images.size(); i++)
             {
-                if(icons[i] == null)
+                if(images[i] == null)
                 {
                     continue;
                 }
+
+                array<Vertex> vertex;
+                vertex = images[i].getVertexsForFrameAndPos(images[i].frame_on[getButtonState()], getUpperLeftInterpolated(), getButtonState()); //+ getOffset());
+            
+                Render::RawQuads(images[i].name, vertex);
+                //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), rec_color);
                 
-                //print("icon x size = " + icons[i].pos.x + " icon y size = " + icons[i].pos.y);
-                GUI::DrawIcon(icons[i].name,//Icon name
-                icons[i].frame_on[button_state],//Icon frame
-                icons[i].getFrameSize(),//Icon size
-                getUpperLeftInterpolated() + (icons[i].pos - Vec2f(0,0)),//Icon position//TODO, FIX.  (probably when rendering is done)
-                0.5f,//Icon scale
-                icons[i].color_on[button_state]);//Color
+                //GUI::DrawIcon(images[i].name,//Icon name
+                //images[i].frame_on[button_state],//Icon frame
+                //images[i].getFrameSize(),//Icon size
+                //getUpperLeftInterpolated() + (images[i].pos - Vec2f(0,0)),//Icon position//TODO, FIX.  (probably when rendering is done)
+                //0.5f,//Icon scale
+                //images[i].color_on[button_state]);//Color
             }
         }
 
@@ -2061,19 +2032,19 @@ Check mark option on right
 
         bool Render() override
         {
-            bool _draw_icons = draw_icons;//Make a temp value called _draw_icons and make it equal to draw_icons.
+            bool _draw_images = draw_images;//Make a temp value called _draw_images and make it equal to draw_images.
 
-            if(draw_icons)//If draw_icons is true
+            if(draw_images)//If draw_images is true
             {
-                draw_icons = false;//Make it false. This is done to prevent the icons from being drawn before the titlebar. That would be no good.
+                draw_images = false;//Make it false. This is done to prevent the images from being drawn before the titlebar. That would be no good.
             }
 
             if(!MenuBaseEx::Render())
             {
-                draw_icons = _draw_icons;//Rendering failed, revert draw_icons to it's original state.
+                draw_images = _draw_images;//Rendering failed, revert draw_images to it's original state.
                 return false;
             }
-            draw_icons = _draw_icons;//If MenuBaseEx was going to draw an icon, it wouldn't. Revert back draw_icon.
+            draw_images = _draw_images;//If MenuBaseEx was going to draw an image, it wouldn't. Revert back draw_image.
 
 
             
@@ -2082,9 +2053,9 @@ Check mark option on right
                 DrawTitlebar();
             }
             
-            if(draw_icons)//Then draw icons
+            if(draw_images)//Then draw images
             {
-                DrawIcons();
+                DrawImages();
             }
 
             if(draw_text)//If text exists and it is supposed to be drawn.
