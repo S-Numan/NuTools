@@ -497,6 +497,19 @@ namespace Nu
 
     //1: The size of the image.
     //2: The size of the frame in the image
+    //Returns the amount of frames in a given size.
+    u16 getFramesInSize(Vec2f image_size, Vec2f frame_size)
+    {
+        Vec2f output;
+
+        output.x = image_size.x / frame_size.x;
+        output.y = image_size.y / frame_size.y;
+        print("todo, confirm this works.");
+        return u16(output.x * output.y);
+    }
+
+    //1: The size of the image.
+    //2: The size of the frame in the image
     //3: The frame you want in the image.
     //Returns the Vector of where the desired frame starts. (top left)
     Vec2f getFrameStart(Vec2f image_size, Vec2f frame_size, u16 desired_frame)
@@ -548,22 +561,22 @@ namespace Nu
     }
 
     
-    //1: The size of the image.
-    //2: The size of the frame in the image
-    //3: The frame you want in the image.
+    //2: The size of the frame
     //4: Optional extra Vec2f applied to each Vector in the returned array for ease.
-    //Returns an array of the four positions of what frame you want in an image.
-    array<Vec2f> getPosFrame(Vec2f image_size, Vec2f frame_size, u16 desired_frame, Vec2f add_to = Vec2f(0,0))
+    //Returns an array of the four positions (top left. top right. bottom left. bottom right.) of the frame.
+    array<Vec2f> getFrameSizes(Vec2f frame_size, Vec2f add_to = Vec2f(0,0))
     {
         Vec2f[] v_pos(4);
 
-        Vec2f frame_start = getFrameStart(image_size, frame_size, desired_frame);
-        Vec2f frame_end   = getFrameEnd(frame_start, frame_size);
+        v_pos[0] = add_to + Vec2f(0,                0                   );//Top left
+        v_pos[1] = add_to + Vec2f(0 + frame_size.x, 0                   );//Top right
+        v_pos[2] = add_to + Vec2f(0 + frame_size.x, 0 + frame_size.y    );//Bottom right
+        v_pos[3] = add_to + Vec2f(0,                0 + frame_size.y    );//Bottom left
 
-        v_pos[0] = add_to + Vec2f(-frame_start.x,   -frame_start.y  );//Top left
-        v_pos[1] = add_to + Vec2f( frame_end.x,     -frame_start.y  );//Top right
-        v_pos[2] = add_to + Vec2f( frame_end.x,     frame_end.y     );//Bottom right
-        v_pos[3] = add_to + Vec2f(-frame_start.x,   frame_end.y     );//Bottom left
+        //v_pos[0] = add_to + Vec2f(-frame_start.x,   -frame_start.y  );//Top left
+        //v_pos[1] = add_to + Vec2f( frame_end.x,     -frame_start.y  );//Top right
+        //v_pos[2] = add_to + Vec2f( frame_end.x,     frame_end.y     );//Bottom right
+        //v_pos[3] = add_to + Vec2f(-frame_start.x,   frame_end.y     );//Bottom left
     
         return v_pos;
     }

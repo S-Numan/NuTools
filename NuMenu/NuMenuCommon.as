@@ -213,7 +213,7 @@ Check mark option on right
 
 
 //1. Switch to Render:: instead of gui draw.
-//With this, have values for the first part of a sprite. The middle part. And the end part. Modify MenuImage for this.
+//With this, have values for the first part of a sprite. The middle part. And the end part. Modify NuImage for this.
 //Useful things to note:
 //Render::SetTransformScreenspace(); Render::SetTransformWorldspace();
 //UV is the scale/offset of the image or something? Like saying xy but for texture matrixes. 0.5 would be half image size?
@@ -303,14 +303,21 @@ Check mark option on right
         ButtonStateCount,//Always last, this specifies the amount of button states.
     }
 
-    class MenuImage
+    class NuImage
     {
-        MenuImage()
+        NuImage()
         {
             name = "";
             frame_on = array<u16>(ButtonStateCount, Idle);
             color_on = array<SColor>(ButtonStateCount, SColor(255, 255, 255, 255));
             Vec2f pos = Vec2f_zero;
+
+            is_texture = false;
+            v_raw = array<Vertex>(4);
+            frame_points = array<Vec2f>(4);
+            z = array<float>(4, 0.0f);
+            scale = Vec2f(1.0f, 1.0f);
+            auto_frame_points = true;
         }
 
         void setDefaultFrame(u16 frame)//Sets the regular frame for all button states.
@@ -336,12 +343,175 @@ Check mark option on right
             frame_on[JustPressed] = press;
             frame_on[Pressed] = press;
         }
+        bool is_texture;//Sets if this is a texture. If this is false, this is not a texture.
         
-        string name;//File name of icon.
-        Vec2f frame_size;//The frame size of the icon. (for choosing different frames);
+        string name;//Either file name, or texture name.
+
+        private Vec2f image_size;//Size of the image given.
+        void setImageSize(Vec2f value)
+        {
+            if(image_size != value)
+            {
+                image_size = value;
+                if(is_texture)
+                {
+                    RecalculatePositions();
+                }
+            }
+        }
+        Vec2f getImageSize()
+        {
+            return image_size;
+        }
+
+        private Vec2f frame_size;//The frame size of the icon. (for choosing different frames);
+        void setFrameSize(Vec2f value)//Sets the frame size of the frame in the image.
+        {
+            if(frame_size != value)
+            {
+                frame_size = value;
+                if(is_texture)
+                {
+                    RecalculatePositions();
+                    if(auto_frame_points){
+                    setDefaultPoints();
+                    }
+                }
+            }
+        }
+        Vec2f getFrameSize()//Gets the frame size in the image.
+        {
+            return frame_size;
+        }
+        
+
         array<u16> frame_on;//Stores what frame the image is on depending on what state the button is in
         array<SColor> color_on;//Color depending on the button state
-        Vec2f pos;//Position of image in relation to the menu.
+        Vec2f pos;//Position of image in relation to something else.
+
+
+        //
+        //Below goes into rendering
+        //
+
+        //Todo, createimage from sprite.
+
+        //This creates a texture and/or sets up a few things for this image to work with it.
+        void CreateImage(string render_name, string file_path = "")
+        {
+            //ensure texture for our use exists
+            if(!Texture::exists(render_name))
+            {
+                if(!Texture::createFromFile(render_name, file_path))
+                {
+                    warn("texture creation failed");
+                    return;
+                }
+            }
+
+            ImageData@ _image = Texture::data(render_name);
+
+            image_size = Vec2f(_image.width(), _image.height());
+            frame_size = image_size;
+            RecalculatePositions();
+            if(auto_frame_points){
+                setDefaultPoints();
+            }
+            name = render_name;
+            is_texture = true;
+        }
+        void CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
+        {
+            ImageData@ tex = Texture::dataFromSprite(s);//Get the sprite data.
+            Texture::createFromData(render_name, tex);//Create a texture from it.
+            CreateImage(render_name);//Give this menu the texture.
+        }
+
+
+        bool auto_frame_points;//This, when true, automatically changes frame_points to the accurate points of the frame. This being false allows you to scale the frame however you like.
+        
+        array<Vec2f> frame_points;//Top left, top right, bottom left, bottom right of the frame when drawn. Stretches or squishes the frame.
+        void setPointUpperLeft(Vec2f value)
+        {
+            frame_points[0] = value;//Top left
+            frame_points[1].y = value.y;//Top right
+            frame_points[3].x = value.x;//Bottom left
+
+            auto_frame_points = false;
+        }
+        void setPointLowerRight(Vec2f value)
+        {
+            frame_points[1].x = value.x;//Top right
+            frame_points[2] = value;//Bottom right
+            frame_points[3].y = value.y;//Bottom left
+        
+            auto_frame_points = false;
+        }
+        void setDefaultPoints()//Sets the correct points taking into factor frame size. Keeps the size of the drawn thing non modified. (ignoring scale)
+        {
+            for(u16 i = 0; i < frame_points.size(); i++)
+            {
+                frame_points = Nu::getFrameSizes(
+                    frame_size//Frame size
+                );
+            }
+        }
+
+        array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
+        
+        void RecalculatePositions()//Recalculates UV. Basically sets up all four points of each frame in the image and puts it all into one big array. Fancy stuff, don't touch it if you don't know what it does. I hardly know what it does.
+        {
+            array<array<Vec2f>> _uv_per_frame(Nu::getFramesInSize(image_size, frame_size));
+            
+            u16 i;
+            for(i = 0; i < _uv_per_frame.size(); i++)
+            {
+                _uv_per_frame[i] = Nu::getUVFrame(
+                image_size,//Image size
+                frame_size,//Frame size
+                i//Desired frame
+                );
+            }
+
+            uv_per_frame = _uv_per_frame;
+        }
+
+        array<float> z;//The z level this is drawn on.
+        void setZ(float value)//Set the z level. (Simplified)
+        {
+            for(u8 i = 0; i < z.size(); i++)
+            {
+                z[i] = value;
+            }
+        }
+        float getZ()//Get the z level. (Simplified)
+        {
+            return z[0];
+        }
+
+
+        private Vec2f scale;//Scale of the frame.
+        void setScale(Vec2f _scale)//Sets the scale of the frame.
+        {
+            scale = _scale;
+        }
+        Vec2f getScale()//Gets the scale of the frame.
+        {
+            return scale;
+        }
+
+        //TODO, don't run this every render call. Only recalculate if needed.
+        array<Vertex> v_raw;//For rendering.
+        array<Vertex> getVertexsForFrameAndPos(u16 frame, Vec2f _pos = Vec2f(0,0))//Gets what this should render.
+        {
+            v_raw[0] = Vertex(_pos + Vec2f(frame_points[0].x * scale.x, frame_points[0].y * scale.y), z[0], uv_per_frame[frame][0], color_on[0]);
+			v_raw[1] = Vertex(_pos + Vec2f(frame_points[1].x * scale.x, frame_points[1].y * scale.y), z[1], uv_per_frame[frame][1], color_on[0]);//Set the colors yourself.
+			v_raw[2] = Vertex(_pos + Vec2f(frame_points[2].x * scale.x, frame_points[2].y * scale.y), z[2], uv_per_frame[frame][2], color_on[0]);
+			v_raw[3] = Vertex(_pos + Vec2f(frame_points[3].x * scale.x, frame_points[3].y * scale.y), z[3], uv_per_frame[frame][3], color_on[0]);
+            return v_raw;
+        }
+        
+
     }
 
     interface IMenu
@@ -430,7 +600,7 @@ Check mark option on right
 
     }
 
-    funcdef bool RENDER_CALLBACK();
+    funcdef bool RENDER_CALLBACK();//NuMenu::IMenu@ menu);//Kag just refuses to include this parameter
 
     //Base of all menus.
     class MenuBase : IMenu
@@ -1260,7 +1430,7 @@ Check mark option on right
 
             initial_press = false;
         
-            icons = array<NuMenu::MenuImage@>(Nu::POSPositionsCount);
+            icons = array<NuMenu::NuImage@>(Nu::POSPositionsCount);
 
             menu_sounds_on = array<string>(ButtonStateCount, "");
             menu_volume = 1.0f;
@@ -1426,17 +1596,17 @@ Check mark option on right
         bool reposition_icons;//If this is true, the icons's position will be reassigned every time the menu moves based on what icon position it is in. top will be put back on the top every movement.
         
         
-        private array<NuMenu::MenuImage@> icons;
+        private array<NuMenu::NuImage@> icons;
 
         
-        MenuImage@ setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
+        NuImage@ setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
         {
             if(icons.size() <= position){ error("In setIcon : tried to get past the highest element in the icons array. Attempted to get icon " + position ); return @null; }
             
-            MenuImage@ icon = MenuImage();
+            NuImage@ icon = NuImage();
             
             icon.name = icon_name;
-            icon.frame_size = icon_frame_size;
+            icon.setFrameSize(icon_frame_size);
 
             icon.setDefaultFrame(icon_frame_default);
             
@@ -1444,7 +1614,7 @@ Check mark option on right
             
             Vec2f icon_pos;
             
-            if(!Nu::getPosOnSizeFull(position, getSize(), icon.frame_size, icon_pos, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/))//Move that pos.
+            if(!Nu::getPosOnSizeFull(position, getSize(), icon_frame_size, icon_pos, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/))//Move that pos.
             {
                 error("setIcon position was an unknown position");
                 return @null;
@@ -1460,7 +1630,7 @@ Check mark option on right
             return icon;
         }
         
-        MenuImage@ getIcon(u16 position = 0)
+        NuImage@ getIcon(u16 position = 0)
         {
             if(icons.size() <= position){ error("In getIcon : tried to get past the highest element in the icons array. Attempted to get icon " + position); return null; }
 
@@ -1492,7 +1662,7 @@ Check mark option on right
                 
                 for(u16 i = 0; i < Nu::POSPositionsCount; i++)
                 {
-                    MenuImage@ icon = getIcon(i);
+                    NuImage@ icon = getIcon(i);
                         
                     if(icon == null)
                     {
@@ -1501,7 +1671,7 @@ Check mark option on right
 
                     Vec2f icon_pos;
                     
-                    if(!Nu::getPosOnSizeFull(i, size, icon.frame_size, icon_pos, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/))//Move that pos.
+                    if(!Nu::getPosOnSizeFull(i, size, icon.getFrameSize(), icon_pos, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/))//Move that pos.
                     {
                         error("Icon position went above the icons array max size");
                         return;
@@ -1588,7 +1758,7 @@ Check mark option on right
                 //print("icon x size = " + icons[i].pos.x + " icon y size = " + icons[i].pos.y);
                 GUI::DrawIcon(icons[i].name,//Icon name
                 icons[i].frame_on[button_state],//Icon frame
-                icons[i].frame_size,//Icon size
+                icons[i].getFrameSize(),//Icon size
                 getUpperLeftInterpolated() + (icons[i].pos - Vec2f(0,0)) * (isWorldPos() ? camera.targetDistance * 2 : 1),//Icon position//TODO, FIX.  (probably when rendering is done)
                 isWorldPos() ? camera.targetDistance: 0.5,//Icon scale
                 icons[i].color_on[button_state]);//Color
@@ -2348,48 +2518,21 @@ Check mark option on right
         void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
         {
             MenuBaseExEx::initVars(_name, _upper_left, _lower_right);
-            render_script_id = 0;
-            render_script_z = 0.0f;
-            scriptfunction = "MenusPreHud";
             render_layer = Render::layer_prehud;
 
             menu_checked = false;
 
-            Setup();
+            desired_frame = 0;
+
+            @image = @NuImage();
+            image.CreateImage("testy_testers", "RenderExample.png");
+            image.setFrameSize(Vec2f(32, 32));
+            image.setScale(Vec2f(1.0f, 1.0f));
         }
 
-
-        int render_script_id;
-        float render_script_z;
-        string scriptfunction;
         Render::ScriptLayer render_layer;
 
-        void Setup()
-        {
-            test_name = "fish_fishers";
-            //ensure texture for our use exists
-            if(!Texture::exists(test_name))
-            {
-                if(!Texture::createFromFile(test_name, "RenderExample.png"))//!Texture::createBySize(test_name, 8, 8))
-                {
-                    warn("texture creation failed");
-                }
-                else
-                {
-                    ImageData@ edit = Texture::data(test_name);
-
-                    for(int i = 0; i < edit.size(); i++)
-                    {
-                        //edit[i] = SColor((((i + i / 8) % 2) == 0) ? 0xff707070 : 0xff909090);
-                    }
-
-                    if(!Texture::update(test_name, edit))
-                    {
-                        warn("texture update failed");
-                    }
-                }
-            }
-        }
+        NuImage@ image;
 
         bool menu_checked;
 
@@ -2416,15 +2559,17 @@ Check mark option on right
             {
                 menu_checked = !menu_checked;
             }
+
+            desired_frame++;
+            if(desired_frame == 4)
+            {
+                desired_frame = 0;
+            }
             
             return true;
         }
 
-        Vec2f[] v_pos;
-        Vec2f[] v_uv;
-        SColor[] v_col;
-
-        Vertex[] v_raw;
+        u16 desired_frame;
 
         bool Render() override
         {
@@ -2435,65 +2580,9 @@ Check mark option on right
 
             //InterpolatePositions();
 
-            v_pos.clear();
-            v_uv.clear();
-            v_col.clear();
-            v_raw.clear();
-
-
-            v_pos.resize(4);
-            v_uv.resize(4);
-
             Render::SetTransformScreenspace();
 
-            f32 z = 0.0f;
-
-            Vec2f p = Vec2f(500,500);//getUpperLeftInterpolated();
-            CMap@ map = getMap();
-
-            v_uv = Nu::getUVFrame(
-                Vec2f(64, 64),//Image size
-                Vec2f(32, 32),//Frame size
-                3//Desired frame
-            );
-
-            v_pos = Nu::getPosFrame(
-                Vec2f(64, 64),//Image size
-                Vec2f(32, 32),//Frame size
-                3,//Desired frame
-                p//Extra position added
-            );
-
-            //v_pos[0] = p + Vec2f(-image_x,-image_y); v_uv[0] = Vec2f(frame_start.x, frame_start.y);//Top left?
-            //v_pos[1] = p + Vec2f( image_x,-image_y); v_uv[1] = Vec2f(frame_end.x, frame_start.y);//Top right?
-            //v_pos[2] = p + Vec2f( image_x, image_y); v_uv[2] = Vec2f(frame_end.x, frame_end.y);//Bottom right?
-            //v_pos[3] = p + Vec2f(-image_x, image_y); v_uv[3] = Vec2f(frame_start.x, frame_end.y);//Bottom left?
-
-            //v_col.push_back(SColor(255, 255, 0, 0));
-            //v_col.push_back(SColor(255, 0, 255, 0));
-            //v_col.push_back(SColor(255, 0, 0, 255));
-            //v_col.push_back(SColor(255, 255, 0, 255));
-
-
-            const float one_third_rotation = (Maths::Pi * 2.0f / 3.0f);
-			SColor col(0xffffffff);
-            for(u16 i = 0; i < 4; i++)
-            {
-                float t = (getGameTime() / 30.0f) * one_third_rotation * (i + 0.5f);
-
-                v_col.push_back(SColor(255, 255, 255, 255));
-                
-                v_col[i].setRed(v_col[i].getRed()/2 + v_col[i].getRed()/2 * Maths::Sin(t));
-                v_col[i].setGreen(v_col[i].getGreen()/2 + v_col[i].getGreen()/2 * Maths::Sin(t + one_third_rotation));
-                v_col[i].setBlue(v_col[i].getBlue()/2 + v_col[i].getBlue()/2 * Maths::Sin(t - one_third_rotation));
-            }
-			v_raw.push_back(Vertex(v_pos[0].x, v_pos[0].y, z, v_uv[0].x, v_uv[0].y, v_col[0]));
-			v_raw.push_back(Vertex(v_pos[1].x, v_pos[1].y, z, v_uv[1].x, v_uv[1].y, v_col[1]));
-			v_raw.push_back(Vertex(v_pos[2].x, v_pos[2].y, z, v_uv[2].x, v_uv[2].y, v_col[2]));
-			v_raw.push_back(Vertex(v_pos[3].x, v_pos[3].y, z, v_uv[3].x, v_uv[3].y, v_col[3]));
-
-            Render::RawQuads(test_name, v_raw);
-
+            Render::RawQuads(image.name, image.getVertexsForFrameAndPos(desired_frame, getUpperLeftInterpolated() + getOffset()));
 
 
             //Render::QuadsColored(test_name, z, v_pos, v_uv, v_col);
@@ -2976,7 +3065,7 @@ Check mark option on right
         
         for(u16 i = 0; i < transporter.menus.size(); i++)
         {
-            if(transporter.menus[i] == null)
+            if(transporter[i] == null)
             {
                 error("Menu was somehow null in rendering. This should not happen."); continue;
             }
