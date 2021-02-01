@@ -203,6 +203,12 @@ Check mark option on right
 //See if the icon repositioning is actually required for CustomButton.as stuff. Figure out how to not make it required if it is. It shouldn't be.
 //Test does not reposition when not interpolated. Look into this
 //Menu opening/closing animations. Full animations that you can put in a sprite sheet and configure.
+//Check if the camera moved, put info in transporter.
+//Rapid button pressing does not work.
+//Don't setMenuMoved(true) if no positions actually changed.
+//Moving interpolated when camera is moving isWorldPos(). it's shakey atm.
+//Add scale x/y to button, make it work with NuImage scale of course.
+
 
 
 //Option list for debugging blobs.
@@ -303,220 +309,54 @@ Check mark option on right
         ButtonStateCount,//Always last, this specifies the amount of button states.
     }
 
-    class NuImage
+    SColor DebugColor(u16 state)//Debug color on each button state. For debugging.
     {
-        NuImage()
+        SColor rec_color;
+        switch(state)
         {
-            name = "";
-            frame_on = array<u16>(ButtonStateCount, Idle);
-            color_on = array<SColor>(ButtonStateCount, SColor(255, 255, 255, 255));
-            Vec2f pos = Vec2f_zero;
-
-            is_texture = false;
-            v_raw = array<Vertex>(4);
-            frame_points = array<Vec2f>(4);
-            z = array<float>(4, 0.0f);
-            scale = Vec2f(1.0f, 1.0f);
-            auto_frame_points = true;
+            case Idle:
+                rec_color = SColor(255, 200, 200, 200);
+                break;
+            case Hover:
+                rec_color = SColor(255, 70, 50, 25);
+                break;
+            case JustHover:
+                rec_color = SColor(255, 100, 100, 100);
+                break;
+            case UnHover:
+                rec_color = SColor(255, 255, 25, 25);
+                break;
+            case Selected:
+                rec_color = SColor(255, 30, 50, 25);
+                break;
+            case FalseRelease:
+                rec_color = SColor(255, 30, 50, 255);
+                break;
+            case AfterRelease:
+                rec_color = SColor(255, 50, 50, 50);
+                break;
+            case Pressed:
+                rec_color = SColor(255, 127,25,25);
+                break;
+            case Released:
+                rec_color = SColor(255, 25,127,25);
+                break;
+            case Disabled:
+                rec_color = SColor(255, 5, 5, 5);
+                break;
+            default:
+                rec_color = SColor(255, 255, 255, 255);
+                break;
         }
 
-        void setDefaultFrame(u16 frame)//Sets the regular frame for all button states.
-        {
-            for(u16 i = 0; i < frame_on.size(); i++)
-            {
-                frame_on[i] = frame;
-            }
-        }
-
-        void setDefaultColor(SColor color)//Sets the regular color for all button states.
-        {
-            for(u16 i = 0; i < color_on.size(); i++)
-            {
-                color_on[i] = color;
-            }
-        }
-
-        void setHoverAndPressFrames(u16 hover, u16 press)//Sets frame for hover and press button states.
-        {
-            frame_on[JustHover] = hover;
-            frame_on[Hover] = hover;
-            frame_on[JustPressed] = press;
-            frame_on[Pressed] = press;
-        }
-        bool is_texture;//Sets if this is a texture. If this is false, this is not a texture.
-        
-        string name;//Either file name, or texture name.
-
-        private Vec2f image_size;//Size of the image given.
-        void setImageSize(Vec2f value)
-        {
-            if(image_size != value)
-            {
-                image_size = value;
-                if(is_texture)
-                {
-                    RecalculatePositions();
-                }
-            }
-        }
-        Vec2f getImageSize()
-        {
-            return image_size;
-        }
-
-        private Vec2f frame_size;//The frame size of the icon. (for choosing different frames);
-        void setFrameSize(Vec2f value)//Sets the frame size of the frame in the image.
-        {
-            if(frame_size != value)
-            {
-                frame_size = value;
-                if(is_texture)
-                {
-                    RecalculatePositions();
-                    if(auto_frame_points){
-                    setDefaultPoints();
-                    }
-                }
-            }
-        }
-        Vec2f getFrameSize()//Gets the frame size in the image.
-        {
-            return frame_size;
-        }
-        
-
-        array<u16> frame_on;//Stores what frame the image is on depending on what state the button is in
-        array<SColor> color_on;//Color depending on the button state
-        Vec2f pos;//Position of image in relation to something else.
-
-
-        //
-        //Below goes into rendering
-        //
-
-        //Todo, createimage from sprite.
-
-        //This creates a texture and/or sets up a few things for this image to work with it.
-        void CreateImage(string render_name, string file_path = "")
-        {
-            //ensure texture for our use exists
-            if(!Texture::exists(render_name))
-            {
-                if(!Texture::createFromFile(render_name, file_path))
-                {
-                    warn("texture creation failed");
-                    return;
-                }
-            }
-
-            ImageData@ _image = Texture::data(render_name);
-
-            image_size = Vec2f(_image.width(), _image.height());
-            frame_size = image_size;
-            RecalculatePositions();
-            if(auto_frame_points){
-                setDefaultPoints();
-            }
-            name = render_name;
-            is_texture = true;
-        }
-        void CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
-        {
-            ImageData@ tex = Texture::dataFromSprite(s);//Get the sprite data.
-            Texture::createFromData(render_name, tex);//Create a texture from it.
-            CreateImage(render_name);//Give this menu the texture.
-        }
-
-
-        bool auto_frame_points;//This, when true, automatically changes frame_points to the accurate points of the frame. This being false allows you to scale the frame however you like.
-        
-        array<Vec2f> frame_points;//Top left, top right, bottom left, bottom right of the frame when drawn. Stretches or squishes the frame.
-        void setPointUpperLeft(Vec2f value)
-        {
-            frame_points[0] = value;//Top left
-            frame_points[1].y = value.y;//Top right
-            frame_points[3].x = value.x;//Bottom left
-
-            auto_frame_points = false;
-        }
-        void setPointLowerRight(Vec2f value)
-        {
-            frame_points[1].x = value.x;//Top right
-            frame_points[2] = value;//Bottom right
-            frame_points[3].y = value.y;//Bottom left
-        
-            auto_frame_points = false;
-        }
-        void setDefaultPoints()//Sets the correct points taking into factor frame size. Keeps the size of the drawn thing non modified. (ignoring scale)
-        {
-            for(u16 i = 0; i < frame_points.size(); i++)
-            {
-                frame_points = Nu::getFrameSizes(
-                    frame_size//Frame size
-                );
-            }
-        }
-
-        array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
-        
-        void RecalculatePositions()//Recalculates UV. Basically sets up all four points of each frame in the image and puts it all into one big array. Fancy stuff, don't touch it if you don't know what it does. I hardly know what it does.
-        {
-            array<array<Vec2f>> _uv_per_frame(Nu::getFramesInSize(image_size, frame_size));
-            
-            u16 i;
-            for(i = 0; i < _uv_per_frame.size(); i++)
-            {
-                _uv_per_frame[i] = Nu::getUVFrame(
-                image_size,//Image size
-                frame_size,//Frame size
-                i//Desired frame
-                );
-            }
-
-            uv_per_frame = _uv_per_frame;
-        }
-
-        array<float> z;//The z level this is drawn on.
-        void setZ(float value)//Set the z level. (Simplified)
-        {
-            for(u8 i = 0; i < z.size(); i++)
-            {
-                z[i] = value;
-            }
-        }
-        float getZ()//Get the z level. (Simplified)
-        {
-            return z[0];
-        }
-
-
-        private Vec2f scale;//Scale of the frame.
-        void setScale(Vec2f _scale)//Sets the scale of the frame.
-        {
-            scale = _scale;
-        }
-        Vec2f getScale()//Gets the scale of the frame.
-        {
-            return scale;
-        }
-
-        //TODO, don't run this every render call. Only recalculate if needed.
-        array<Vertex> v_raw;//For rendering.
-        array<Vertex> getVertexsForFrameAndPos(u16 frame, Vec2f _pos = Vec2f(0,0))//Gets what this should render.
-        {
-            v_raw[0] = Vertex(_pos + Vec2f(frame_points[0].x * scale.x, frame_points[0].y * scale.y), z[0], uv_per_frame[frame][0], color_on[0]);
-			v_raw[1] = Vertex(_pos + Vec2f(frame_points[1].x * scale.x, frame_points[1].y * scale.y), z[1], uv_per_frame[frame][1], color_on[0]);//Set the colors yourself.
-			v_raw[2] = Vertex(_pos + Vec2f(frame_points[2].x * scale.x, frame_points[2].y * scale.y), z[2], uv_per_frame[frame][2], color_on[0]);
-			v_raw[3] = Vertex(_pos + Vec2f(frame_points[3].x * scale.x, frame_points[3].y * scale.y), z[3], uv_per_frame[frame][3], color_on[0]);
-            return v_raw;
-        }
-        
-
+        return rec_color;
     }
 
     interface IMenu
     {
         void initVars(string name, Vec2f upper_left = Vec2f(0,0), Vec2f lower_right = Vec2f(0,0));
+
+        u32 getTicksSinceCreated();
 
         void KillMenu();
         bool getKillMenu();
@@ -595,6 +435,15 @@ Check mark option on right
         void setRenderFunction(RENDER_CALLBACK@ value);
         RENDER_CALLBACK@ getRenderFunction();
         bool DefaultRenderCaller();
+        
+        array<Nu::NuImage@> getBackgrounds();
+        Nu::NuImage@ getBackground(u16 element);
+        void addBackground(Nu::NuImage@ _background);
+        void removeBackground(u16 element);
+        void clearBackgrounds();
+
+        Render::ScriptLayer getRenderLayer();
+        void setRenderLayer(Render::ScriptLayer value);
 
         bool Render();
 
@@ -638,6 +487,8 @@ Check mark option on right
                 error("NuMenuCommonLogic.as must be before anything else that uses NuMenu in gamemode.cfg");
             }
 
+            ticks_since_created = 0;
+
             default_buffer = 4.0f;
             is_world_pos = false;
 
@@ -656,7 +507,7 @@ Check mark option on right
 
             render_background = true;
 
-            did_menu_just_move = true;
+            did_menu_just_move = false;
 
             upper_left = array<Vec2f>(4);
             lower_right = array<Vec2f>(4);
@@ -666,7 +517,21 @@ Check mark option on right
             radius = 0.0f;
 
             render_func = @RENDER_CALLBACK(DefaultRenderCaller);
-        
+
+            render_layer = Render::layer_prehud;
+
+
+            backgrounds = array<Nu::NuImage@>();
+
+            Nu::NuImage@ _background = Nu::NuImage(ButtonStateCount);
+            _background.CreateImage("testy_testers", "RenderExample.png");
+            _background.setFrameSize(Vec2f(32, 32));
+            for(u16 i = 0; i < ButtonStateCount; i++)
+            {
+                _background.color_on[i] = DebugColor(i);
+            }
+            
+            addBackground(@_background);
     
 
             setUpperLeft(_upper_left, false);
@@ -675,6 +540,12 @@ Check mark option on right
             setInterpolated(true);
 
             setName(_name);
+        }
+
+        u32 ticks_since_created;
+        u32 getTicksSinceCreated()
+        {
+            return ticks_since_created;
         }
 
         CMenuTransporter@ transporter;
@@ -899,8 +770,8 @@ Check mark option on right
             {
                 upper_left[2] = getUpperLeft();//set interpolated
                 lower_right[2] = getLowerRight();//set interpolated
-                upper_left[1] = getUpperLeft(true);//set old
-                lower_right[1] = getLowerRight(true);//set old
+                upper_left[1] = getUpperLeft();//set old
+                lower_right[1] = getLowerRight();//set old
             }
             button_interpolation = value;
         }
@@ -919,9 +790,9 @@ Check mark option on right
         //
 
         private array<Vec2f> upper_left;//Upper left of menu. [0] is normal; [1] is old; [2] is interpolated; [3] is collision 
-        Vec2f getUpperLeft(bool get_raw_pos = false)//If this bool is true; even if isWorldPos() is true, it will get the raw position. I.E in most cases the actual world position. not the world to screen pos. does nothing if isWorldPos is false.
+        Vec2f getUpperLeft(bool get_screen_pos = false)//If this bool is true, this menu will always get screen position regardless of if it's world pos or screen pos.
         {
-            if(isWorldPos() && !get_raw_pos)
+            if(isWorldPos() && get_screen_pos)
             {
                 //CCamera@ camera = getCamera();
                 //This might be slow. - Todo numan
@@ -950,28 +821,28 @@ Check mark option on right
 
             setMenuJustMoved(menu_just_move);
         }
-        Vec2f getPos(bool get_raw_pos = false)
+        Vec2f getPos(bool get_screen_pos = false)
         {
-            return getUpperLeft(get_raw_pos);
+            return getUpperLeft(get_screen_pos);
         }
 
         //Not in relation to the menu
-        Vec2f getMiddle(bool get_raw_pos = false)
+        Vec2f getMiddle(bool get_screen_pos = false)
         {
-            if(isWorldPos() && !get_raw_pos)//If isWorldPos and we aren't getting a raw pos. (I.E convert world to screen)
+            if(isWorldPos() && get_screen_pos)//If isWorldPos and we aren't getting a raw pos. (I.E convert world to screen)
             {
-                return getDriver().getScreenPosFromWorldPos(getUpperLeft(true) + (getSize() / 2));//Get the world pos upper left, then add the size divided by two to it. Then convert it to screen pos. 
+                return getDriver().getScreenPosFromWorldPos(getUpperLeft(get_screen_pos) + (getSize() / 2));//Get the world pos upper left, then add the size divided by two to it. Then convert it to screen pos. 
             }
             else
             {
-                return getUpperLeft(get_raw_pos) + (getSize() / 2);//Add the size divided by two.
+                return getUpperLeft(get_screen_pos) + (getSize() / 2);//Add the size divided by two.
             }
         }
 
         private array<Vec2f> lower_right(3);//Lower right of menu. [0] is normal; [1] is old; [2] is interpolated; [3] is collision
-        Vec2f getLowerRight(bool get_raw_pos = false)//If this bool is true; even if isWorldPos() is true, it will get the raw position. I.E in most cases the actual world position. not the world to screen pos. does nothing if isWorldPos is false.
+        Vec2f getLowerRight(bool get_screen_pos = false)//If this bool is true; even if isWorldPos() is true, it will get the raw position. I.E in most cases the actual world position. not the world to screen pos. does nothing if isWorldPos is false.
         {
-            if(isWorldPos() && !get_raw_pos)
+            if(isWorldPos() && get_screen_pos)
             {
                 return getDriver().getScreenPosFromWorldPos(lower_right[0]);
             }
@@ -1010,18 +881,18 @@ Check mark option on right
         //Old Positions
         //
 
-        Vec2f getUpperLeftOld(bool get_raw_pos = false)
+        Vec2f getUpperLeftOld(bool get_screen_pos = false)
         {
-            if(isWorldPos() && !get_raw_pos)
+            if(isWorldPos() && get_screen_pos)
             {
                 return getDriver().getScreenPosFromWorldPos(upper_left[1]);
             }
             
             return upper_left[1];
         }
-        Vec2f getLowerRightOld(bool get_raw_pos = false)
+        Vec2f getLowerRightOld(bool get_screen_pos = false)
         {
-            if(isWorldPos() && !get_raw_pos)
+            if(isWorldPos() && get_screen_pos)
             {
                 return getDriver().getScreenPosFromWorldPos(lower_right[1]);
             }
@@ -1038,6 +909,13 @@ Check mark option on right
         void setMenuJustMoved(bool value)
         {
             did_menu_just_move = value;
+            if(value)
+            {
+                for(u16 i = 0; i < backgrounds.size(); i++)
+                {
+                    backgrounds[i].setPointLowerRight(getSize());
+                }
+            }
         }
 
     
@@ -1057,7 +935,7 @@ Check mark option on right
         void setOffset(Vec2f value)
         {
             offset = value;
-            //setMenuJustMoved(true);//Not sure if this should be here.
+            setMenuJustMoved(true);//Not sure if this should be here.
         }
 
         //
@@ -1068,18 +946,18 @@ Check mark option on right
         
 
         //Not in relation to the menu.
-        Vec2f getCollisionUpperLeft(bool get_raw_pos = false)
+        Vec2f getCollisionUpperLeft(bool get_screen_pos = false)
         {
-            if(isWorldPos() && !get_raw_pos)
+            if(isWorldPos() && get_screen_pos)
             {
                 return getDriver().getScreenPosFromWorldPos(upper_left[0] + upper_left[3]);
             }
 
             return upper_left[0] + upper_left[3];//Top left of the menu plus the top left collision position.
         }
-        Vec2f getCollisionLowerRight(bool get_raw_pos = false)
+        Vec2f getCollisionLowerRight(bool get_screen_pos = false)
         {
-            if(isWorldPos() && !get_raw_pos)
+            if(isWorldPos() && get_screen_pos)
             {
                 return getDriver().getScreenPosFromWorldPos(upper_left[0] + lower_right[3]);
             }
@@ -1147,7 +1025,7 @@ Check mark option on right
             }
             else if(getRadius() != 0.0f)//Try checking for radius instead
             {
-                if(getDistance(getMiddle(), value) < getRadius() * (isWorldPos() ? getCamera().targetDistance : 1))//If the distance between the middle and value is less than the radius 
+                if(getDistance(getMiddle(), value) < getRadius())//If the distance between the middle and value is less than the radius 
                 {
                     return true;//Yes but radius.
                 }
@@ -1173,6 +1051,11 @@ Check mark option on right
                 return false;//Inform anything that uses this method that something went wrong.
             }
 
+            if(getTicksSinceCreated() == 0)//Menu just created. First tick
+            {
+                setMenuJustMoved(true);//Refresh things.
+            }
+
             if(didMenuJustMove())//If the menu just moved
             {
                 setMenuJustMoved(false);//Well it didn't just move anymore.
@@ -1186,8 +1069,8 @@ Check mark option on right
             lower_right[2] = getLowerRight();
 
             //And make the old be equal to the new.
-            upper_left[1] = getUpperLeft(true);
-            lower_right[1] = getLowerRight(true);
+            upper_left[1] = getUpperLeft();
+            lower_right[1] = getLowerRight();
 
 
             //Automatically move to blob if there is an owner blob and getMoveToOwner is true.
@@ -1260,15 +1143,17 @@ Check mark option on right
                 //Move towards owner blob
                 if(_blob != null && getMoveToOwner())//If this menu has an owner blob and it is supposed to move towards it.
                 {
-                    CCamera@ camera = getCamera();
-                    Driver@ driver = getDriver();//This might be even slower. - Todo numan
-                    
-                    upper_left[2] = driver.getScreenPosFromWorldPos(_blob.getInterpolatedPosition() + getOffset());
+                    if(isWorldPos())
+                    {
+                        upper_left[2] = _blob.getInterpolatedPosition() + getOffset();
 
-                    lower_right[2] = driver.getScreenPosFromWorldPos(//To screen pos everything once they're done calculating.
-                    _blob.getInterpolatedPosition() + getOffset()//Upper left interpolated + the offset.
-                    + getSize()//+ the size.
-                    );
+                        lower_right[2] = _blob.getInterpolatedPosition() + getOffset()//Upper left interpolated + the offset.
+                        + getSize();//+ the size.
+                    }
+                    else
+                    {
+                        error("Trying to follow world pos blob in screen pos. Set world pos to true!");
+                    }
                 }
                 else//Just interpolate
                 {
@@ -1277,12 +1162,20 @@ Check mark option on right
                     lower_right[2] = Vec2f_lerp(getLowerRightOld(), getLowerRight(), transporter.FRAME_TIME);
                 }
                 //print(FRAME_TIME+'');
+                Vec2f size_interpolated = getLowerRightInterpolated() - getUpperLeftInterpolated();
+                for(u16 i = 0; i < backgrounds.size(); i++)
+                {
+                    backgrounds[i].setPointLowerRight(size_interpolated);//Size interpolated.
+                }
             }
-            else if(isWorldPos())//If the menu didn't move, but the camera may of(check not yet added). move the menu to where it should be.
+            //No longer required with new rendering system. Probably.
+            /*else if(isWorldPos())//If the menu didn't move, but the camera may of(check not yet added). move the menu to where it should be. TODO - check if the camera moved. only do this is it moved.
             {
                 upper_left[2] = getUpperLeft();
                 lower_right[2] = getLowerRight();
-            }
+
+                image.setPointLowerRight(getLowerRightInterpolated());
+            }*/
         }
 
         //
@@ -1321,10 +1214,55 @@ Check mark option on right
         {
             return Render();
         }
-       
+        
+        private array<Nu::NuImage@> backgrounds;
+        array<Nu::NuImage@> getBackgrounds()
+        {
+            return backgrounds;
+        }
+        Nu::NuImage@ getBackground(u16 element)
+        {
+            if(element >= backgrounds.size()) { error("tried to get past backgrounds array max."); return @null; }
+            return backgrounds[element];
+        }
+        void addBackground(Nu::NuImage@ _background)
+        {
+            _background.setPointLowerRight(getSize());
+            backgrounds.push_back(@_background);
+        }
+        void removeBackground(u16 element)
+        {
+            if(element >= backgrounds.size()) { error("tried to remove past backgrounds array max."); return; }
+            backgrounds.removeAt(element);
+        }
+        void clearBackgrounds()
+        {
+            backgrounds.clear();
+        }
+        //TODO, add remove options to remove by name and hash
+
+        Render::ScriptLayer render_layer;
+        Render::ScriptLayer getRenderLayer()
+        {
+            return render_layer;
+        }
+        void setRenderLayer(Render::ScriptLayer value)
+        {
+            render_layer = value;
+        }
+
         bool Render()//Overwrite this method if you want a different look.
         {
             Driver@ driver = getDriver();
+
+            if(!isWorldPos())
+            {
+                Render::SetTransformScreenspace();
+            }
+            else//World pos
+            {
+                Render::SetTransformWorldspace();
+            }
 
             //If this cannot be seen. This is out of range. 
             /*if(getUpperLeft().x  - transporter.MARGIN > driver.getScreenWidth()
@@ -1340,45 +1278,14 @@ Check mark option on right
 
             if(getRenderBackground())
             {
-                SColor rec_color;
-                switch(getButtonState())
+                for(u16 i = 0; i < backgrounds.size(); i++)
                 {
-                    case Idle:
-                        rec_color = SColor(255, 200, 200, 200);
-                        break;
-                    case Hover:
-                        rec_color = SColor(255, 70, 50, 25);
-                        break;
-                    case JustHover:
-                        rec_color = SColor(255, 100, 100, 100);
-                        break;
-                    case UnHover:
-                        rec_color = SColor(255, 255, 25, 25);
-                        break;
-                    case Selected:
-                        rec_color = SColor(255, 30, 50, 25);
-                        break;
-                    case FalseRelease:
-                        rec_color = SColor(255, 30, 50, 255);
-                        break;
-                    case AfterRelease:
-                        rec_color = SColor(255, 50, 50, 50);
-                        break;
-                    case Pressed:
-                        rec_color = SColor(255, 127,25,25);
-                        break;
-                    case Released:
-                        rec_color = SColor(255, 25,127,25);
-                        break;
-                    case Disabled:
-                        rec_color = SColor(255, 5, 5, 5);
-                        break;
-                    default:
-                        rec_color = SColor(255, 255, 255, 255);
-                        break;
+                    array<Vertex> vertex;
+                    vertex = backgrounds[i].getVertexsForFrameAndPos(backgrounds[i].frame_on[getButtonState()], getUpperLeftInterpolated(), getButtonState()); //+ getOffset());
+                
+                    Render::RawQuads(backgrounds[i].name, vertex);
+                    //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), rec_color);
                 }
-
-                GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), rec_color);
             }
 
             return true;
@@ -1387,6 +1294,7 @@ Check mark option on right
         //
         //Rendering
         //
+
     }
     
 
@@ -1430,7 +1338,7 @@ Check mark option on right
 
             initial_press = false;
         
-            icons = array<NuMenu::NuImage@>(Nu::POSPositionsCount);
+            icons = array<Nu::NuImage@>(Nu::POSPositionsCount);
 
             menu_sounds_on = array<string>(ButtonStateCount, "");
             menu_volume = 1.0f;
@@ -1463,7 +1371,11 @@ Check mark option on right
             {
                 if(play_sound_on_world)
                 {
-                    Sound::Play(menu_sounds_on[_button_state], getPos(true), menu_volume, 1.0f);
+                    if(!isWorldPos())
+                    {
+                        warning("Tried to play sound on world while isWorldPos() was false.");
+                    }
+                    Sound::Play(menu_sounds_on[_button_state], getPos(), menu_volume, 1.0f);
                 }
                 else
                 {
@@ -1596,21 +1508,22 @@ Check mark option on right
         bool reposition_icons;//If this is true, the icons's position will be reassigned every time the menu moves based on what icon position it is in. top will be put back on the top every movement.
         
         
-        private array<NuMenu::NuImage@> icons;
+        private array<Nu::NuImage@> icons;
 
         
-        NuImage@ setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
+        Nu::NuImage@ setIcon(string icon_name, Vec2f icon_frame_size, u16 icon_frame_default, u16 icon_frame_hover, u16 icon_frame_press, u16 position = 0)
         {
             if(icons.size() <= position){ error("In setIcon : tried to get past the highest element in the icons array. Attempted to get icon " + position ); return @null; }
             
-            NuImage@ icon = NuImage();
+            Nu::NuImage@ icon = Nu::NuImage(ButtonStateCount);
             
             icon.name = icon_name;
             icon.setFrameSize(icon_frame_size);
 
             icon.setDefaultFrame(icon_frame_default);
             
-            icon.setHoverAndPressFrames(icon_frame_hover, icon_frame_press);
+            icon.setFourTwoFrames(JustHover, Hover, JustPressed, Pressed,
+                icon_frame_hover, icon_frame_press);
             
             Vec2f icon_pos;
             
@@ -1630,7 +1543,7 @@ Check mark option on right
             return icon;
         }
         
-        NuImage@ getIcon(u16 position = 0)
+        Nu::NuImage@ getIcon(u16 position = 0)
         {
             if(icons.size() <= position){ error("In getIcon : tried to get past the highest element in the icons array. Attempted to get icon " + position); return null; }
 
@@ -1654,15 +1567,10 @@ Check mark option on right
         {
             if(areIconsUsed())
             {
-                CCamera@ camera;
-                if(isWorldPos())
-                {
-                    @camera = @getCamera();
-                }
                 
                 for(u16 i = 0; i < Nu::POSPositionsCount; i++)
                 {
-                    NuImage@ icon = getIcon(i);
+                    Nu::NuImage@ icon = getIcon(i);
                         
                     if(icon == null)
                     {
@@ -1671,7 +1579,7 @@ Check mark option on right
 
                     Vec2f icon_pos;
                     
-                    if(!Nu::getPosOnSizeFull(i, size, icon.getFrameSize(), icon_pos, default_buffer /* (isWorldPos() ? getCamera().targetDistance : 1)*/))//Move that pos.
+                    if(!Nu::getPosOnSizeFull(i, size, icon.getFrameSize(), icon_pos, default_buffer))//Move that pos.
                     {
                         error("Icon position went above the icons array max size");
                         return;
@@ -1735,15 +1643,10 @@ Check mark option on right
             {
                 return;
             }
-            CCamera@ camera;
-            if(isWorldPos())
-            {
-                @camera = @getCamera();
-            }
 
             //Reposition icons.
             if(reposition_icons && isInterpolated()//If this menu is interpolated
-            && (didMenuJustMove() || isWorldPos()))//And the menu just moved or is on a world position.
+            && didMenuJustMove())//And the menu just moved.
             {
                 RepositionAllIcons(getLowerRightInterpolated() - getUpperLeftInterpolated());
             }
@@ -1759,8 +1662,8 @@ Check mark option on right
                 GUI::DrawIcon(icons[i].name,//Icon name
                 icons[i].frame_on[button_state],//Icon frame
                 icons[i].getFrameSize(),//Icon size
-                getUpperLeftInterpolated() + (icons[i].pos - Vec2f(0,0)) * (isWorldPos() ? camera.targetDistance * 2 : 1),//Icon position//TODO, FIX.  (probably when rendering is done)
-                isWorldPos() ? camera.targetDistance: 0.5,//Icon scale
+                getUpperLeftInterpolated() + (icons[i].pos - Vec2f(0,0)),//Icon position//TODO, FIX.  (probably when rendering is done)
+                0.5f,//Icon scale
                 icons[i].color_on[button_state]);//Color
             }
         }
@@ -1888,7 +1791,6 @@ Check mark option on right
         
         void SelectFont()
         {
-            CCamera@ camera = getCamera();
             if(resize_text && isWorldPos())
             {
                 //if(camera.targetDistance < 0.9)
@@ -2067,9 +1969,9 @@ Check mark option on right
 
         bool isPointInTitlebar(Vec2f value)//Is the vec2f value within the titlebar?
         {
-            Vec2f _upperleft = getUpperLeft(true);
+            Vec2f _upperleft = getUpperLeft();
             
-            if(value.x <= getLowerRight(true).x - (getSize().x - titlebar_size.x) //If the point is to the left of the titlebar's right side.
+            if(value.x <= getLowerRight().x - (getSize().x - titlebar_size.x) //If the point is to the left of the titlebar's right side.
             && value.y <= _upperleft.y + titlebar_size.y//If the point is above the titlebar's bottom.
             && value.x >= _upperleft.x//If the point is to the right of the titlebar's left side.
             && value.y >= _upperleft.y)//If the point is below the titlebar's top.
@@ -2113,7 +2015,7 @@ Check mark option on right
             //Titlebar
             if(titlebar_width_is_menu)
             {
-                titlebar_size.x = getSize().x * (getCamera().targetDistance * 2);
+                titlebar_size.x = getSize().x;
             }
 
             if(!titlebar_ignore_press && titlebar_size.y != 0.0f)
@@ -2128,7 +2030,7 @@ Check mark option on right
                     if(titlebar_press_pos != Vec2f_zero)
                     {
                         //MenuBaseExEx required to not accidently use the one in MenuHolder which moves their children menu's before the tick methods.
-                        MenuBaseExEx::setPos(getUpperLeft(true) - //Current menu position subtracted by
+                        MenuBaseExEx::setPos(getUpperLeft() - //Current menu position subtracted by
                          (titlebar_press_pos - mouse_pos));//The positioned the titlebar was pressed minus the current mouse position. (The difference.)
                         titlebar_press_pos = mouse_pos;
                     }
@@ -2199,7 +2101,7 @@ Check mark option on right
             Vec2f _upperleft = getUpperLeftInterpolated();//Upper left
             
             Vec2f _lowerright = (getUpperLeftInterpolated() + Vec2f(titlebar_size.x, +//Upper left plus titlebar_size.x +
-            titlebar_size.y * (isWorldPos() ? getCamera().targetDistance * 2 : 1))); //titlebar_size.y multiplied by the camera distance if isWorldPos() is true.
+            titlebar_size.y)); //titlebar_size.y
 
             GUI::DrawRectangle(_upperleft, _lowerright);
         }
@@ -2215,7 +2117,7 @@ Check mark option on right
 
             //For repositionioning text in an interpolated manner. Only works if reposition_text is true.
             if((reposition_text && isInterpolated())//If this menu is interpolated 
-            && (didMenuJustMove() || isWorldPos()))//and the menu just moved or is on a world position.
+            && didMenuJustMove())//and the menu just moved.
             {
                 RepositionAllText(getLowerRightInterpolated() - getUpperLeftInterpolated());
             }
@@ -2226,7 +2128,7 @@ Check mark option on right
                 {
                     continue;
                 }
-                GUI::DrawText(text_strings[i], getUpperLeftInterpolated() + text_positions[i] * (isWorldPos() && !reposition_text ? getCamera().targetDistance * 2: 1), //* (isWorldPos() ? 1 * 1 : 1),//lol what?
+                GUI::DrawText(text_strings[i], getUpperLeftInterpolated() + text_positions[i],// * (isWorldPos() && !reposition_text ? getCamera().targetDistance * 2: 1), //* (isWorldPos() ? 1 * 1 : 1),//lol what?
                 text_color);
             }
         }
@@ -2370,8 +2272,19 @@ Check mark option on right
             if(player == null){return false;}
             CControls@ controls = player.getControls();
             if(controls == null){return false;}
-            
-            return Tick(KEY_LBUTTON, controls.getMouseScreenPos());
+
+            Vec2f pos;
+
+            if(isWorldPos())
+            {
+                pos = controls.getMouseWorldPos();
+            }
+            else
+            {
+                pos = controls.getMouseScreenPos();
+            }
+
+            return Tick(KEY_LBUTTON, pos);
         }
 
         bool Tick(Vec2f position)
@@ -2380,8 +2293,19 @@ Check mark option on right
             if(player == null){return false;}
             CControls@ controls = player.getControls();
             if(controls == null){return false;}
+
+            Vec2f pos;
+
+            if(isWorldPos())
+            {
+                pos = controls.getMouseWorldPos();
+            }
+            else
+            {
+                pos = controls.getMouseScreenPos();
+            }
             
-            return Tick(KEY_LBUTTON, controls.getMouseScreenPos(), position);
+            return Tick(KEY_LBUTTON, pos, position);
         }
 
         //Examples: point parameter for the mouse position, the position parameter is for the blob. position parameter only really useful when it comes to radius stuff.
@@ -2404,7 +2328,7 @@ Check mark option on right
             u8 _button_state = getButtonState();//Get the button state.
 
             if(enableRadius == 0.0f || position == Vec2f_zero ||//Provided both these values have been assigned, the statement below will check.
-            getDistance(position, getMiddle(true)) < enableRadius)//The button is within enable(interact) distance.
+            getDistance(position, getMiddle()) < enableRadius)//The button is within enable(interact) distance.
             {
                 _button_state = getPressingState(point, _button_state, key_button, key_button_release, key_button_just);//Get the pressing state. That pun in intentional.
             }
@@ -2487,119 +2411,6 @@ Check mark option on right
         }
     }
 
-    //Menu setup to function like an check box. Click once and it's state changes.
-    class MenuCheckBox : MenuBaseExEx
-    {
-        string test_name;
-
-        MenuCheckBox(string _name)
-        {
-            if(!isClient())
-            {
-                return;
-            }
-
-            initVars(_name);
-
-            render_background = false;
-        }
-        MenuCheckBox(Vec2f _upper_left, Vec2f _lower_right, string _name)
-        {
-            if(!isClient())
-            {
-                return;
-            }
-
-            initVars(_name, _upper_left, _lower_right);
-
-            render_background = false;
-        }
-
-        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
-        {
-            MenuBaseExEx::initVars(_name, _upper_left, _lower_right);
-            render_layer = Render::layer_prehud;
-
-            menu_checked = false;
-
-            desired_frame = 0;
-
-            @image = @NuImage();
-            image.CreateImage("testy_testers", "RenderExample.png");
-            image.setFrameSize(Vec2f(32, 32));
-            image.setScale(Vec2f(1.0f, 1.0f));
-        }
-
-        Render::ScriptLayer render_layer;
-
-        NuImage@ image;
-
-        bool menu_checked;
-
-        bool Tick() override
-        {
-            if(!MenuBaseExEx::Tick())
-            {
-                return false;
-            }
-
-            CPlayer@ player = getLocalPlayer();
-
-            CControls@ controls = player.getControls();
-
-            Vec2f mouse_pos = controls.getMouseScreenPos();
-            
-            bool left_button = controls.mousePressed1;//Pressing
-            bool left_button_release = controls.isKeyJustReleased(KEY_LBUTTON);//Just released
-            bool left_button_just = controls.isKeyJustPressed(KEY_LBUTTON);//Just pressed
-
-            button_state = getPressingState(mouse_pos, button_state, left_button, left_button_release, left_button_just);
-
-            if(button_state == Released)
-            {
-                menu_checked = !menu_checked;
-            }
-
-            desired_frame++;
-            if(desired_frame == 4)
-            {
-                desired_frame = 0;
-            }
-            
-            return true;
-        }
-
-        u16 desired_frame;
-
-        bool Render() override
-        {
-            if(!MenuBaseExEx::Render())
-            {
-                return false;
-            }
-
-            //InterpolatePositions();
-
-            Render::SetTransformScreenspace();
-
-            Render::RawQuads(image.name, image.getVertexsForFrameAndPos(desired_frame, getUpperLeftInterpolated() + getOffset()));
-
-
-            //Render::QuadsColored(test_name, z, v_pos, v_uv, v_col);
-
-            /*if(menu_checked == true)
-            {
-                GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), SColor(255, 25,127,25));
-            }
-            else
-            {
-                GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), SColor(255, 127,25,25));
-            }*/
-
-            return true;
-        }
-    }
-
 
 
 
@@ -2660,26 +2471,9 @@ Check mark option on right
         //Overrides
         //
 
-        void setUpperLeft(Vec2f value, bool menu_just_move = true) override
+        void setMenuJustMoved(bool value) override
         {
-            MenuBase::setUpperLeft(value, menu_just_move);
-            moveHeldMenus();
-        }
-
-        void setPos(Vec2f value, bool menu_just_move = true) override
-        {
-            MenuBase::setPos(value, menu_just_move);
-            moveHeldMenus();
-        }
-        void setLowerRight(Vec2f value, bool menu_just_move = true) override
-        { 
-            MenuBase::setLowerRight(value, menu_just_move);
-            moveHeldMenus();
-        }
-
-        void setSize(Vec2f value) override
-        {
-            MenuBase::setSize(value);
+            MenuBase::setMenuJustMoved(value);
             moveHeldMenus();
         }
         
@@ -2767,7 +2561,7 @@ Check mark option on right
                 
                 if(_menu.getMoveToOwner())
                 {
-                    _menu.setPos(getPos(true) + _menu.getOffset());
+                    _menu.setPos(getPos() + _menu.getOffset());
                 }
                 
                 return true;
@@ -2832,14 +2626,6 @@ Check mark option on right
                     optional_menus.push_back(@_menu);
                     break;
                 }
-                case CheckBox:
-                {
-                    MenuCheckBox@ _menu = MenuCheckBox(_name + "_chk");
-
-
-                    optional_menus.push_back(@_menu);
-                    break;
-                }
                 default:
                     error("Menu option " + value + " not found.");
                     break;
@@ -2861,7 +2647,7 @@ Check mark option on right
                 added_menu.setOwnerMenu(this);
 
 
-                added_menu.setPos(getPos(true) + added_menu.getOffset());
+                added_menu.setPos(getPos() + added_menu.getOffset());
 
                 return @added_menu;
             }
@@ -2885,7 +2671,7 @@ Check mark option on right
                     continue;
                 }
                 
-                optional_menus[i].setPos(getPos(true) + optional_menus[i].getOffset());
+                optional_menus[i].setPos(getPos() + optional_menus[i].getOffset());
             }
         }
 

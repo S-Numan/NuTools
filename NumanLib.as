@@ -504,7 +504,7 @@ namespace Nu
 
         output.x = image_size.x / frame_size.x;
         output.y = image_size.y / frame_size.y;
-        print("todo, confirm this works.");
+    
         return u16(output.x * output.y);
     }
 
@@ -581,6 +581,259 @@ namespace Nu
         return v_pos;
     }
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    class NuImage
+    {
+        NuImage(u16 state_count = 1)
+        {
+            name = "";
+            name_id = 0;
+            frame_on = array<u16>(state_count, 0);
+            color_on = array<SColor>(state_count, SColor(255, 255, 255, 255));
+            Vec2f pos = Vec2f_zero;
+
+            is_texture = false;
+            v_raw = array<Vertex>(4);
+            frame_points = array<Vec2f>(4);
+            z = array<float>(4, 0.0f);
+            scale = Vec2f(1.0f, 1.0f);
+            auto_frame_points = true;
+        }
+
+        void setDefaultFrame(u16 frame)//Sets the regular frame for all states.
+        {
+            for(u16 i = 0; i < frame_on.size(); i++)
+            {
+                frame_on[i] = frame;
+            }
+        }
+
+        void setDefaultColor(SColor color)//Sets the regular color for all states.
+        {
+            for(u16 i = 0; i < color_on.size(); i++)
+            {
+                color_on[i] = color;
+            }
+        }
+
+                            //  JustHover state Hover state Just Pressed  Pressed state--OnHoverFrame|OnPressFrame    
+        void setFourTwoFrames(u16 just_hover, u16 hover, u16 just_pressed, u16 pressed, u16 on_hover, u16 on_press)//In NuMenuCommon this is used to set frames for hover and press states easily.
+        {
+            frame_on[just_hover] = on_hover;
+            frame_on[hover] = on_hover;
+            frame_on[just_pressed] = on_press;
+            frame_on[pressed] = on_press;
+        }
+        u16 name_id;//Used for keeping track of what image is what image. For when using several NuImages in one array for example. Loop through the array and compare enums to this.
+        //Todo - replace name_id with a string name and hash?
+
+        bool is_texture;//Sets if this is a texture. If this is false, this is not a texture.
+        
+        string name;//Either file name, or texture name.
+
+        private Vec2f image_size;//Size of the image given.
+        void setImageSize(Vec2f value)
+        {
+            if(image_size != value)
+            {
+                image_size = value;
+                if(is_texture)
+                {
+                    RecalculatePositions();
+                }
+            }
+        }
+        Vec2f getImageSize()
+        {
+            return image_size;
+        }
+
+        private Vec2f frame_size;//The frame size of the icon. (for choosing different frames);
+        void setFrameSize(Vec2f value)//Sets the frame size of the frame in the image.
+        {
+            if(frame_size != value)
+            {
+                frame_size = value;
+                if(is_texture)
+                {
+                    RecalculatePositions();
+                    if(auto_frame_points){
+                    setDefaultPoints();
+                    }
+                }
+            }
+        }
+        Vec2f getFrameSize()//Gets the frame size in the image.
+        {
+            return frame_size;
+        }
+        
+
+        array<u16> frame_on;//Stores what frame the image is on depending on what state this is in
+        array<SColor> color_on;//Color depending on the state
+        Vec2f pos;//Position of image in relation to something else.
+
+
+        //
+        //Below goes into rendering
+        //
+
+        //Todo, createimage from sprite.
+
+        //This creates a texture and/or sets up a few things for this image to work with it.
+        void CreateImage(string render_name, string file_path = "")
+        {
+            //ensure texture for our use exists
+            if(!Texture::exists(render_name))
+            {
+                if(!Texture::createFromFile(render_name, file_path))
+                {
+                    warn("texture creation failed");
+                    return;
+                }
+            }
+
+            ImageData@ _image = Texture::data(render_name);
+
+            image_size = Vec2f(_image.width(), _image.height());
+            frame_size = image_size;
+            RecalculatePositions();
+            if(auto_frame_points){
+                setDefaultPoints();
+            }
+            name = render_name;
+            is_texture = true;
+        }
+        void CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
+        {
+            ImageData@ tex = Texture::dataFromSprite(s);//Get the sprite data.
+            Texture::createFromData(render_name, tex);//Create a texture from it.
+            CreateImage(render_name);//Give this menu the texture.
+        }
+
+
+        bool auto_frame_points;//This, when true, automatically changes frame_points to the accurate points of the frame. This being false allows you to scale the frame however you like.
+        
+        array<Vec2f> frame_points;//Top left, top right, bottom left, bottom right of the frame when drawn. Stretches or squishes the frame.
+        void setPointUpperLeft(Vec2f value)
+        {
+            frame_points[0] = value;//Top left
+            frame_points[1].y = value.y;//Top right
+            frame_points[3].x = value.x;//Bottom left
+
+            auto_frame_points = false;
+        }
+        void setPointLowerRight(Vec2f value)
+        {
+            frame_points[1].x = value.x;//Top right
+            frame_points[2] = value;//Bottom right
+            frame_points[3].y = value.y;//Bottom left
+        
+            auto_frame_points = false;
+        }
+        void setDefaultPoints()//Sets the correct points taking into factor frame size. Keeps the size of the drawn thing non modified. (ignoring scale)
+        {
+            for(u16 i = 0; i < frame_points.size(); i++)
+            {
+                frame_points = Nu::getFrameSizes(
+                    frame_size//Frame size
+                );
+            }
+        }
+
+        array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
+        
+        void RecalculatePositions()//Recalculates UV. Basically sets up all four points of each frame in the image and puts it all into one big array. Fancy stuff, don't touch it if you don't know what it does. I hardly know what it does.
+        {
+            array<array<Vec2f>> _uv_per_frame(Nu::getFramesInSize(image_size, frame_size));
+            
+            u16 i;
+            for(i = 0; i < _uv_per_frame.size(); i++)
+            {
+                _uv_per_frame[i] = Nu::getUVFrame(
+                image_size,//Image size
+                frame_size,//Frame size
+                i//Desired frame
+                );
+            }
+
+            uv_per_frame = _uv_per_frame;
+        }
+
+        array<float> z;//The z level this is drawn on.
+        void setZ(float value)//Set the z level. (Simplified)
+        {
+            for(u8 i = 0; i < z.size(); i++)
+            {
+                z[i] = value;
+            }
+        }
+        float getZ()//Get the z level. (Simplified)
+        {
+            return z[0];
+        }
+
+
+        private Vec2f scale;//Scale of the frame.
+        void setScale(Vec2f _scale)//Sets the scale of the frame.
+        {
+            scale = _scale;
+        }
+        Vec2f getScale()//Gets the scale of the frame.
+        {
+            return scale;
+        }
+
+        //TODO, don't run this every render call. Only recalculate if needed.
+        array<Vertex> v_raw;//For rendering.
+        array<Vertex> getVertexsForFrameAndPos(u16 frame, Vec2f _pos = Vec2f(0,0), u16 state = 0)//Gets what this should render.
+        {
+            v_raw[0] = Vertex(_pos + Vec2f(frame_points[0].x * scale.x, frame_points[0].y * scale.y), z[0], uv_per_frame[frame][0], color_on[state]);
+			v_raw[1] = Vertex(_pos + Vec2f(frame_points[1].x * scale.x, frame_points[1].y * scale.y), z[1], uv_per_frame[frame][1], color_on[state]);//Set the colors yourself.
+			v_raw[2] = Vertex(_pos + Vec2f(frame_points[2].x * scale.x, frame_points[2].y * scale.y), z[2], uv_per_frame[frame][2], color_on[state]);
+			v_raw[3] = Vertex(_pos + Vec2f(frame_points[3].x * scale.x, frame_points[3].y * scale.y), z[3], uv_per_frame[frame][3], color_on[state]);
+            return v_raw;
+        }
+        
+
+    }
 
 }
 
