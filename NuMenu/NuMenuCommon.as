@@ -1077,8 +1077,15 @@ Check mark option on right
             CBlob@ _owner_blob = getOwnerBlob();
             if(_owner_blob != null && getMoveToOwner())
             {
-                setPos(_owner_blob.getPosition() + getOffset());
-            }  
+                if(isWorldPos())
+                {
+                    setPos(_owner_blob.getPosition() + getOffset());
+                }
+                else//Screen pos
+                {
+                    setPos(getDriver().getScreenPosFromWorldPos(_owner_blob.getPosition()) + getOffset());
+                }
+            }
 
             CPlayer@ player = getLocalPlayer();
             if(player == null)//The player must exist to get the CControls. (and maybe some other stuff)
@@ -1152,7 +1159,13 @@ Check mark option on right
                     }
                     else
                     {
-                        error("Trying to follow world pos blob in screen pos. Set world pos to true!");
+                        Driver@ driver = getDriver();
+                        Vec2f b_ipos = driver.getScreenPosFromWorldPos(_blob.getInterpolatedPosition());//Blob_interpolatedPOS
+                        
+                        upper_left[2] = b_ipos + getOffset();
+
+                        lower_right[2] = b_ipos + getOffset()//Upper left interpolated + the offset.
+                        + getSize();//+ the size.
                     }
                 }
                 else//Just interpolate
