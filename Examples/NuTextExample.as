@@ -1,3 +1,4 @@
+#include "NuMenuCommon.as";
 #include "NuTextCommon.as";
 
 void onInit( CRules@ this )
