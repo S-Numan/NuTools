@@ -1,13 +1,19 @@
 //This file should go before all other files that use NuMenu in gamemode.cfg
 
 #include "NuMenuCommon.as";
+#include "NuTextCommon.as";
+#include "CHub";
 
 bool init;
 
 void onInit( CRules@ rules )
 {
-    print("NuMenu Loaded");   
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
+    CHub@ hub = CHub();
+
+    rules.set("CHub", @hub);
+    
+    print("NuHub Loaded");
 
 
     NuMenu::onInit(rules);
@@ -31,6 +37,9 @@ void onReload( CRules@ rules )
 
 void onTick( CRules@ rules )
 {
+    CHub@ hub;
+    rules.get("NuHub", @hub);
+
     NuMenu::onTick(rules);//Important NuMenu things.
     
     NuMenu::MenuTick();//Run logic for the menus.
@@ -40,11 +49,5 @@ void onRender( CRules@ rules )
 {
     if(!init) { return; }//Kag renders before onInit. Stop this.
 
-    CMenuTransporter@ _transporter;
-
-    rules.get("NuMenus", @_transporter);
-
     NuMenu::onRender(rules);//Important NuMenu things.
-    
-    NuMenu::MenuRender(@_transporter);//Render the menus.
 }

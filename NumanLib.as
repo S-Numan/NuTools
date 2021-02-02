@@ -754,6 +754,8 @@ namespace Nu
             }
 
             ImageData@ _image = Texture::data(render_name);
+            if(_image == null) { error("image was null for some reason in NumanLib::NuImage::CreateImage"); return @null; }
+            if(_image.size() == 0) { warning("Image provided in NumanLib::NuImage::CreateImage was 0 in size"); return _image; }
 
             image_size = Vec2f(_image.width(), _image.height());
             frame_size = image_size;

@@ -9,12 +9,12 @@
 //Save inside a mod, and you are done. Call that font from wherever elsewhere.
 
 #include "NumanLib.as";
+#include "CHub";
 
 u32 CHARACTER_SPACE = 32;
-
-class NuText
+class NuFont
 {
-    NuText(string font_png)
+    /*NuFont(string font_png)
     {
         Setup(font_png);
         setString("Hello World!");
@@ -37,15 +37,19 @@ class NuText
         
         if(_image_size < 3)//To prevent problems when setting start/end/null colors.
         {
-            error("Image provided to NuText was too small.");
+            error("Image provided to NuFont was too small.");
             return;
         }
-        
+
         SColor start_color = basefontdata[0];//Get the start color.
         SColor end_color = basefontdata[1];//Get the end color.
         SColor null_color = basefontdata[2];//Get null color. (usually black)
 
         basefontdata[1] = null_color;//Remove this one.
+
+
+        if(!Texture::update(font_png, basefontdata)){ error("WAT?"); return;}//Update the texture without that.
+
 
         u32 i;
 
@@ -114,7 +118,7 @@ class NuText
 
         if(character_count - CHARACTER_SPACE != start_count)
         {
-            error("NuText: Something went wrong.\ncharacter_count = " + character_count + "\nstart_count = " + start_count);
+            error("NuFont: Something went wrong.\ncharacter_count = " + character_count + "\nstart_count = " + start_count + "\nend_count = " + end_count);
         }
 
         basefont.uv_per_frame = uv_per_frame;
@@ -136,6 +140,45 @@ class NuText
     }
 
 
+    Nu::NuImage@ basefont;
+
+    array<Vec2f> character_sizes;//Sizes for every character in the character png.*/
+}
+
+class NuText
+{
+    /*NuText()
+    {
+        font = @null;
+
+        is_world_pos = false;
+    }
+
+    bool is_world_pos;
+    bool isWorldPos()
+    {
+        return is_world_pos;
+    }
+    void setWorldPos(bool value)
+    {
+        is_world_pos = value;
+    }
+    private NuFont@ font;
+    void setFont(NuFont@ _font)
+    {
+        font = _font;
+    }
+    void setFont(string font_name)
+    {
+        array<NuFont@> fonts 
+        getRules().get("font_array", fonts);
+    }
+    NuFont@ getFont()
+    {
+        return @font;
+    }
+
+
     void Render(Vec2f _pos = Vec2f(0,0), u16 state = 0)
     {
         Vec2f character_pos = Vec2f(0,0);
@@ -154,10 +197,6 @@ class NuText
             character_pos.x += character_sizes[render_string[i]].x;//Store an array of where each character should be rendered. Don't recalculate it every render call. TODO
         }
     }
-
-    Nu::NuImage@ basefont;
-
-    array<Vec2f> character_sizes;//Sizes for every character in the character png.
 
     array<Vec2f> string_sizes;//Sizes for each character in the drawn string.
     
@@ -183,7 +222,5 @@ class NuText
     string getString()
     {
         return render_string;
-    }
-
-
+    }*/
 }

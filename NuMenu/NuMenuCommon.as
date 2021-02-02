@@ -1,164 +1,5 @@
 #include "NumanLib.as";
-
-
-class CMenuTransporter
-{
-    CMenuTransporter()
-    {
-        SetupArrays();
-        SetupRendering();
-        SetupGlobalVars();
-    }
-    
-    void SetupArrays()
-    {
-        menus = array<NuMenu::IMenu@>();
-        buttons = array<NuMenu::MenuButton@>();
-    }
-
-
-    int posthudid;
-    int prehudid;
-    int postworldid;
-    int objectsid;
-    int tilesid;
-    int backgroundid;
-    void SetupRendering()
-    {
-        posthudid = Render::addScript(Render::layer_posthud, "NuMenuCommon.as", "MenusPostHud", 0.0f);
-        prehudid = Render::addScript(Render::layer_prehud, "NuMenuCommon.as", "MenusPreHud", 0.0f);
-        postworldid = Render::addScript(Render::layer_postworld, "NuMenuCommon.as", "MenusPostWorld", 0.0f);
-        objectsid = Render::addScript(Render::layer_objects, "NuMenuCommon.as", "MenusObjects", 0.0f);
-        tilesid = Render::addScript(Render::layer_tiles, "NuMenuCommon.as", "MenusTiles", 0.0f);
-        backgroundid = Render::addScript(Render::layer_background, "NuMenuCommon.as", "MenusBackground", 0.0f);
-    }
-
-
-    f32 FRAME_TIME; // last frame time
-    float MARGIN;//How many pixels away will things stop drawing from outside the screen.
-    void SetupGlobalVars()
-    {
-        FRAME_TIME = 0.0f;
-        MARGIN = 255.0f;
-    }
-
-
-
-
-    bool addMenuToList(NuMenu::IMenu@ _menu)
-    {
-        menus.push_back(_menu);
-        buttons.push_back(@null);
-
-        return true;
-    }
-
-    bool addMenuToList(NuMenu::MenuButton@ _menu)
-    {
-        menus.push_back(_menu);
-        buttons.push_back(_menu);
-
-        return true;
-    }
-
-    bool removeMenuFromList(u16 i)
-    {
-        if(i >= menus.size())
-        {
-            error("Tried to remove menu equal to or above the menu size."); return false;
-        }
-
-        menus.removeAt(i);
-        buttons.removeAt(i);
-
-        return true;
-    }
-    
-    bool removeMenuFromList(string _name)
-    {
-        int _namehash = _name.getHash();
-        for(u16 i = 0; i < menus.size(); i++)
-        {
-            if(menus[i].getNameHash() == _namehash)
-            {
-                menus.removeAt(i);
-                buttons.removeAt(i);
-                i--;
-            }
-        }
-
-        return true;
-    }
-
-
-    //Returns an array of all the positions of menus with _name in the menu array. 
-    array<u16> getMenuPositions(string _name)
-    {   
-        array<u16> _menu_positions();
-        
-        int _namehash = _name.getHash();
-        for(u16 i = 0; i < menus.size(); i++)
-        {
-            if(menus[i].getNameHash() == _namehash)
-            {
-                _menu_positions.push_back(i);
-            }
-        }
-
-        return _menu_positions;
-    }
-
-    u16 getMenuListSize()
-    {
-        return menus.size();
-    }
-
-    //False being returned means the code tried to get past the max menu size.
-    bool getMenuFromList(u16 i, NuMenu::IMenu@ &out imenu)
-    {
-        if(i >= menus.size()) { error("Tried to get menu equal to or above the menu size."); @imenu = @null; return false; }
-
-        @imenu = @menus[i];
-
-        return true;
-    }
-
-    //Get the first IMenu from the menus array with _name.
-    //False being returned means no menus were found.
-    bool getMenuFromList(string _name, NuMenu::IMenu@ &out imenu)
-    {
-        array<u16> _menus();
-        _menus = getMenuPositions(_name);
-        if(_menus.size() > 0)
-        {
-            @imenu = @menus[_menus[0]];
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    void ClearMenuList()
-    {
-        menus.clear();
-        buttons.clear();
-    }
-
-    //Return IMenu at the position.
-    NuMenu::IMenu@ get_opIndex(int idx) const
-    {
-        if(idx >= menus.size()) { error("Tried to get menu out of bounds."); return @null; }
-        return @menus[idx];
-    }
-    
-
-    array<NuMenu::IMenu@> menus;
-
-    array<NuMenu::MenuButton@> buttons;//Since casting is very broken, this is a way to sidestep the issue.
-}
-//Don't let more of one of this exist at once.
+#include "CHub";
 
 
 namespace NuMenu
@@ -221,6 +62,7 @@ Check mark option on right
 
 //1. Before the first tick, the checkbox in menuholder runs away from it's owner. Fix plz.
 //2. Remake text. All text. Add shaky text. And different color text for each induvidual letter.
+//3. Fix button rendering to render like it should. Not just via a method, but a render script.
 
 //
 //TODO LIST
@@ -474,9 +316,9 @@ Check mark option on right
 
         void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0))
         {
-            if(!getRules().get("NuMenus", @transporter))
+            if(!getRules().get("CHub", @transporter))
             {
-                error("NuMenuCommonLogic.as must be before anything else that uses NuMenu in gamemode.cfg");
+                error("NuHubLogic.as must be before anything else that uses NuMenu in gamemode.cfg");
             }
 
             ticks_since_created = 0;
@@ -540,7 +382,7 @@ Check mark option on right
             return ticks_since_created;
         }
 
-        CMenuTransporter@ transporter;
+        CHub@ transporter;
 
         float default_buffer;
 
@@ -2745,7 +2587,7 @@ Check mark option on right
 
 
 
-    CMenuTransporter@ transporter;
+    CHub@ transporter;
 
     void onInit(CRules@ rules)
     {
@@ -2754,11 +2596,7 @@ Check mark option on right
             return;
         }
 
-        CMenuTransporter@ _transporter = CMenuTransporter();
-
-        rules.set("NuMenus", @_transporter);
-
-        rules.get("NuMenus", @transporter);
+        rules.get("CHub", @transporter);
         
     }
 
@@ -2823,7 +2661,7 @@ Check mark option on right
         transporter.FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
     }
 
-    void MenuRender(CMenuTransporter@ transporter)
+    void MenuRender(CHub@ transporter)
     {
         Render::SetAlphaBlend(true);
         
@@ -2845,13 +2683,13 @@ Check mark option on right
     }
 }
 
-CMenuTransporter@ o_transporter = @null;//Outer transporter.
+CHub@ o_transporter = @null;//Outer transporter.
 
 bool TransporterInit()
 {
     if(o_transporter == null)//Init.
     {
-        getRules().get("NuMenus", @o_transporter);
+        getRules().get("CHub", @o_transporter);
         print("rules got");
         if(o_transporter == null)//Still equal to null?
         {

@@ -1,4 +1,5 @@
 #include "NuMenuCommon.as";
+#include "CHub";
 
 void onInit( CRules@ this )
 {
@@ -7,8 +8,8 @@ void onInit( CRules@ this )
         return;
     }
 
-    CMenuTransporter@ transporter;
-    if(!this.get("NuMenus", @transporter)) { error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return; }
+    CHub@ transporter;
+    if(!this.get("CHub", @transporter)) { error("Failed to get NuMenus. Make sure NuHubLogic is before anything else that tries to use the built in NuMenus array."); return; }
 
     print("Menu Example Creation");
 
@@ -100,8 +101,8 @@ void ButtonTestFunction(CPlayer@ caller, CBitStream params, NuMenu::IMenu@ menu)
 
 void onTick( CRules@ this )
 {
-    CMenuTransporter@ transporter;
-    if(!this.get("NuMenus", @transporter)) { error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return; }
+    CHub@ transporter;
+    if(!this.get("CHub", @transporter)) { error("Failed to get NuMenus. Make sure NuHubLogic is before anything else that tries to use the built in NuMenus array."); return; }
    
 
     DebugOptionChanger(transporter);
@@ -111,7 +112,7 @@ void onTick( CRules@ this )
 
 
 
-void DebugOptionChanger(CMenuTransporter@ transporter)
+void DebugOptionChanger(CHub@ transporter)
 {
     NuMenu::IMenu@ _menu = @null;
     if(transporter.getMenuListSize() > 0)

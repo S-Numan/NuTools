@@ -1,6 +1,6 @@
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
-
+/*
 void onInit( CRules@ this )
 {
     if(!isClient())
@@ -9,7 +9,7 @@ void onInit( CRules@ this )
     }
 
     CMenuTransporter@ transporter;
-    if(!this.get("NuMenus", @transporter)) { error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return; }
+    if(!this.get("NuMenus", @transporter)) { error("Failed to get NuMenus. Make sure NuHubLogic is before anything else that tries to use the built in NuMenus array."); return; }
 
     print("Text Example Creation");
 }
@@ -22,7 +22,7 @@ void onReload( CRules@ this )
 void onTick( CRules@ this )
 {
     CMenuTransporter@ transporter;
-    if(!this.get("NuMenus", @transporter)) { error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return; }
+    if(!this.get("NuMenus", @transporter)) { error("Failed to get NuMenus. Make sure NuHubLogic is before anything else that tries to use the built in NuMenus array."); return; }
    
 }
 
