@@ -536,15 +536,18 @@ namespace Nu
     //1: The size of the image.
     //2: The size of the frame in the image
     //3: The frame you want in the image.
-    //Returns an array of the four positions .
+    //Returns an array of the four positions. Now in UV style! Buy now for only 19.99$ free shipping and handling.
     array<Vec2f> getUVFrame(Vec2f image_size, Vec2f frame_size, u16 desired_frame)
     {
-        Vec2f[] v_uv(4);
-
-
         Vec2f frame_start = getFrameStart(image_size, frame_size, desired_frame);
-        Vec2f frame_end   = getFrameEnd(frame_start, frame_size);
+        Vec2f frame_end = getFrameEnd(frame_start, frame_size);
 
+        return getUVFrame(image_size, frame_start, frame_end);
+    }
+    //Same as above, but less user friendly. Set the frame start and end here instead of frame_size and desired frame.
+    array<Vec2f> getUVFrame(Vec2f image_size, Vec2f frame_start, Vec2f frame_end)
+    {
+        Vec2f[] v_uv(4);
 
         frame_start.x = frame_start.x / image_size.x;
         frame_start.y = frame_start.y / image_size.y;
@@ -632,7 +635,16 @@ namespace Nu
 
     class NuImage
     {
-        NuImage(u16 state_count = 1)
+        NuImage()
+        {
+            Setup();
+        }
+        NuImage(u16 state_count)
+        {
+            Setup(state_count);
+        }
+
+        void Setup(u16 state_count = 1)
         {
             name = "";
             name_id = 0;
@@ -680,12 +692,12 @@ namespace Nu
         string name;//Either file name, or texture name.
 
         private Vec2f image_size;//Size of the image given.
-        void setImageSize(Vec2f value)
+        void setImageSize(Vec2f value, bool calculate = true)
         {
             if(image_size != value)
             {
                 image_size = value;
-                if(is_texture)
+                if(calculate && is_texture)
                 {
                     RecalculateUV();
                 }
@@ -697,12 +709,12 @@ namespace Nu
         }
 
         private Vec2f frame_size;//The frame size of the icon. (for choosing different frames);
-        void setFrameSize(Vec2f value)//Sets the frame size of the frame in the image.
+        void setFrameSize(Vec2f value, bool calculate = true)//Sets the frame size of the frame in the image.
         {
             if(frame_size != value)
             {
                 frame_size = value;
-                if(is_texture)
+                if(calculate && is_texture)
                 {
                     RecalculateUV();
                     if(auto_frame_points){
@@ -729,7 +741,7 @@ namespace Nu
         //Todo, createimage from sprite.
 
         //This creates a texture and/or sets up a few things for this image to work with it.
-        void CreateImage(string render_name, string file_path = "")
+        ImageData@ CreateImage(string render_name, string file_path = "")
         {
             //ensure texture for our use exists
             if(!Texture::exists(render_name))
@@ -737,7 +749,7 @@ namespace Nu
                 if(!Texture::createFromFile(render_name, file_path))
                 {
                     warn("texture creation failed");
-                    return;
+                    return @null;
                 }
             }
 
@@ -751,6 +763,8 @@ namespace Nu
             }
             name = render_name;
             is_texture = true;
+
+            return _image;
         }
         void CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
         {
@@ -781,12 +795,9 @@ namespace Nu
         }
         void setDefaultPoints()//Sets the correct points taking into factor frame size. Keeps the size of the drawn thing non modified. (ignoring scale)
         {
-            for(u16 i = 0; i < frame_points.size(); i++)
-            {
-                frame_points = Nu::getFrameSizes(
-                    MultVec(frame_size, scale)//Frame size
-                );
-            }
+            frame_points = Nu::getFrameSizes(
+                MultVec(frame_size, scale)//Frame size
+            );
         }
 
         array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
@@ -844,6 +855,7 @@ namespace Nu
         array<Vertex> getVertexsForFrameAndPos(u16 frame, Vec2f _pos = Vec2f(0,0), u16 state = 0)//Gets what this should render.
         {
             if(!is_texture){ error("Tried getVertexsForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
+            if(frame_points.size() == 0 || uv_per_frame.size() == 0 || uv_per_frame[frame].size() == 0) { error("Instant crash prevention in NumanLib.as"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
 
             Vec2f _offset = MultVec(offset, scale);
 
@@ -853,11 +865,29 @@ namespace Nu
 			v_raw[3] = Vertex(_offset + _pos + frame_points[3], z[3], uv_per_frame[frame][3], color_on[state]);
             return v_raw;
         }
+
+
+
+        void Render(u16 frame = -1, Vec2f _pos = Vec2f(0,0), u16 state = 0)
+        {
+            if(frame == -1)
+            {
+                frame = frame_on[state];
+            }
+            Render::RawQuads(name, getVertexsForFrameAndPos(frame, _pos, state));
+        }
         
 
     }
 
 }
+
+//TODO
+/*
+
+Allow NuImage to be rotated. See frame_points. Take each vector and apply a rotation on them. GL
+
+
 
 //IDEAS
 

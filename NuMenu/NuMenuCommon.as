@@ -1286,10 +1286,7 @@ Check mark option on right
             {
                 for(u16 i = 0; i < backgrounds.size(); i++)
                 {
-                    array<Vertex> vertex;
-                    vertex = backgrounds[i].getVertexsForFrameAndPos(backgrounds[i].frame_on[getButtonState()], getUpperLeftInterpolated(), getButtonState()); //+ getOffset());
-                
-                    Render::RawQuads(backgrounds[i].name, vertex);
+                    backgrounds[i].Render(backgrounds[i].frame_on[getButtonState()], getUpperLeftInterpolated(), getButtonState());
                     //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), rec_color);
                 }
             }
@@ -1637,10 +1634,7 @@ Check mark option on right
                     continue;
                 }
 
-                array<Vertex> vertex;
-                vertex = images[i].getVertexsForFrameAndPos(images[i].frame_on[getButtonState()], getUpperLeftInterpolated(), getButtonState()); //+ getOffset());
-            
-                Render::RawQuads(images[i].name, vertex);
+                images[i].Render(images[i].frame_on[getButtonState()], getUpperLeftInterpolated(), getButtonState());
                 //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), rec_color);
                 
                 //GUI::DrawIcon(images[i].name,//Icon name

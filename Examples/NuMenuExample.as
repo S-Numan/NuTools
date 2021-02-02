@@ -10,7 +10,7 @@ void onInit( CRules@ this )
     CMenuTransporter@ transporter;
     if(!this.get("NuMenus", @transporter)) { error("Failed to get NuMenus. Make sure NuMenuCommonLogic is before anything else that tries to use the built in NuMenus array."); return; }
 
-    print("creation");
+    print("Menu Example Creation");
 
     NuMenu::MenuHolder@ random_menu = NuMenu::MenuHolder(
         Vec2f(64, 64),//Top left
@@ -76,6 +76,16 @@ void onInit( CRules@ this )
     
     transporter.addMenuToList(random_menu);
 
+
+
+
+
+
+
+    
+
+
+
 }
 
 void onReload( CRules@ this )
@@ -96,7 +106,6 @@ void onTick( CRules@ this )
 
     DebugOptionChanger(transporter);
 }
-
 
 
 
