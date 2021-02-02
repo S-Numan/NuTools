@@ -597,7 +597,26 @@ namespace Nu
     
 
 
+    string CutOutFileName(string value)
+    {
+        //Get the last slash
+        u16 last_slash = value.findLast("/");
+        u16 _last_slash = value.findLast("\\");
+        if(_last_slash > last_slash)
+        {
+            last_slash = _last_slash;
+        }
+        if(value.size() == last_slash + 1)//Is the last slash on the end of the string?
+        {
+            warning("CutOutFileName: The last slash was on the end of the string."); return value;
+        }
+        //Cut out things past the dot.
+        u16 last_dot = value.findLast(".");
 
+
+        return value.substr(last_slash + 1, last_dot);//Cut out the part between these two and return it.
+
+    }
 
 
 

@@ -1,9 +1,9 @@
 //#include "NuMenuCommon.as";//Why isn't this required?
 #include "NuTextCommon.as";
 
-class CHub
+class NuHub
 {
-    CHub()
+    NuHub()
     {
         SetupArrays();
         SetupRendering();
@@ -54,22 +54,38 @@ class CHub
             return fonts;
         }
         
-        void setFont(NuFont@ _font)
+        void addFont(NuFont@ _font)
         {
+            if(_font == null){ error("addFont(NuFont@): attempted to add null font."); return;}
             
+            if(getFont(_font.basefont.name) != null) { warning("addFont(NuFont@): Font attempted to add already existed."); return; }
+            
+            fonts.push_back(@_font);
         }
-        void setFont(string font_file)//Don't set if a font with this render name already exists.
+        void addFont(string font_file)
         {
+            string font_name = CutOutFileName(font_file);
+            if(getFont(font_name) != null) { warning("addFont(string): Font attempted to add already existed."); return; }
 
+            NuFont@ font = NuFont(font_file);
+
+            fonts.push_back(@font);
         }
         
         NuFont@ getFont(string font_file)
         {
-
-        }
+            string font_name = CutOutFileName(font_file);
+            for(u16 i = 0; i < fonts.size(); i++)
+            {
+                if(fonts[i].basefont.name == font_name)
+                {
+                    return @fonts[i];
+                }
+            }
+        }*/
 
         
-        getFont()//*/
+        //getFont()//
 
     //
     //Fonts

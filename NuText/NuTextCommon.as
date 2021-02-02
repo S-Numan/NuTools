@@ -9,7 +9,7 @@
 //Save inside a mod, and you are done. Call that font from wherever elsewhere.
 
 #include "NumanLib.as";
-#include "CHub";
+#include "NuHub";
 
 u32 CHARACTER_SPACE = 32;
 class NuFont
@@ -22,6 +22,8 @@ class NuFont
     
     void Setup(string font_png)
     {
+        Texture::destroy(font_png);
+
         string_sizes = array<Vec2f>();
         character_sizes = array<Vec2f>();
         string_size_total = Vec2f(0,0);
@@ -149,9 +151,11 @@ class NuText
 {
     /*NuText()
     {
-        font = @null;
-
         is_world_pos = false;
+
+        setFont();
+
+        setFont("Arial_font");
     }
 
     bool is_world_pos;
@@ -170,8 +174,11 @@ class NuText
     }
     void setFont(string font_name)
     {
-        array<NuFont@> fonts 
-        getRules().get("font_array", fonts);
+        NuHub@ hub;
+        if(!this.get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
+        NuFont@ _font = hub.getFont(font_name);
+        if(_font == null){ warning("setFont(string): Font not found."); return; }
+
     }
     NuFont@ getFont()
     {

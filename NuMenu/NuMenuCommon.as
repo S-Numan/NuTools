@@ -1,5 +1,6 @@
 #include "NumanLib.as";
-#include "CHub";
+#include "NuHub.as";
+#include "NuTextCommon.as";
 
 
 namespace NuMenu
@@ -316,7 +317,7 @@ Check mark option on right
 
         void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0))
         {
-            if(!getRules().get("CHub", @transporter))
+            if(!getRules().get("NuHub", @transporter))
             {
                 error("NuHubLogic.as must be before anything else that uses NuMenu in gamemode.cfg");
             }
@@ -382,7 +383,7 @@ Check mark option on right
             return ticks_since_created;
         }
 
-        CHub@ transporter;
+        NuHub@ transporter;
 
         float default_buffer;
 
@@ -2587,7 +2588,7 @@ Check mark option on right
 
 
 
-    CHub@ transporter;
+    NuHub@ transporter;
 
     void onInit(CRules@ rules)
     {
@@ -2596,7 +2597,7 @@ Check mark option on right
             return;
         }
 
-        rules.get("CHub", @transporter);
+        rules.get("NuHub", @transporter);
         
     }
 
@@ -2661,7 +2662,7 @@ Check mark option on right
         transporter.FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
     }
 
-    void MenuRender(CHub@ transporter)
+    void MenuRender(NuHub@ transporter)
     {
         Render::SetAlphaBlend(true);
         
@@ -2683,13 +2684,13 @@ Check mark option on right
     }
 }
 
-CHub@ o_transporter = @null;//Outer transporter.
+NuHub@ o_transporter = @null;//Outer transporter.
 
 bool TransporterInit()
 {
     if(o_transporter == null)//Init.
     {
-        getRules().get("CHub", @o_transporter);
+        getRules().get("NuHub", @o_transporter);
         print("rules got");
         if(o_transporter == null)//Still equal to null?
         {

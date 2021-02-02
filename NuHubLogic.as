@@ -2,16 +2,16 @@
 
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
-#include "CHub";
+#include "NuHub";
 
 bool init;
 
 void onInit( CRules@ rules )
 {
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
-    CHub@ hub = CHub();
+    NuHub@ hub = NuHub();
 
-    rules.set("CHub", @hub);
+    rules.set("NuHub", @hub);
     
     print("NuHub Loaded");
 
@@ -37,7 +37,7 @@ void onReload( CRules@ rules )
 
 void onTick( CRules@ rules )
 {
-    CHub@ hub;
+    NuHub@ hub;
     rules.get("NuHub", @hub);
 
     NuMenu::onTick(rules);//Important NuMenu things.
