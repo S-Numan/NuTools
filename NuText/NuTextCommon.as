@@ -384,7 +384,7 @@ class NuText
         }
         
         string_sizes = array<Vec2f>(render_string.size());
-        string_size_total = Vec2f(0.0f, font.character_sizes[CHARACTER_SPACE].y * scale.y);
+        string_size_total;
         char_positions = array<Vec2f>(render_string.size());
 
         float next_line_distance = font.character_sizes[CHARACTER_SPACE].y * scale.y;
@@ -394,8 +394,6 @@ class NuText
             u16 char_num = render_string[i];//Get the number associated with this character.
 
             string_sizes[i] = Nu::MultVec(font.character_sizes[char_num], scale);//Set the size of this character in the string, multiplied by the scale.
-        
-            string_size_total.x += string_sizes[i].x;//Add this to the string total size.
 
 
             Vec2f char_pos;//Position this character adds.
@@ -407,6 +405,16 @@ class NuText
             char_pos = CapWidth(char_pos, i, i, next_line_distance);
 
             char_positions[i] = char_pos;//Add it to this character.
+
+            if(string_size_total.x < char_pos.x)//Set as string_size_total.x if larger
+            {
+                string_size_total.x = char_pos.x;
+            }
+            if(string_size_total.y < char_pos.y)//Set as string_size_total.y if larger
+            {
+                string_size_total.y = char_pos.y;
+            }
+                
         }
     }
 

@@ -27,7 +27,7 @@ void onInit( CRules@ this )
     
     text_test.setWidthCap(100.0f);
 
-    text_test.setAngle(90.0f);
+    text_test.setAngle(0.0f);
 }
 
 void onReload( CRules@ this )
