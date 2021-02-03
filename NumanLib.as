@@ -944,6 +944,9 @@ namespace Nu
         void setAngle(float value)
         {
             angle = value;
+            if(auto_frame_points){
+                setDefaultPoints();
+            }
         }
         float getAngle()
         {

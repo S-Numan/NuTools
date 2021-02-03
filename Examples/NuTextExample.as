@@ -26,6 +26,8 @@ void onInit( CRules@ this )
     text_test.setColor(SColor(255, 255, 0, 0));
     
     text_test.setWidthCap(100.0f);
+
+    text_test.setAngle(90.0f);
 }
 
 void onReload( CRules@ this )

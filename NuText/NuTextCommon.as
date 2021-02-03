@@ -192,6 +192,8 @@ class NuFont
     array<Vec2f> character_sizes;//Sizes for every character in the character png.
 }
 
+
+//TODO, move things that can only be done from the basefont in NuFont to NuText.
 class NuText
 {
     NuText()
@@ -215,6 +217,8 @@ class NuText
         scale = Vec2f(1,1);
 
         width_cap = 99999.0f;
+
+        angle = 0.0f;
     }
 
     //
@@ -273,6 +277,22 @@ class NuText
         font.basefont.color_on[0] = value;
     }
 
+    float angle;
+
+    float getAngle()
+    {
+        if(font == null) { Nu::Error("Font was null."); return 0.0f; }
+
+        return angle;
+    }
+    void setAngle(float value)
+    {
+        if(font == null) { Nu::Error("Font was null."); return; }
+
+        angle = value;
+        refreshSizesAndPositions();
+    }
+
     //
     //Settings
     //
@@ -297,7 +317,9 @@ class NuText
         {
             font.basefont.setFrameSize(font.character_sizes[render_string[i]], false);//Set the frame size of the character in the texture.
             
-            font.basefont.setScale(scale);//Set the scale
+            font.basefont.setScale(scale);//Set the scale.
+
+            font.basefont.setAngle(angle);//Set the angle. For those weird people.
 
             font.basefont.setDefaultPoints();//Set the points for how large this character is rendered.
 
