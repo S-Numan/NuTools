@@ -1897,7 +1897,7 @@ Check mark option on right
 
             if(draw_text)//If text exists and it is supposed to be drawn.
             {
-                DrawTexts();//Too
+                //DrawTexts();//Too
             }
 
             return true;
