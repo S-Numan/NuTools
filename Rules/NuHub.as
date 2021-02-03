@@ -49,7 +49,7 @@ class NuHub
 
         
         private array<NuFont@> fonts;
-        /*array<NuFont@> getFonts()
+        array<NuFont@> getFonts()
         {
             return fonts;
         }
@@ -62,19 +62,24 @@ class NuHub
             
             fonts.push_back(@_font);
         }
-        void addFont(string font_file)
+        void addFont(string font_file, bool has_alpha = true)
         {
-            string font_name = CutOutFileName(font_file);
+            string font_name = Nu::CutOutFileName(font_file);
             if(getFont(font_name) != null) { warning("addFont(string): Font attempted to add already existed."); return; }
 
-            NuFont@ font = NuFont(font_file);
+            NuFont@ font = NuFont(font_file, has_alpha);
+
+            if(font == null)
+            {
+                Nu::Error("Font was still null after creation. Somehow.");
+            }
 
             fonts.push_back(@font);
         }
         
-        NuFont@ getFont(string font_file)
+        NuFont@ getFont(string _font)
         {
-            string font_name = CutOutFileName(font_file);
+            string font_name = Nu::CutOutFileName(_font);
             for(u16 i = 0; i < fonts.size(); i++)
             {
                 if(fonts[i].basefont.name == font_name)
@@ -82,7 +87,8 @@ class NuHub
                     return @fonts[i];
                 }
             }
-        }*/
+            return @null;
+        }
 
         
         //getFont()//

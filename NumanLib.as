@@ -597,28 +597,102 @@ namespace Nu
     
 
 
+    //1: The path to a file.
+    //Returns the first parameter without any slashes or the file extension.
     string CutOutFileName(string value)
     {
+        if(value.size() == 0)
+        {
+            Nu::Error("The size of the input string was 0");
+        }
         //Get the last slash
-        u16 last_slash = value.findLast("/");
-        u16 _last_slash = value.findLast("\\");
+        int last_slash = value.findLast("/");
+        int _last_slash = value.findLast("\\");
         if(_last_slash > last_slash)
         {
             last_slash = _last_slash;
         }
-        if(value.size() == last_slash + 1)//Is the last slash on the end of the string?
+
+        if(last_slash != -1 && value.size() == last_slash + 1)//Is the last slash on the end of the string? (and it existed)
         {
             warning("CutOutFileName: The last slash was on the end of the string."); return value;
         }
         //Cut out things past the dot.
-        u16 last_dot = value.findLast(".");
+        int last_dot = value.findLast(".");
 
-
-        return value.substr(last_slash + 1, last_dot);//Cut out the part between these two and return it.
-
+        //print("last_slash = " + last_slash + " last_dot = " + last_dot);
+        //Cut out the part between these two and return it.
+        return value.substr(last_slash + 1,//Special note, if the last_slash was not found it returns -1. Adding 1 to it means there is no need to check if it didn't get it.
+            last_dot);//When last_dot isn't found, it also returns -1. This is fine as the size.
     }
 
 
+    //1: Output scriptstack string
+    //2: Output callstack string
+    //3: Optional skip parameter. This skips the amount of callstacks as input in. It is by default 1 to skip itself.
+    //Gives out two variables that are the scriptstack and callstack. They are both numbered.
+    void getStackString(string &out scriptstack, string &out callstack, u16 skip = 1)
+    {
+        u16 i;
+
+        array<string> stack = getScriptStack();
+
+        scriptstack = "";
+
+        for(i = 0; i < stack.size(); i++)
+        {
+            string next_line;
+            if(i != stack.size() - 1)//As long as this isn't the last iteration.
+            {
+                next_line = "\n";//Throw a next line on the end.
+            }
+
+            scriptstack += "#" + (i + 1) + ": " + stack[i] + next_line;
+        }
+
+        stack = getCallStack();
+        
+        callstack = "";//Output
+
+        for(i = skip; i < stack.size(); i++)//Skip getCallStackString.
+        {
+            string next_line;
+            if(i != stack.size() - 1)//As long as this isn't the last iteration.
+            {
+                next_line = "\n";//Throw a next line on the end.
+            }
+
+            callstack += "#" + (i - skip + 1) + ": " + stack[i] + next_line;
+        }
+    }
+
+    //1: Text to throw out as an error.
+    //Throws an error to the console, with the script stack and callstack included and colored.
+    void Error(string input)
+    {
+        SColor error_color = SColor(255, 255, 0, 0);
+        SColor regular_color = SColor(200, 255, 255, 255);
+        SColor purple_error_color = SColor(255, 255, 0, 200);
+
+        string scriptstack;
+        string callstack;
+
+        getStackString(scriptstack, callstack, 2);//Skip itself and this method. that is what 2 means. 
+        
+        //print("1==========1 ", error_color);
+
+        print("Script stack", purple_error_color);
+        
+        print(scriptstack, regular_color);
+        
+        print("Callstack for current script: ", purple_error_color);
+
+        print(callstack, regular_color);
+        
+        print("Message: " + input, error_color);
+
+        //print("2==========2 ", error_color);
+    }
 
 
 
@@ -677,6 +751,7 @@ namespace Nu
             z = array<float>(4, 0.0f);
             scale = Vec2f(1.0f, 1.0f);
             auto_frame_points = true;
+            would_crash = false;
         }
 
         void setDefaultFrame(u16 frame)//Sets the regular frame for all states.
@@ -760,7 +835,7 @@ namespace Nu
         //Todo, createimage from sprite.
 
         //This creates a texture and/or sets up a few things for this image to work with it.
-        ImageData@ CreateImage(string render_name, string file_path = "")
+        ImageData@ CreateImage(string render_name, string file_path)
         {
             //ensure texture for our use exists
             if(!Texture::exists(render_name))
@@ -785,13 +860,18 @@ namespace Nu
             name = render_name;
             is_texture = true;
 
-            return _image;
+            return @_image;
         }
-        void CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
+        ImageData@ CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
         {
             ImageData@ tex = Texture::dataFromSprite(s);//Get the sprite data.
             Texture::createFromData(render_name, tex);//Create a texture from it.
-            CreateImage(render_name);//Give this menu the texture.
+            return @CreateImage(render_name);//Give this menu the texture.
+        }
+        ImageData@ CreateImage(string file_path)//Takes just a file path.
+        {
+            string file_name = Nu::CutOutFileName(file_path);//Cuts out the file name.
+            return @CreateImage(file_name, file_path);//Uses the file_name as the render_name, and the file path as is.
         }
 
 
@@ -871,12 +951,19 @@ namespace Nu
             return scale;
         }
 
+        bool would_crash;
+
         //TODO, don't run this every render call. Only recalculate if needed.
         array<Vertex> v_raw;//For rendering.
         array<Vertex> getVertexsForFrameAndPos(u16 frame, Vec2f _pos = Vec2f(0,0), u16 state = 0)//Gets what this should render.
         {
-            if(!is_texture){ error("Tried getVertexsForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
-            if(frame_points.size() == 0 || uv_per_frame.size() == 0 || uv_per_frame[frame].size() == 0) { error("Instant crash prevention in NumanLib.as"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
+            if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//Already sent the error log, this could of crashed. So just stop to not spam.
+            if(!is_texture){ Nu::Error("Tried getVertexsForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
+            would_crash = false;
+            if(frame_points.size() == 0) {          Nu::Error("frame_points.size() was equal to 0");          would_crash = true; }
+            if(uv_per_frame.size() == 0) {          Nu::Error("uv_per_frame.size() was equal to 0");          would_crash = true; }
+            if(uv_per_frame[frame].size() == 0) {   Nu::Error("uv_per_frame[frame].size() was equal to 0");   would_crash = true; }
+            if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//This will crash instantly if it goes beyond this point, so exit out.
 
             Vec2f _offset = MultVec(offset, scale);
 

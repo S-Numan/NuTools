@@ -19,6 +19,12 @@ void onInit( CRules@ rules )
     NuMenu::onInit(rules);
 
 
+    hub.addFont("Arial.png");
+
+
+
+    
+
     if(!init &&//First time init.
         sv_gamemode == "Testing")//Provided the gamemode name is Testing.
     {

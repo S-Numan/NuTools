@@ -1,24 +1,26 @@
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
 
-/*void onInit( CRules@ this )
+void onInit( CRules@ this )
 {
     if(!isClient())
     {
         return;
     }
+    
+    init = true;
 
     NuHub@ hub;
     if(!this.get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
 
-    hub.addFont("Arial_font.png");
+    //hub.addFont("Arial_font.png");
 
     print("Text Example Creation");
 
     
-
-    text_test = NuText("Arial_font");
-    text_test.text = "Hello World!\n!@#$%^&*()_+}{";
+    //NuText();
+    @text_test = @NuText("Arial", "Hello World!\n!@#$%^&*()_+}{");
+    text_test.setIsWorldPos(true);
 }
 
 void onReload( CRules@ this )
@@ -34,7 +36,10 @@ void onTick( CRules@ this )
 
 NuText@ text_test;
 
+bool init;
+
 void onRender(CRules@ this)
 {
-    text_test.Render(Vec2f(16.0f, 16.0f));
-}*/
+    if(!init){ return; }//If the init has not yet happened.
+    text_test.Render(Vec2f(128.0f, 128.0f));
+}
