@@ -752,6 +752,8 @@ namespace Nu
             scale = Vec2f(1.0f, 1.0f);
             auto_frame_points = true;
             would_crash = false;
+            angle = 0.0f;
+            angle_vel = 0.0f;
         }
 
         void setDefaultFrame(u16 frame)//Sets the regular frame for all states.
@@ -899,6 +901,10 @@ namespace Nu
             frame_points = Nu::getFrameSizes(
                 MultVec(frame_size, scale)//Frame size
             );
+            for(u8 i = 0; i < frame_points.size(); i++){
+                frame_points[i] = frame_points[i].RotateByDegrees(angle);
+            }
+            
         }
 
         array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
@@ -931,6 +937,27 @@ namespace Nu
         float getZ()//Get the z level. (Simplified)
         {
             return z[0];
+        }
+
+
+        private float angle;
+        void setAngle(float value)
+        {
+            angle = value;
+        }
+        float getAngle()
+        {
+            return angle;
+        }
+        
+        private float angle_vel;
+        void setAngleVel(float value)
+        {
+            angle_vel = value;
+        }
+        float getAngleVel()
+        {
+            return angle_vel;
         }
 
 
