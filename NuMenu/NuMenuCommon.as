@@ -2105,7 +2105,11 @@ Check mark option on right
                 pos = controls.getMouseScreenPos();
             }
 
-            return Tick(KEY_LBUTTON, pos);
+            array<u16> key_codes(2);
+            key_codes[0] = KEY_LBUTTON;
+            key_codes[1] = KEY_RBUTTON; 
+            
+            return Tick(key_codes, pos);
         }
 
         bool Tick(Vec2f position)
@@ -2125,12 +2129,21 @@ Check mark option on right
             {
                 pos = controls.getMouseScreenPos();
             }
+
+            array<u16> key_codes(2);
+            key_codes[0] = KEY_LBUTTON;
+            key_codes[1] = KEY_RBUTTON; 
             
-            return Tick(KEY_LBUTTON, pos, position);
+            return Tick(key_codes, pos, position);
+        }
+
+        bool Tick(u16 key_code, Vec2f point, Vec2f position = Vec2f_zero)
+        {
+            return Tick(array<u16>(1, key_code), point, position);
         }
 
         //Examples: point parameter for the mouse position, the position parameter is for the blob. position parameter only really useful when it comes to radius stuff.
-        bool Tick(u16 key_code, Vec2f point, Vec2f position = Vec2f_zero)
+        bool Tick(array<u16> key_codes, Vec2f point, Vec2f position = Vec2f_zero)
         {
             if(!MenuBaseExEx::Tick())
             {
@@ -2141,10 +2154,28 @@ Check mark option on right
 
             CControls@ controls = player.getControls();
             
-            bool key_button = controls.isKeyPressed(key_code);//Pressing
-            bool key_button_release = controls.isKeyJustReleased(key_code);//Just released
-            bool key_button_just = controls.isKeyJustPressed(key_code);//Just pressed
+            if(key_codes.size() == 0)
+            {
+                Nu::Error("Input key codes size was equal to 0");
+            }
 
+            bool key_button = false;
+            bool key_button_release = false;
+            bool key_button_just = false;
+
+            //Assign true if any of the input keys are being pressed.
+            for(u16 i = 0; i < key_codes.size(); i++)
+            {
+                if(!key_button){
+                    key_button = controls.isKeyPressed(key_codes[i]);//Pressing
+                }
+                if(!key_button_release){
+                    key_button_release = controls.isKeyJustReleased(key_codes[i]);//Just released
+                }
+                if(!key_button_just){
+                    key_button_just = controls.isKeyJustPressed(key_codes[i]);//Just pressed
+                }
+            }
             
             u8 _button_state = getButtonState();//Get the button state.
 
@@ -2158,17 +2189,29 @@ Check mark option on right
                 _button_state = Disabled;//The button is disabled
             }
 
+            //Anti swinging.
+            if(_button_state == JustPressed || _button_state == Pressed || _button_state == Released || _button_state == AfterRelease)
+            {
+                CBlob@ player_blob = player.getBlob();
+                if(player_blob != null)
+                {
+                    player_blob.set_bool("no_swing", true);
+                }
+            }
+
+            //Instant press.
+            if(instant_press && _button_state == JustPressed)//If the button is supposed to be released instantly upon press.
+            {
+                _button_state = Released;//The button was basically released, so tell it to actually release. To prevent it from sending the command twice.
+            }
+
+            //Command sending.
             if(_button_state == Released)//If the button was released.
             {
                 sendReleaseCommand();//Send the command.
             }
 
-            if(instant_press && _button_state == JustPressed)//If the button is supposed to be released instantly upon press.
-            {
-                sendReleaseCommand();//Send the command.
-                _button_state = Released;//The button was basically released, so tell it to actually release. To prevent it from sending the command twice.
-            }
-
+            //Set state.
             if(_button_state != getButtonState())//Was the button state changed.
             {
                 setButtonState(_button_state);//Set the button state.

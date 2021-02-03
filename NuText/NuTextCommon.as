@@ -428,7 +428,6 @@ class NuText
 
     private Vec2f CapWidth(Vec2f char_pos, u16 i, u16 &out out_i, float next_line_distance)
     {
-        print("wid cap = " + width_cap + " char_pos.x = " + char_pos.x);
         if(char_pos.x > width_cap//If the character position has gone past the width cap.
         && i < render_string.size() - 1)//And there is a next character.
         {
