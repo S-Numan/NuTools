@@ -19,8 +19,13 @@ void onInit( CRules@ this )
 
     
     //NuText();
-    @text_test = @NuText("Arial", "Hello World!\n!@#$%^&*()_+}{");
+    @text_test = @NuText("Arial", "Hello World!\n! @ # $ % ^ & * ( ) _ + } { ");
+    
     text_test.setIsWorldPos(true);
+    
+    text_test.setColor(SColor(255, 255, 0, 0));
+    
+    text_test.setWidthCap(100.0f);
 }
 
 void onReload( CRules@ this )

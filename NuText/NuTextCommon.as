@@ -44,6 +44,8 @@ class NuFont
         @basefont = @Nu::NuImage();
         ImageData@ basefontdata = @basefont.CreateImage(font_name, font_path);
         
+        basefont.auto_frame_points = false;
+
         u32 _image_size = basefontdata.width() * basefontdata.height();
         Vec2f _image_size_vec = Vec2f(basefontdata.width(), basefontdata.height());
         
@@ -211,18 +213,14 @@ class NuText
         is_world_pos = false;
 
         scale = Vec2f(1,1);
+
+        width_cap = 99999.0f;
     }
 
-    private bool is_world_pos;
-    bool isWorldPos()
-    {
-        return is_world_pos;
-    }
-    void setIsWorldPos(bool value)
-    {
-        is_world_pos = value;
-    }
-    
+    //
+    //Font
+    //
+
     private NuFont@ font;
     void setFont(NuFont@ _font)
     {
@@ -243,6 +241,45 @@ class NuText
     {
         return @font;
     }
+
+    //
+    //Font
+    //
+
+    //
+    //Settings
+    //
+
+    private bool is_world_pos;
+    bool isWorldPos()
+    {
+        return is_world_pos;
+    }
+    void setIsWorldPos(bool value)
+    {
+        is_world_pos = value;
+    }
+
+    SColor getColor()
+    {
+        if(font == null) { Nu::Error("Font was null."); return SColor(255, 255, 255, 0); }
+        
+        return font.basefont.color_on[0];
+    }
+    void setColor(SColor value)
+    {
+        if(font == null) { Nu::Error("Font was null."); return; }
+        
+        font.basefont.color_on[0] = value;
+    }
+
+    //
+    //Settings
+    //
+
+    //
+    //Rendering
+    //
 
 
     void Render(Vec2f _pos = Vec2f(0,0), u16 state = 0)
@@ -271,6 +308,32 @@ class NuText
         }
     }
 
+    private string render_string;
+    void setString(string value, Vec2f _scale = Vec2f(0,0))
+    {
+        render_string = value;
+
+        if(_scale != Vec2f(0,0))//Default parameter set?
+        {
+            scale = _scale;//Set the scale
+        }
+
+        refreshSizesAndPositions();
+    }
+    
+    string getString()
+    {
+        return render_string;
+    }
+
+    //
+    //Rendering
+    //
+
+    //
+    //Positions and scales
+    //
+
     private Vec2f scale;
     Vec2f getScale()
     {
@@ -288,19 +351,6 @@ class NuText
 
     array<Vec2f> char_positions;//What position each character should be in to not overlap.
 
-    private string render_string;
-    void setString(string value, Vec2f _scale = Vec2f(0,0))
-    {
-        render_string = value;
-
-        if(_scale != Vec2f(0,0))//Default parameter set?
-        {
-            scale = _scale;//Set the scale
-        }
-
-        refreshSizesAndPositions();
-    }
-
     //Optional cap parameter puts a cap on how far the string can go right. It will halve where a space is, and if not possible it will cut a word in half.//TODO, cap the max x position. 
     
     //Refreshs the size each character is, and where the characters should be positioned.
@@ -315,6 +365,8 @@ class NuText
         string_size_total = Vec2f(0.0f, font.character_sizes[CHARACTER_SPACE].y * scale.y);
         char_positions = array<Vec2f>(render_string.size());
 
+        float next_line_distance = font.character_sizes[CHARACTER_SPACE].y * scale.y;
+
         for(u16 i = 0; i < render_string.size(); i++)//For every character
         {
             u16 char_num = render_string[i];//Get the number associated with this character.
@@ -326,31 +378,91 @@ class NuText
 
             Vec2f char_pos;//Position this character adds.
 
-            if(i > 0)//Past the first character
-            {
-                char_pos += char_positions[i - 1];//Take the previous position.
-                char_pos.x += string_sizes[i - 1].x;//Add the new position to it
-            }
-            else//First character.
-            {
-                char_pos = Vec2f(0,0);
-            }
+            char_pos = Align(char_pos, i);
 
-            if(i < render_string.size() - 1)//Provided there is one space forward.
-            {
-                if(render_string[i] == "\n"[0])//This a next line character?
-                {
-                    print("new line spotted!");
-                    char_pos.y += font.character_sizes[CHARACTER_SPACE].y * scale.y;//Next line.
-                    char_pos.x = 0.0f;//Next line.
-                }
-            }
+            char_pos = NextLine(char_pos, i, next_line_distance);
+
+            char_pos = CapWidth(char_pos, i, i, next_line_distance);
 
             char_positions[i] = char_pos;//Add it to this character.
         }
     }
-    string getString()
+
+    private Vec2f Align(Vec2f char_pos, u16 i)
     {
-        return render_string;
+        if(i > 0)//Past the first character
+        {
+            char_pos = char_positions[i - 1];//Take the previous position.
+            char_pos.x += string_sizes[i - 1].x;//Add the new position to it
+        }
+        else//First character.
+        {
+            char_pos = Vec2f(0,0);
+        }
+
+        return char_pos;
     }
+
+    private Vec2f NextLine(Vec2f char_pos, u16 i, float next_line_distance)
+    {
+        if(i < render_string.size() - 1//Provided there is one space forward.
+            && render_string[i] == "\n"[0])//And this a next line character.
+        {
+            char_pos.y += next_line_distance;//Next line.
+            char_pos.x = 0.0f;//Next line.
+        }
+
+        return char_pos;
+    }
+
+    private float width_cap;
+    float getWidthCap()
+    {
+        return width_cap;
+    }
+    void setWidthCap(float value)
+    {
+        width_cap = value;
+        refreshSizesAndPositions();
+    }
+
+    private Vec2f CapWidth(Vec2f char_pos, u16 i, u16 &out out_i, float next_line_distance)
+    {
+        print("wid cap = " + width_cap + " char_pos.x = " + char_pos.x);
+        if(char_pos.x > width_cap//If the character position has gone past the width cap.
+        && i < render_string.size() - 1)//And there is a next character.
+        {
+            u16 q;
+            //Find the spacebar below this position
+            for(q = i; q > 0; q--)//Count down from this position
+            {
+                if(char_positions[q].y != char_pos.y)//If it has switched a line.
+                {
+                    q = 0;//Tell q we failed.
+                    break;//Failure, stop.
+                }
+                if(render_string[q] == " "[0])//If this character is equal to space bar.
+                {
+                    break;//Success, stop. q is now the spacebar character.
+                }
+            }
+
+            if(q != 0)//Spacebar was found.
+            {
+                i = q + 1;//i equals one character past the space bar.   
+            }
+            //else//If a spacebar on the same line was not found.
+            
+            char_pos.y += next_line_distance;//Next line.
+            char_pos.x = 0.0f;//Next line.
+        }
+        
+        out_i = i;
+        
+        return char_pos;
+    }
+
+    //
+    //Positions and scales
+    //
 }
