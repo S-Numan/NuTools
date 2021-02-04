@@ -13,7 +13,7 @@ void onInit( CRules@ this )
     NuHub@ hub;
     if(!this.get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
 
-    //hub.addFont("Arial_font.png");
+    //hub.addFont("Arial.png");
 
     print("Text Example Creation");
 

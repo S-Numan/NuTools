@@ -1509,7 +1509,7 @@ Check mark option on right
 
             setTextColor(SColor(255, 0, 0, 0));
 
-            setFont("AveriaSerif-Bold.ttf", 4);
+            setFont("Arial");
         }
 
         MenuBaseExEx(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
@@ -1523,7 +1523,7 @@ Check mark option on right
 
             setTextColor(SColor(255, 0, 0, 0));
 
-            setFont("AveriaSerif-Bold.ttf", 4);
+            setFont("Arial");
         }
 
         void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
@@ -1538,14 +1538,9 @@ Check mark option on right
         
             draw_text = true;
             reposition_text = false;
-            resize_text = false;
-            text_used = false;
 
-            text_strings = array<string>(Nu::POSPositionsCount, "");
+            text = array<NuText@>(Nu::POSPositionsCount, @null);
             text_positions = array<Vec2f>(Nu::POSPositionsCount);
-            font_size = 4;
-            font = "";
-            text_color = SColor(255, 0, 0, 0);
         }
 
         //
@@ -1558,7 +1553,7 @@ Check mark option on right
             MenuBaseEx::setMenuJustMoved(value);
             if(value)//Menu just moved.
             {
-                //Optimize me, this will be done twice a tick if both top left and bottom right are moved. That is no goodo.
+                //Optimize me, this will be done twice a tick if both top left and bottom right are moved. That is no goodo. TODO
                 if(reposition_text)
                 {
                     RepositionAllText(getSize());
@@ -1578,141 +1573,210 @@ Check mark option on right
         //Text settings
         //
 
-        private u16 font_size;
-        private string font;//Font used.
-        string getFont()
+        private array<NuText@> text;//NuText used.
+        array<NuText@> getTexts()
         {
-            return font;
+            return text;
         }
-        u16 getFontSize()
+
+        private array<Vec2f> text_positions;
+
+        NuText@ getText(u16 element = Nu::PosCenter)
         {
-            return font_size;
-        }
-        //This loads a custom font for the menu. This does not pick an existing font.
-        void setFont(string _font, u16 size)//TODO - numan : Make text smoothly grow and shrink
-        {
-            font = _font;
-            font_size = size;
-            string fontfile = CFileMatcher(_font).getFirst();
+            if(element >= text.size()) { Nu::Error("Tried to get text out of array bounds. Attempted to get text at the position " + element); return NuText(); }
+            //if(text[element] == null){Nu:Error("text at element " + element + " was null"); }
             
-            
-            if (!GUI::isFontLoaded(font))
-            {
-                GUI::LoadFont(font, fontfile, size, true);
-            }
-            else if (!GUI::isFontLoaded(font + "_" + (size / 2)))
-            {
-                GUI::LoadFont(font + "_" + (size / 2), fontfile + "_1", size / 2, true);
-            }
-            else if (!GUI::isFontLoaded(font + "_" + (size * 2)))
-            {
-                GUI::LoadFont(font + "_" + (size * 2), fontfile + "_2", size * 2, true);
-            }
+            return @text[element];
         }
+        void setText(NuText@ _text, u16 element = Nu::PosCenter)
+        {
+            if(element >= text.size()) { Nu::Error("Tried to set text out of array bounds. Attempted to get text at the position " + element); return; }
+            if(_text == null) { Nu::Error("Input parameter text was null."); return; }
+            
+            Vec2f text_pos;
+            
+            Vec2f text_dimensions = _text.string_size_total;
+            
+            if(!Nu::getPosOnSizeFull(element, getSize(), text_dimensions, text_pos, default_buffer))//Move that pos.
+            {
+                error("Text position went above the text_positions array max size");
+                return;
+            }
+
+            text_positions[element] = text_pos;
+            
+            @text[element] = @_text;
+        }
+        NuText@ setText(string _text, string font_name, u16 element = Nu::PosCenter)
+        {
+            NuText@ _nuText = NuText(font_name, _text);//Create text with font and text.
+            
+            setText(_nuText, element);//Set the text to this menu.
         
-        void SelectFont()
+            return @_nuText;//Return the text.
+        }
+        NuText@ setText(string _text, u16 element = Nu::POSCenter)
         {
-            if(resize_text && isWorldPos())
-            {
-                //if(camera.targetDistance < 0.9)
-                //{
-                //    GUI::SetFont(font + "_" + (getFontSize() / 2));
-                //}
-                //else if(camera.targetDistance > 0.9 && camera.targetDistance < 1.1)
-                //{
-                    GUI::SetFont(font);
-                //}
-                //else//Camera targetDistance more than 1.1
-                //{
-                //    GUI::SetFont(font + "_" + (getFontSize() * 2));
-                //}
-            }
-            else
-            {
-                GUI::SetFont(font);
-            }
+            NuText@ _nuText = NuText();//Create text
+            
+            _nuText.setString(_text);//Set the string inside
+
+            setText(_nuText, element);//Set it to this menu.
+
+            return @_nuText;//Return it.
         }
 
 
-        private SColor text_color;
-        SColor getTextColor()
+        
+        NuFont@ setFont(string font_name)
         {
-            return text_color;
+            NuHub@ hub;
+            if(!getRules().get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return @null; }
+            NuFont@ _font = hub.getFont(font_name);
+            if(_font == null){ warning("Could not find font with font_name = " + font_name); return hub.getFont("Arial"); }
+
+            setFont(@_font);
+            return @_font;
         }
-        void setTextColor(SColor value)
+        void setFont(NuFont@ _font, u16 element = -1)
         {
-            text_color = value;
+            if(_font == null){ Nu::Error("Font was null."); return; }
+            if(element == u16(-1))//No element specified.
+            {
+                for(u16 i = 0; i < text.size(); i++)
+                {
+                    if(text[i] == null) { continue; }
+                    text[i].setFont(_font);
+                }
+            }
+            else if(element < text.size())
+            {
+                if(text[element] != null)
+                {
+                    text[element].setFont(_font);
+                }
+               else { Nu::Error("Element specified " + element + " was null."); }
+            }
+            else { Nu::Error("Attempted to set text above text array at " + element); }
+        }
+
+
+        SColor getTextColor(u16 element = -1)
+        {
+            if(element == u16(-1))
+            {
+                for(u16 i = 0; i < text.size(); i++)
+                {
+                    if(text[i] == null) { continue; }
+                    return text[i].getColor();
+                }
+            }
+            else if(element < text.size())
+            {
+                if(text[element] != null)
+                {
+                    return text[element].getColor();
+                }
+                else { Nu::Error("Element specified " + element + " was null."); }
+            }
+            else { Nu::Error("Attempted to set text above text array at " + element); }
+
+            return SColor(255, 255, 255, 255);//Not found.
+        }
+        void setTextColor(SColor value, u16 element = -1)
+        {
+            if(element == u16(-1))
+            {
+                for(u16 i = 0; i < text.size(); i++)
+                {
+                    if(text[i] == null) { continue; }
+                    text[i].setColor(value);
+                }
+            }
+            else if(element < text.size())
+            {
+                if(text[element] != null)
+                {
+                    text[element].setColor(value);
+                }
+                else { Nu::Error("Element specified " + element + " was null."); }
+            }
+            else { Nu::Error("Attempted to set text above text array at " + element); }
+        }
+
+        Vec2f getTextScale(u16 element = -1)
+        {
+            if(element == u16(-1))
+            {
+                for(u16 i = 0; i < text.size(); i++)
+                {
+                    if(text[i] == null) { continue; }
+                    return text[i].getScale();
+                }
+            }
+            else if(element < text.size())
+            {
+                if(text[element] != null)
+                {
+                    return text[element].getScale();
+                }
+                else { Nu::Error("Element specified " + element + " was null."); }
+            }
+            else { Nu::Error("Attempted to set text above text array at " + element); }
+
+            return Vec2f(0,0);
+        }
+        void setTextScale(Vec2f value, u16 element = -1)
+        {
+            if(element == u16(-1))
+            {
+                for(u16 i = 0; i < text.size(); i++)
+                {
+                    if(text[i] == null) { continue; }
+                    text[i].setScale(value);
+                }
+            }
+            else if(element < text.size())
+            {
+                if(text[element] != null)
+                {
+                    text[element].setScale(value);
+                }
+                else { Nu::Error("Element specified " + element + " was null."); }
+            }
+            else { Nu::Error("Attempted to set text above text array at " + element); }
+        }
+        void setTextScale(float value, u16 element = -1)
+        {
+            setTextScale(Vec2f(value, value), element);
         }
 
         //
         //Text settings
 
         bool draw_text;
-        bool resize_text;
         bool reposition_text;//If this is true, the text's position will be reassigned every time the menu moves based on what text it is. top will be put back on the top every movement.
-        
-        
-        private array<string> text_strings;
-        private array<Vec2f> text_positions;
-
-        string getText(u16 array_position)
-        {
-            if(array_position >= text_strings.size()){error("getText : Tried to get text out of array bounds. Attempted to get text at the position " + array_position); return ""; }
-
-            return text_strings[array_position];
-        }
-        void setText(string text, u16 array_position)
-        {
-            if(array_position >= text_strings.size()){error("setText : Tried to get text out of array bounds. Attempted to get text at the position " + array_position); return; }
-            
-            GUI::SetFont(font);
-            Vec2f text_pos;
-            
-            Vec2f text_dimensions;
-            GUI::GetTextDimensions(text, text_dimensions);
-            
-            if(!Nu::getPosOnSizeFull(array_position, getSize(), text_dimensions, text_pos, default_buffer))//Move that pos.
-            {
-                error("Text position went above the text_positions array max size");
-                return;
-            }
-
-
-            text_positions[array_position] = text_pos;
-            
-            text_strings[array_position] = text;
-
-            text_used = UpdateIsTextUsed();
-        }
 
         void RepositionAllText(Vec2f size)
         {
-            if(isTextUsed())
-            {
-                GUI::SetFont(font);
-                
-                for(u16 i = 0; i < Nu::POSPositionsCount; i++)
+            for(u16 i = 0; i < Nu::POSPositionsCount; i++)
+            {           
+                if(text[i] == null)
                 {
-                    string text = getText(i);
-                        
-                    if(text.size() == 0)
-                    {
-                        continue;
-                    }
-
-                    Vec2f text_pos;
-            
-                    Vec2f text_dimensions;
-                    GUI::GetTextDimensions(text, text_dimensions);
-
-                    if(!Nu::getPosOnSizeFull(i, size, text_dimensions, text_pos, default_buffer))//Move that pos.
-                    {
-                        error("Text position went above the text_positions array max size");
-                        return;
-                    }
-                    
-                    setTextPos(text_pos, i);
+                    continue;
                 }
+
+                Vec2f text_pos;
+        
+                Vec2f text_dimensions = text[i].string_size_total;
+
+                if(!Nu::getPosOnSizeFull(i, size, text_dimensions, text_pos, default_buffer))//Move that pos.
+                {
+                    error("Text position went above the text_positions array max size");
+                    return;
+                }
+                
+                text_positions[i] = text_pos;
             }
         }
 
@@ -1720,35 +1784,15 @@ Check mark option on right
         
         Vec2f getTextPos(u16 array_position)
         {
-            if(array_position >= text_strings.size()){error("getTextPos : Tried to get text out of array bounds at pos " + array_position); return Vec2f_zero; }
+            if(array_position >= text_positions.size()){ Nu::error("Tried to get position out of bounds at " + array_position); return Vec2f(0,0); }
 
             return text_positions[array_position];
         }
         void setTextPos(Vec2f value, u16 array_position)
         {
-            if(array_position >= text_strings.size()){error("setTextPos : Tried to get text out of array bounds at pos " + array_position); return; }
+            if(array_position >= text_positions.size()){Nu::error("Tried to get position out of bounds at " + array_position); return; }
             
             text_positions[array_position] = value;
-        }
-
-
-        private bool text_used;
-
-        private bool UpdateIsTextUsed()//Updates the text_used bool.
-        {
-            for(u16 i = 0; i < text_strings.size(); i++)
-            {
-                if(text_strings[i].size() != 0)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        bool isTextUsed()
-        {
-            return text_used;
         }
 
         //
@@ -1897,7 +1941,7 @@ Check mark option on right
 
             if(draw_text)//If text exists and it is supposed to be drawn.
             {
-                //DrawTexts();//Too
+                DrawTexts();//Too
             }
 
             return true;
@@ -1930,12 +1974,6 @@ Check mark option on right
 
         void DrawTexts()
         {
-            if(!isTextUsed())
-            {
-                return;
-            }
-            SelectFont();//Sets the font
-
             //For repositionioning text in an interpolated manner. Only works if reposition_text is true.
             if((reposition_text && isInterpolated())//If this menu is interpolated 
             && didMenuJustMove())//and the menu just moved.
@@ -1943,14 +1981,14 @@ Check mark option on right
                 RepositionAllText(getLowerRightInterpolated() - getUpperLeftInterpolated());
             }
 
-            for(u16 i = 0; i < text_strings.size(); i++)
+            for(u16 i = 0; i < text.size(); i++)
             {
-                if(text_strings[i].size() == 0)
+                if(text[i] == null)
                 {
                     continue;
                 }
-                GUI::DrawText(text_strings[i], getUpperLeftInterpolated() + text_positions[i],// * (isWorldPos() && !reposition_text ? getCamera().targetDistance * 2: 1), //* (isWorldPos() ? 1 * 1 : 1),//lol what?
-                text_color);
+                
+                text[i].Render(getUpperLeftInterpolated() + text_positions[i], getButtonState());
             }
         }
     }

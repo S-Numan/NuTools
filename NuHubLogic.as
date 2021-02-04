@@ -19,7 +19,7 @@ void onInit( CRules@ rules )
     NuMenu::onInit(rules);
 
 
-    hub.addFont("Arial.png");
+    hub.addFont("Arial", "Arial.png");
 
 
 

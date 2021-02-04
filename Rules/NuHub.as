@@ -62,12 +62,13 @@ class NuHub
             
             fonts.push_back(@_font);
         }
-        void addFont(string font_file, bool has_alpha = true)
+        void addFont(string font_name, string font_file, bool has_alpha = true)
         {
-            string font_name = Nu::CutOutFileName(font_file);
+            font_name = Nu::CutOutFileName(font_name);
+
             if(getFont(font_name) != null) { warning("addFont(string): Font attempted to add already existed."); return; }
 
-            NuFont@ font = NuFont(font_file, has_alpha);
+            NuFont@ font = NuFont(font_name, font_file, has_alpha);
 
             if(font == null)
             {
@@ -77,9 +78,10 @@ class NuHub
             fonts.push_back(@font);
         }
         
-        NuFont@ getFont(string _font)
+        NuFont@ getFont(string font_name)
         {
-            string font_name = Nu::CutOutFileName(_font);
+            font_name = Nu::CutOutFileName(font_name);
+            
             for(u16 i = 0; i < fonts.size(); i++)
             {
                 if(fonts[i].basefont.name == font_name)

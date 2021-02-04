@@ -14,13 +14,13 @@
 const u32 CHARACTER_SPACE = 32;
 class NuFont
 {
-    NuFont(string font_path, bool _alpha = true)
+    NuFont(string font_name, string font_path, bool _alpha = true)
     {
         print("");//KAG will instantly crash if I don't print this.
         
         has_alpha = _alpha;
 
-        Setup(font_path);
+        Setup(font_name, font_path);
     }
 
     private bool has_alpha;
@@ -29,11 +29,9 @@ class NuFont
         return has_alpha;
     }
     
-    void Setup(string font_path)
+    void Setup(string font_name, string font_path)
     {
         print("");//KAG will instantly crash if I don't print this.
-        
-        string font_name = Nu::CutOutFileName(font_path);
 
         if(Texture::exists(font_name))
         {
@@ -199,7 +197,7 @@ class NuText
     NuText()
     {
         Setup();
-        setFont("Arial_font");
+        setFont("Arial");
         setString("");
     }
     NuText(string font_name, string text = ""
@@ -219,6 +217,8 @@ class NuText
         width_cap = 99999.0f;
 
         angle = 0.0f;
+
+        text_color = SColor(255, 255, 255, 255);
     }
 
     //
@@ -230,16 +230,17 @@ class NuText
     {
         if(_font == null){ Nu::Error("setFont(NuFont@): Font was null."); return; }
         @font = @_font;
+
+        refreshSizesAndPositions();
     }
     void setFont(string font_name)
     {
         NuHub@ hub;
         if(!getRules().get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
         NuFont@ _font = hub.getFont(font_name);
-        if(_font == null){ warning("setFont(string): Font not found. Try creating a font with the name \"" + font_name + "\" via the hub with addFont(string font_name);"); return; }
+        if(_font == null){ Nu::StackAndMessage("Font not found. Try creating a font with the name \"" + font_name + "\" via the hub with addFont(string font_name);"); return; }
 
-        @font = @_font;
-
+        setFont(_font);
     }
     NuFont@ getFont()
     {
@@ -264,17 +265,18 @@ class NuText
         is_world_pos = value;
     }
 
+    SColor text_color;
     SColor getColor()
     {
         if(font == null) { Nu::Error("Font was null."); return SColor(255, 255, 255, 0); }
         
-        return font.basefont.color_on[0];
+        return text_color;
     }
     void setColor(SColor value)
     {
         if(font == null) { Nu::Error("Font was null."); return; }
         
-        font.basefont.color_on[0] = value;
+        text_color = value;
     }
 
     float angle;
@@ -313,13 +315,15 @@ class NuText
             Render::SetTransformWorldspace();
         }
         
+        font.basefont.setScale(scale);//Set the scale.
+
+        font.basefont.setAngle(angle);//Set the angle. For those weird people.
+
+        font.basefont.color_on[0] = text_color;//Set the color.
+
         for(u16 i = 0; i < render_string.size(); i++)//For every character in this string.
         {
             font.basefont.setFrameSize(font.character_sizes[render_string[i]], false);//Set the frame size of the character in the texture.
-            
-            font.basefont.setScale(scale);//Set the scale.
-
-            font.basefont.setAngle(angle);//Set the angle. For those weird people.
 
             font.basefont.setDefaultPoints();//Set the points for how large this character is rendered.
 
@@ -384,7 +388,7 @@ class NuText
         }
         
         string_sizes = array<Vec2f>(render_string.size());
-        string_size_total;
+        string_size_total = Vec2f(0,0);
         char_positions = array<Vec2f>(render_string.size());
 
         float next_line_distance = font.character_sizes[CHARACTER_SPACE].y * scale.y;

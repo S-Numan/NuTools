@@ -666,32 +666,38 @@ namespace Nu
         }
     }
 
-    //1: Text to throw out as an error.
+    //1: Text to send as the message.
+    //2: Optional Message color.
+    //3: Optional Regular color.
+    //4: Optional Title color.
+    //5: Optional Skipped callstacks.
     //Throws an error to the console, with the script stack and callstack included and colored.
-    void Error(string input)
+    void StackAndMessage(string input, SColor message_color = SColor(255, 0, 50, 255), SColor regular_color = SColor(200, 255, 255, 255), SColor title_color = SColor(255, 0, 255, 255), u16 skip = 2)
     {
-        SColor error_color = SColor(255, 255, 0, 0);
-        SColor regular_color = SColor(200, 255, 255, 255);
-        SColor purple_error_color = SColor(255, 255, 0, 200);
-
         string scriptstack;
         string callstack;
 
-        getStackString(scriptstack, callstack, 2);//Skip itself and this method. that is what 2 means. 
+        getStackString(scriptstack, callstack, skip);//Skip itself and this method. that is what 2 means. 
         
-        //print("1==========1 ", error_color);
+        //print("1==========1 ", message_color);
 
-        print("Script stack", purple_error_color);
+        print("Script stack", title_color);
         
         print(scriptstack, regular_color);
         
-        print("Callstack for current script: ", purple_error_color);
+        print("Callstack for current script: ", title_color);
 
         print(callstack, regular_color);
         
-        print("Message: " + input, error_color);
+        print("Message: " + input, message_color);
 
-        //print("2==========2 ", error_color);
+        //print("2==========2 ", message_color);
+    }
+    //1: Text to throw out as the message.
+    //Calls StackAndMessage with error colors.
+    void Error(string input)
+    {
+        StackAndMessage(input, SColor(255, 255, 0, 0), SColor(200, 255, 255, 255), SColor(255, 255, 0, 200), 3);
     }
 
 
