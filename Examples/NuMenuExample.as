@@ -56,7 +56,7 @@ void onInit( CRules@ this )
 
     button1.setSize(Vec2f(32, 32));//Here we tell the button to be 32 by 32.
     
-    button1.setPos(Vec2f(700.0f, 50.0f));//Then we put it at this position.
+    button1.setPos(Vec2f(800.0f, 200.0f));//Then we put it at this position.
 
 
 
