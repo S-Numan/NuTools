@@ -1,3 +1,5 @@
+//Set gamemode to "Testing" for this to activate.
+
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
 
