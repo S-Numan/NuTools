@@ -42,8 +42,7 @@ void onTick( CRules@ this )
                 CBlob@ blob = player.getBlob();
                 if(blob != null)
                 {
-                    NuText@ txt = NuText("Arial", "A");
-                    txt.setIsWorldPos(true);
+                    NuText@ txt = NuText("Calibri-Bold", "A");
                     txt.setScale(Vec2f(0.25f, 0.25f));
                     screaming.push_back(@txt);
                 

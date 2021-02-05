@@ -6,7 +6,14 @@
 
 bool init;
 
-void onInit( CRules@ rules )
+void onInit( CRules@ rules )//First time start only.
+{
+    NuHub@ hub = LoadStuff(rules);
+    
+    hub.SetupRendering();
+}
+
+NuHub@ LoadStuff( CRules@ rules)//Every reload and restart
 {
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
     NuHub@ hub = NuHub();
@@ -19,8 +26,7 @@ void onInit( CRules@ rules )
     NuMenu::onInit(rules);
 
 
-    hub.addFont("Arial", "Arial.png");
-
+    addFonts(rules, hub);
 
 
     
@@ -34,11 +40,13 @@ void onInit( CRules@ rules )
     }
 
     init = true;
+
+    return @hub;
 }
 
 void onReload( CRules@ rules )
 {
-    onInit(rules);
+    LoadStuff(rules);
 }
 
 void onTick( CRules@ rules )
@@ -56,4 +64,15 @@ void onRender( CRules@ rules )
     if(!init) { return; }//Kag renders before onInit. Stop this.
 
     NuMenu::onRender(rules);//Important NuMenu things.
+}
+
+
+
+
+
+void addFonts( CRules@ rules, NuHub@ hub)
+{
+    hub.addFont("Arial", "Arial.png");
+    hub.addFont("Calibri", "Calibri-48.png");
+    hub.addFont("Calibri-Bold", "Calibri-48-Bold.png");
 }

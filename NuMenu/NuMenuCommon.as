@@ -52,6 +52,7 @@ Check mark option on right
 //Add scale x/y to button, make it work with NuImage scale of course.
 //Remove the titlbar and replace with with an actual menu.
 //Have values for the first part of a sprite. The middle part. And the end part. Modify NuImage for this.
+//Make setting to world pos actually set the upper left and lower right to the correct positions to not look like the menu changed position.
 
 
 //Option list for debugging blobs.
@@ -68,13 +69,6 @@ Check mark option on right
 //
 //TODO LIST
 //
-
-    float getDistance(Vec2f point1, Vec2f point2)//Add to NumanLib later
-    {
-        float dis = (Maths::Pow(point1.x-point2.x,2)+Maths::Pow(point1.y-point2.y,2));
-        return Maths::Sqrt(dis);
-        //return getDistanceToLine(point1, point1 + Vec2f(0,1), point2);
-    }
 
     //Actual classes.
     enum MenuClasses
@@ -189,7 +183,8 @@ Check mark option on right
 
     interface IMenu
     {
-        void initVars(string name, Vec2f upper_left = Vec2f(0,0), Vec2f lower_right = Vec2f(0,0));
+        void initVars();
+        void afterInitVars(string _name, u8 _menu_config, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0));
 
         u32 getTicksSinceCreated();
 
@@ -296,10 +291,10 @@ Check mark option on right
                 return;
             }
 
-            initVars(_name);
+            initVars();
+            afterInitVars(_name, _menu_config);
             
             setMenuClass(BaseClass);
-            setMenuConfig(_menu_config);
         }
         
         MenuBase(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)// add default option for world pos/screen pos? - Todo numan
@@ -309,13 +304,13 @@ Check mark option on right
                 return;
             }
 
-            initVars(_name, _upper_left, _lower_right);
+            initVars();
+            afterInitVars(_name, _menu_config, _upper_left, _lower_right);
             
             setMenuClass(BaseClass);
-            setMenuConfig(_menu_config);
         }
 
-        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0))
+        void initVars()
         {
             if(!getRules().get("NuHub", @transporter))
             {
@@ -354,10 +349,12 @@ Check mark option on right
             render_func = @RENDER_CALLBACK(DefaultRenderCaller);
 
             render_layer = Render::layer_prehud;
-
-
+        
             backgrounds = array<Nu::NuImage@>();
+        }
 
+        void afterInitVars(string _name, u8 _menu_config ,Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0))
+        {
             Nu::NuImage@ _background = Nu::NuImage(ButtonStateCount);
             _background.CreateImage("testy_testers", "RenderExample.png");
             _background.setFrameSize(Vec2f(32, 32));
@@ -366,7 +363,7 @@ Check mark option on right
                 _background.color_on[i] = DebugColor(i);
             }
             
-            addBackground(@_background);
+            addBackground(_background);
     
 
             setUpperLeft(_upper_left, false);
@@ -374,7 +371,11 @@ Check mark option on right
 
             setInterpolated(true);
 
+            setMenuJustMoved(true);
+
             setName(_name);
+
+            setMenuConfig(_menu_config);
         }
 
         u32 ticks_since_created;
@@ -386,6 +387,14 @@ Check mark option on right
         NuHub@ transporter;
 
         float default_buffer;
+        float getDefaultBuffer()
+        {
+            return default_buffer;
+        }
+        void setDefaultBuffer(float value)
+        {
+            default_buffer = value;
+        }
 
         private bool kill_menu;
 
@@ -860,7 +869,7 @@ Check mark option on right
             }
             else if(getRadius() != 0.0f)//Try checking for radius instead
             {
-                if(getDistance(getMiddle(), value) < getRadius()//If the distance between the middle and value is less than the radius
+                if(Nu::getDistance(getMiddle(), value) < getRadius()//If the distance between the middle and value is less than the radius
                 * (isWorldPos() ? 0.75 : 1))//That is multiplied by 0.75 if isWorldPos is true to keep them lining up. TODO replace with scale system.
                 {
                     return true;//Yes but radius.
@@ -889,16 +898,13 @@ Check mark option on right
 
             if(getTicksSinceCreated() == 0)//Menu just created. First tick
             {
-                setMenuJustMoved(true);//Refresh things.
+                //setMenuJustMoved(true);//I have no idea why, but if the menu does not tick right after being created, the background size will be at (0,0) and as such is invisible. This fixes that. But first, figure out why.
             }
 
             if(didMenuJustMove())//If the menu just moved
             {
                 setMenuJustMoved(false);//Well it didn't just move anymore.
             }
-
-            //One more tick has passed since the state was changed.
-            setTicksSinceStateChange(getTicksSinceStateChange() + 1);
 
             //Set the interpolated values to the positions.
             upper_left[2] = getUpperLeft();
@@ -922,6 +928,13 @@ Check mark option on right
                     setPos(getDriver().getScreenPosFromWorldPos(_owner_blob.getPosition()) + getOffset());
                 }
             }
+
+
+            //One more tick has passed since the state was changed.
+            setTicksSinceStateChange(getTicksSinceStateChange() + 1);
+
+            ticks_since_created++;//A tick has passed.
+            
 
             CPlayer@ player = getLocalPlayer();
             if(player == null)//The player must exist to get the CControls. (and maybe some other stuff)
@@ -971,7 +984,8 @@ Check mark option on right
         void InterpolatePositions()
         {
             //No interpolation? Just set them to where they should be on the screen then.
-            if(!isInterpolated())
+            if(!isInterpolated()
+                || getTicksSinceCreated() == 0)//Or if the menu hasn't ticked yet.
             {
                 upper_left[2] = getUpperLeft();
                 lower_right[2] = getLowerRight();
@@ -1130,7 +1144,7 @@ Check mark option on right
                 for(u16 i = 0; i < backgrounds.size(); i++)
                 {
                     backgrounds[i].Render(backgrounds[i].frame_on[getButtonState()], getUpperLeftInterpolated(), getButtonState());
-                    //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), rec_color);
+                    //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), DebugColor(getButtonState()));
                 }
             }
 
@@ -1158,25 +1172,25 @@ Check mark option on right
         {
             if(!isClient()) { return; }
 
-            initVars(_name);
+            initVars();
+            afterInitVars(_name, _menu_config);
 
             setMenuClass(BaseExClass);
-            setMenuConfig(_menu_config);
         }
 
         MenuBaseEx(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient()) { return; }
 
-            initVars(_name, _upper_left, _lower_right);
+            initVars();
+            afterInitVars(_name, _menu_config, _upper_left, _lower_right);
 
             setMenuClass(BaseExClass);
-            setMenuConfig(_menu_config);
         }
 
-        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
+        void initVars() override
         {
-            MenuBase::initVars(_name, _upper_left, _lower_right);
+            MenuBase::initVars();
 
             draw_images = true;
             reposition_images = false;
@@ -1380,7 +1394,7 @@ Check mark option on right
             
             Vec2f image_offset;
             
-            if(!Nu::getPosOnSizeFull(position, getSize(), image_frame_size, image_offset, default_buffer))//Move that pos.
+            if(!Nu::getPosOnSizeFull(position, getSize(), image_frame_size, image_offset, getDefaultBuffer()))//Move that pos.
             {
                 error("setImage position was an unknown position");
                 return @null;
@@ -1427,7 +1441,7 @@ Check mark option on right
 
                 Vec2f image_offset;
                 
-                if(!Nu::getPosOnSizeFull(i, size, image.getFrameSize(), image_offset, default_buffer))//Move that pos.
+                if(!Nu::getPosOnSizeFull(i, size, image.getFrameSize(), image_offset, getDefaultBuffer()))//Move that pos.
                 {
                     error("Image position went above the images array max size");
                     return;
@@ -1502,33 +1516,25 @@ Check mark option on right
         {
             if(!isClient()) { return; }
 
-            initVars(_name);
-            
+            initVars();
+            afterInitVars(_name, _menu_config);
+
             setMenuClass(BaseExExClass);
-            setMenuConfig(_menu_config);
-
-            setTextColor(SColor(255, 0, 0, 0));
-
-            setFont("Arial");
         }
 
         MenuBaseExEx(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
         {
             if(!isClient()) { return; }
 
-            initVars(_name, _upper_left, _lower_right);
+            initVars();
+            afterInitVars(_name, _menu_config, _upper_left, _lower_right);
 
             setMenuClass(BaseExExClass);
-            setMenuConfig(_menu_config);
-
-            setTextColor(SColor(255, 0, 0, 0));
-
-            setFont("Arial");
         }
 
-        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
+        void initVars() override
         {
-            MenuBaseEx::initVars(_name, _upper_left, _lower_right);
+            MenuBaseEx::initVars();
             
             titlebar_ignore_press = false;
             draw_titlebar = true;
@@ -1556,7 +1562,7 @@ Check mark option on right
                 //Optimize me, this will be done twice a tick if both top left and bottom right are moved. That is no goodo. TODO
                 if(reposition_text)
                 {
-                    RepositionAllText(getSize());
+                    RepositionText(getSize());
                 }
             }
         }
@@ -1592,12 +1598,12 @@ Check mark option on right
         {
             if(element >= text.size()) { Nu::Error("Tried to set text out of array bounds. Attempted to get text at the position " + element); return; }
             if(_text == null) { Nu::Error("Input parameter text was null."); return; }
-            
+
             Vec2f text_pos;
             
             Vec2f text_dimensions = _text.string_size_total;
             
-            if(!Nu::getPosOnSizeFull(element, getSize(), text_dimensions, text_pos, default_buffer))//Move that pos.
+            if(!Nu::getPosOnSizeFull(element, getSize(), text_dimensions, text_pos, getDefaultBuffer()))//Move that pos.
             {
                 error("Text position went above the text_positions array max size");
                 return;
@@ -1628,17 +1634,17 @@ Check mark option on right
 
 
         
-        NuFont@ setFont(string font_name)
+        NuFont@ setFont(string font_name, u16 element = -1, bool repos = true)
         {
             NuHub@ hub;
             if(!getRules().get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return @null; }
             NuFont@ _font = hub.getFont(font_name);
             if(_font == null){ warning("Could not find font with font_name = " + font_name); return hub.getFont("Arial"); }
 
-            setFont(@_font);
+            setFont(@_font, element, repos);
             return @_font;
         }
-        void setFont(NuFont@ _font, u16 element = -1)
+        void setFont(NuFont@ _font, u16 element = -1, bool repos = true)
         {
             if(_font == null){ Nu::Error("Font was null."); return; }
             if(element == u16(-1))//No element specified.
@@ -1647,6 +1653,7 @@ Check mark option on right
                 {
                     if(text[i] == null) { continue; }
                     text[i].setFont(_font);
+                    if(repos) { RepositionText(getSize(), i); }
                 }
             }
             else if(element < text.size())
@@ -1654,6 +1661,7 @@ Check mark option on right
                 if(text[element] != null)
                 {
                     text[element].setFont(_font);
+                    if(repos) { RepositionText(getSize(), element); }
                 }
                else { Nu::Error("Element specified " + element + " was null."); }
             }
@@ -1726,7 +1734,7 @@ Check mark option on right
 
             return Vec2f(0,0);
         }
-        void setTextScale(Vec2f value, u16 element = -1)
+        void setTextScale(Vec2f value, u16 element = -1, bool repos = true)
         {
             if(element == u16(-1))
             {
@@ -1734,6 +1742,7 @@ Check mark option on right
                 {
                     if(text[i] == null) { continue; }
                     text[i].setScale(value);
+                    if(repos) { RepositionText(getSize(), i); }
                 }
             }
             else if(element < text.size())
@@ -1741,14 +1750,15 @@ Check mark option on right
                 if(text[element] != null)
                 {
                     text[element].setScale(value);
+                    if(repos) { RepositionText(getSize(), element); }
                 }
                 else { Nu::Error("Element specified " + element + " was null."); }
             }
             else { Nu::Error("Attempted to set text above text array at " + element); }
         }
-        void setTextScale(float value, u16 element = -1)
+        void setTextScale(float value, u16 element = -1, bool repos = true)
         {
-            setTextScale(Vec2f(value, value), element);
+            setTextScale(Vec2f(value, value), element, repos);
         }
 
         //
@@ -1757,27 +1767,48 @@ Check mark option on right
         bool draw_text;
         bool reposition_text;//If this is true, the text's position will be reassigned every time the menu moves based on what text it is. top will be put back on the top every movement.
 
-        void RepositionAllText(Vec2f size)
+        void RepositionText(Vec2f size, u16 element = -1)
         {
-            for(u16 i = 0; i < Nu::POSPositionsCount; i++)
-            {           
-                if(text[i] == null)
-                {
-                    continue;
-                }
+            if(element == u16(-1))
+            {
+                for(u16 i = 0; i < Nu::POSPositionsCount; i++)
+                {           
+                    if(text[i] == null)
+                    {
+                        continue;
+                    }
 
-                Vec2f text_pos;
-        
-                Vec2f text_dimensions = text[i].string_size_total;
+                    Vec2f text_pos;
+            
+                    Vec2f text_dimensions = text[i].string_size_total;
 
-                if(!Nu::getPosOnSizeFull(i, size, text_dimensions, text_pos, default_buffer))//Move that pos.
-                {
-                    error("Text position went above the text_positions array max size");
-                    return;
+                    if(!Nu::getPosOnSizeFull(i, size, text_dimensions, text_pos, getDefaultBuffer()))//Move that pos.
+                    {
+                        Nu::Error("Text position went above the text_positions array max size"); return;
+                    }
+                    
+                    text_positions[i] = text_pos;
                 }
-                
-                text_positions[i] = text_pos;
             }
+            else if(element < text.size())
+            {
+                if(text[element] != null)
+                {
+                    Vec2f text_pos;
+            
+                    Vec2f text_dimensions = text[element].string_size_total;
+
+                    if(!Nu::getPosOnSizeFull(element, size, text_dimensions, text_pos, getDefaultBuffer()))//Move that pos.
+                    {
+                        Nu::Error("Text position went above the text_positions array max size"); return;
+                    }
+                    
+                    text_positions[element] = text_pos;
+                }
+                else { Nu::Error("Element specified " + element + " was null."); }
+            }
+            else { Nu::Error("Attempted to reposition text above text array at " + element); }
+            
         }
 
 
@@ -1790,7 +1821,7 @@ Check mark option on right
         }
         void setTextPos(Vec2f value, u16 array_position)
         {
-            if(array_position >= text_positions.size()){Nu::error("Tried to get position out of bounds at " + array_position); return; }
+            if(array_position >= text_positions.size()){ Nu::error("Tried to get position out of bounds at " + array_position); return; }
             
             text_positions[array_position] = value;
         }
@@ -1978,7 +2009,7 @@ Check mark option on right
             if((reposition_text && isInterpolated())//If this menu is interpolated 
             && didMenuJustMove())//and the menu just moved.
             {
-                RepositionAllText(getLowerRightInterpolated() - getUpperLeftInterpolated());
+                RepositionText(getLowerRightInterpolated() - getUpperLeftInterpolated());
             }
 
             for(u16 i = 0; i < text.size(); i++)
@@ -2010,10 +2041,10 @@ Check mark option on right
                 return;
             }
 
-            initVars(_name);
-        
+            initVars();
+            afterInitVars(_name, _menu_config);
+
             setMenuClass(ButtonClass);
-            setMenuConfig(_menu_config);
         }
 
         MenuButton(string _name, CBlob@ blob, u8 _menu_config = NuMenu::Custom)
@@ -2023,14 +2054,13 @@ Check mark option on right
                 return;
             }
 
-            initVars(_name);
+            initVars();
+            afterInitVars(_name, _menu_config);
 
             setMenuClass(ButtonClass);
-            setMenuConfig(_menu_config);
             
             setOwnerBlob(blob);//This is the button's owner. The button will follow this blob (can be disabled).
             setIsWorldPos(true);//The position of the button is in the world, not the screen as the button is following a blob, a thing in the world. Therefor isWorldPos should be true.
-            //Remove this and see what happens for funzies. - TODO Numan
         }
 
         MenuButton(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
@@ -2040,15 +2070,15 @@ Check mark option on right
                 return;
             }
 
-            initVars(_name, _upper_left, _lower_right);
+            initVars();
+            afterInitVars(_name, _menu_config, _upper_left, _lower_right);
         
             setMenuClass(ButtonClass);
-            setMenuConfig(_menu_config);
         }
 
-        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
+        void initVars() override
         {
-            MenuBaseExEx::initVars(_name, _upper_left, _lower_right);
+            MenuBaseExEx::initVars();
             send_to_rules = false;
             kill_on_release = false;
             instant_press = false;
@@ -2127,67 +2157,66 @@ Check mark option on right
 
         bool Tick() override
         {
-            CPlayer@ player = getLocalPlayer();
-            if(player == null){return false;}
-            CControls@ controls = player.getControls();
-            if(controls == null){return false;}
-
-            Vec2f pos;
-
-            if(isWorldPos())
-            {
-                pos = controls.getMouseWorldPos();
-            }
-            else
-            {
-                pos = controls.getMouseScreenPos();
-            }
-
-            array<u16> key_codes(2);
-            key_codes[0] = KEY_LBUTTON;
-            key_codes[1] = KEY_RBUTTON; 
-            
-            return Tick(key_codes, pos);
-        }
-
-        bool Tick(Vec2f position)
-        {
-            CPlayer@ player = getLocalPlayer();
-            if(player == null){return false;}
-            CControls@ controls = player.getControls();
-            if(controls == null){return false;}
-
-            Vec2f pos;
-
-            if(isWorldPos())
-            {
-                pos = controls.getMouseWorldPos();
-            }
-            else
-            {
-                pos = controls.getMouseScreenPos();
-            }
-
-            array<u16> key_codes(2);
-            key_codes[0] = KEY_LBUTTON;
-            key_codes[1] = KEY_RBUTTON; 
-            
-            return Tick(key_codes, pos, position);
-        }
-
-        bool Tick(u16 key_code, Vec2f point, Vec2f position = Vec2f_zero)
-        {
-            return Tick(array<u16>(1, key_code), point, position);
-        }
-
-        //Examples: point parameter for the mouse position, the position parameter is for the blob. position parameter only really useful when it comes to radius stuff.
-        bool Tick(array<u16> key_codes, Vec2f point, Vec2f position = Vec2f_zero)
-        {
             if(!MenuBaseExEx::Tick())
             {
                 return false;
             }
 
+            CControls@ controls = getLocalPlayer().getControls();
+
+            Vec2f pos;
+
+            if(isWorldPos())
+            {
+                pos = controls.getMouseWorldPos();
+            }
+            else
+            {
+                pos = controls.getMouseScreenPos();
+            }
+
+            array<u16> key_codes(2);
+            key_codes[0] = KEY_LBUTTON;
+            key_codes[1] = KEY_RBUTTON; 
+            
+            return Update(key_codes, pos);
+        }
+
+        bool Tick(Vec2f position)
+        {
+            if(!MenuBaseExEx::Tick())
+            {
+                return false;
+            }
+            
+            CControls@ controls = getLocalPlayer().getControls();
+
+            Vec2f pos;
+
+            if(isWorldPos())
+            {
+                pos = controls.getMouseWorldPos();
+            }
+            else
+            {
+                pos = controls.getMouseScreenPos();
+            }
+
+            array<u16> key_codes(2);
+            key_codes[0] = KEY_LBUTTON;
+            key_codes[1] = KEY_RBUTTON; 
+            
+            return Update(key_codes, pos, position);
+        }
+
+        bool Tick(u16 key_code, Vec2f point, Vec2f position = Vec2f_zero)
+        {
+            return Update(array<u16>(1, key_code), point, position);
+        }
+
+        //Examples: point parameter for the mouse position, the position parameter is for the blob. position parameter only really useful when it comes to radius stuff.
+        bool Update(array<u16> key_codes, Vec2f point, Vec2f position = Vec2f_zero)
+        {
             CPlayer@ player = getLocalPlayer();
 
             CControls@ controls = player.getControls();
@@ -2218,7 +2247,7 @@ Check mark option on right
             u8 _button_state = getButtonState();//Get the button state.
 
             if(enableRadius == 0.0f || position == Vec2f_zero ||//Provided both these values have been assigned, the statement below will check.
-            getDistance(position, getMiddle()) < enableRadius)//The button is within enable(interact) distance.
+            Nu::getDistance(position, getMiddle()) < enableRadius)//The button is within enable(interact) distance.
             {
                 _button_state = getPressingState(point, _button_state, key_button, key_button_release, key_button_just);//Get the pressing state. That pun in intentional.
             }
@@ -2331,10 +2360,10 @@ Check mark option on right
                 return;
             }
             
-            initVars(_name);
+            initVars();
+            afterInitVars(_name, _menu_config);
         
             setMenuClass(HolderClass);
-            setMenuConfig(_menu_config);
         }
 
         MenuHolder(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
@@ -2344,15 +2373,15 @@ Check mark option on right
                 return;
             }
             
-            initVars(_name, _upper_left, _lower_right);
+            initVars();
+            afterInitVars(_name, _menu_config, _upper_left, _lower_right);
 
             setMenuClass(HolderClass);
-            setMenuConfig(_menu_config);
         }
 
-        void initVars(string _name, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0)) override
+        void initVars() override
         {
-            MenuBase::initVars(_name, _upper_left, _lower_right);
+            MenuBase::initVars();
         }
 
         
@@ -2376,7 +2405,10 @@ Check mark option on right
         void setMenuJustMoved(bool value) override
         {
             MenuBase::setMenuJustMoved(value);
-            moveHeldMenus();
+            if(value)
+            {
+                moveHeldMenus();
+            }
         }
         
         void setInterpolated(bool value) override
@@ -2544,7 +2576,7 @@ Check mark option on right
                 added_menu.setSize(optional_menu_size);
                 added_menu.setInterpolated(isInterpolated());
 
-                //added_menu.setOffset(Vec2f(getSize().x - optional_menu_size.x - default_buffer, getSize().y/2 - optional_menu_size.y/2));
+                //added_menu.setOffset(Vec2f(getSize().x - optional_menu_size.x - getDefaultBuffer(), getSize().y/2 - optional_menu_size.y/2));
 
                 added_menu.setOwnerMenu(this);
 

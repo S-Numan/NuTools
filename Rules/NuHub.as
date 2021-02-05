@@ -6,7 +6,7 @@ class NuHub
     NuHub()
     {
         SetupArrays();
-        SetupRendering();
+        
         SetupGlobalVars();
     }
     
@@ -26,6 +26,7 @@ class NuHub
     int backgroundid;
     void SetupRendering()
     {
+
         posthudid = Render::addScript(Render::layer_posthud, "NuMenuCommon.as", "MenusPostHud", 0.0f);
         prehudid = Render::addScript(Render::layer_prehud, "NuMenuCommon.as", "MenusPreHud", 0.0f);
         postworldid = Render::addScript(Render::layer_postworld, "NuMenuCommon.as", "MenusPostWorld", 0.0f);
@@ -48,52 +49,58 @@ class NuHub
     //
 
         
-        private array<NuFont@> fonts;
-        array<NuFont@> getFonts()
-        {
-            return fonts;
-        }
+    private array<NuFont@> fonts;
+    array<NuFont@> getFonts()
+    {
+        return fonts;
+    }
+    
+    void addFont(NuFont@ _font)
+    {
+        if(_font == null){ error("addFont(NuFont@): attempted to add null font."); return;}
         
-        void addFont(NuFont@ _font)
+        if(getFont(_font.basefont.name) != null) { warning("addFont(NuFont@): Font attempted to add already existed."); return; }
+        
+        fonts.push_back(@_font);
+    }
+    void addFont(string font_name, string font_file, bool has_alpha = true)
+    {
+        if(getFont(font_name) != null) { warning("addFont(string): Font attempted to add already existed."); return; }
+
+        NuFont@ font = NuFont(font_name, font_file, has_alpha);
+
+        if(font == null)
         {
-            if(_font == null){ error("addFont(NuFont@): attempted to add null font."); return;}
-            
-            if(getFont(_font.basefont.name) != null) { warning("addFont(NuFont@): Font attempted to add already existed."); return; }
-            
-            fonts.push_back(@_font);
+            Nu::Error("Font was still null after creation. Somehow.");
         }
-        void addFont(string font_name, string font_file, bool has_alpha = true)
+
+        fonts.push_back(@font);
+    }
+    
+    NuFont@ getFont(string font_name)
+    {
+        for(u16 i = 0; i < fonts.size(); i++)
         {
-            font_name = Nu::CutOutFileName(font_name);
-
-            if(getFont(font_name) != null) { warning("addFont(string): Font attempted to add already existed."); return; }
-
-            NuFont@ font = NuFont(font_name, font_file, has_alpha);
-
-            if(font == null)
+            if(fonts[i].basefont.name == font_name)
             {
-                Nu::Error("Font was still null after creation. Somehow.");
+                return @fonts[i];
             }
-
-            fonts.push_back(@font);
         }
-        
-        NuFont@ getFont(string font_name)
+        return @null;
+    }
+
+    bool FontExists(string font_name)
+    {
+        if(getFont(font_name) != null)
         {
-            font_name = Nu::CutOutFileName(font_name);
-            
-            for(u16 i = 0; i < fonts.size(); i++)
-            {
-                if(fonts[i].basefont.name == font_name)
-                {
-                    return @fonts[i];
-                }
-            }
-            return @null;
+            return true;
         }
 
-        
-        //getFont()//
+        return false;
+    }
+
+    
+    //getFont()//
 
     //
     //Fonts

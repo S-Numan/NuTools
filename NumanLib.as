@@ -701,6 +701,21 @@ namespace Nu
     }
 
 
+    //1: Vec2f 1.
+    //2: Vec2f 2.
+    //Returns a float that is the distance between the two points.
+    float getDistance(Vec2f point1, Vec2f point2)//Add to NumanLib later
+    {
+        float dis = (Maths::Pow(point1.x-point2.x,2)+Maths::Pow(point1.y-point2.y,2));
+        return Maths::Sqrt(dis);
+        //return getDistanceToLine(point1, point1 + Vec2f(0,1), point2);
+    }
+
+
+
+
+
+
 
 
 
@@ -945,6 +960,7 @@ namespace Nu
             return z[0];
         }
 
+        Vec2f angle_offset;//The offset required to make spinning move from the middle, and not the top left.
 
         private float angle;
         void setAngle(float value)

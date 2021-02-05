@@ -1,12 +1,12 @@
 //How to create fonts for this mod.
 //Go to ../Base/GUI/Fonts
 //Open IrrFontTool.exe
-//Top left 1024 pixels width.
-//On the right, set the font size to 48.\
+//I reccomend going to the Top left and changing 256 pixels wide to 1024 pixels wide pixels. 
+//After that, I also reccomend setting the font size to 48. Neither of these are required though.
 //Pick the font you want in the middle.
-//Click the square button on the right that says "create bitmap font and copy to clipboard"
+//Click the square button on the left that says "create bitmap font and copy to clipboard"
 //Paste in image program, crop if needed.
-//Save inside a mod, and you are done. Call that font from wherever elsewhere.
+//Save inside a mod, and you are done. See NuTextExample.as for how to add the png as a font into kag.
 
 #include "NumanLib.as";
 #include "NuHub";
@@ -210,7 +210,7 @@ class NuText
     
     void Setup()
     {
-        is_world_pos = false;
+        //is_world_pos = false;
 
         scale = Vec2f(1,1);
 
@@ -255,7 +255,7 @@ class NuText
     //Settings
     //
 
-    private bool is_world_pos;
+    /*private bool is_world_pos;
     bool isWorldPos()
     {
         return is_world_pos;
@@ -263,7 +263,7 @@ class NuText
     void setIsWorldPos(bool value)
     {
         is_world_pos = value;
-    }
+    }*/
 
     SColor text_color;
     SColor getColor()
@@ -306,14 +306,14 @@ class NuText
 
     void Render(Vec2f _pos = Vec2f(0,0), u16 state = 0)
     {
-        if(!isWorldPos())
+        /*if(!isWorldPos())
         {
             Render::SetTransformScreenspace();
         }
         else//World pos
         {
             Render::SetTransformWorldspace();
-        }
+        }*/
         
         font.basefont.setScale(scale);//Set the scale.
 
