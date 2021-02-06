@@ -52,6 +52,8 @@ class NuFont
         
         basefont.auto_frame_points = false;
 
+        basefont.setZ(2.0f);
+
         u32 _image_size = basefontdata.width() * basefontdata.height();
         Vec2f _image_size_vec = Vec2f(basefontdata.width(), basefontdata.height());
         
