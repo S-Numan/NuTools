@@ -2778,7 +2778,7 @@ Check mark option on right
         transporter.FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
     }
 
-    void MenuRender(NuHub@ transporter)
+    void MenuRender(NuHub@ transporter, Render::ScriptLayer layer)
     {
         Render::SetAlphaBlend(true);
         
@@ -2787,6 +2787,10 @@ Check mark option on right
             if(transporter[i] == null)
             {
                 error("Menu was somehow null in rendering. This should not happen."); continue;
+            }
+            if(transporter[i].getRenderLayer() != layer)//Current layer is not equal?
+            {
+                continue;//Skip
             }
             RENDER_CALLBACK@ func = transporter[i].getRenderFunction();
             if(func == null)
@@ -2807,7 +2811,7 @@ bool TransporterInit()
     if(o_transporter == null)//Init.
     {
         getRules().get("NuHub", @o_transporter);
-        print("rules got");
+        print("NuMenu rendering transporter got.");
         if(o_transporter == null)//Still equal to null?
         {
             error("Render function failed to get things to render.");
@@ -2817,51 +2821,44 @@ bool TransporterInit()
     return true;
 }
 
-void MenusPreHud(int id)
-{
-    TransporterInit();
-    
-    NuMenu::MenuRender(@o_transporter);
-
-    //CBlob@[] players;
-    //getBlobsByTag("player", @players);
-    //for (uint i = 0; i < players.length; i++)
-    //{
-    //    RenderHUDWidgetFor(players[i]);
-    //}
-}
-
 void MenusPostHud(int id)
 {
     if(!TransporterInit()) { return; }
-    //When readding, make sure this doesn't re-render already renedered menus. TODO.
-    //NuMenu::MenuRender(@o_transporter);
+    
+    NuMenu::MenuRender(o_transporter, Render::layer_posthud);
+}
+
+void MenusPreHud(int id)
+{
+    if(!TransporterInit()) { return; }
+    
+    NuMenu::MenuRender(o_transporter, Render::layer_prehud);
 }
 
 void MenusPostWorld(int id)
 {
     if(!TransporterInit()) { return; }
     
-    //NuMenu::MenuRender(@o_transporter);
+    NuMenu::MenuRender(o_transporter, Render::layer_postworld);
 }
 
 void MenusObjects(int id)
 {
     if(!TransporterInit()) { return; }
     
-    //NuMenu::MenuRender(@o_transporter);
+    NuMenu::MenuRender(o_transporter, Render::layer_objects);
 }
 
 void MenusTiles(int id)
 {
     if(!TransporterInit()) { return; }
     
-    //NuMenu::MenuRender(@o_transporter);
+    NuMenu::MenuRender(o_transporter, Render::layer_tiles);
 }
 
 void MenusBackground(int id)
 {
     if(!TransporterInit()) { return; }
     
-    //NuMenu::MenuRender(@o_transporter);
+    NuMenu::MenuRender(o_transporter, Render::layer_background);
 }
