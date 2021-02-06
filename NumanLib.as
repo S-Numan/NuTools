@@ -922,8 +922,11 @@ namespace Nu
             frame_points = Nu::getFrameSizes(
                 MultVec(frame_size, scale)//Frame size
             );
-            for(u8 i = 0; i < frame_points.size(); i++){
-                frame_points[i] = frame_points[i].RotateByDegrees(angle);
+            if(angle != 0.0f)
+            {
+                for(u8 i = 0; i < frame_points.size(); i++){
+                    frame_points[i] = frame_points[i].RotateByDegrees(angle);
+                }
             }
             
         }

@@ -37,7 +37,7 @@ void onTick( CRules@ this )
         if(player != null)
         {
             CControls@ controls = getControls();
-            if(controls.isKeyPressed(KEY_KEY_E))
+            if(controls.isKeyPressed(KEY_LCONTROL) && controls.isKeyPressed(KEY_KEY_E))
             {
                 CBlob@ blob = player.getBlob();
                 if(blob != null)
@@ -49,7 +49,7 @@ void onTick( CRules@ this )
                     //screaming_direction.push_back(RandomDirection());    
                     screaming_direction.push_back(getRandomVelocity(0, 12.0f, 360));
 
-                    screaming_pos.push_back(blob.getPosition() - txt.string_size_total / 2);
+                    screaming_pos.push_back(controls.getMouseWorldPos() - txt.string_size_total / 2);
                 
                     screaming_angle_vel.push_back(XORRandom(32));
                 }

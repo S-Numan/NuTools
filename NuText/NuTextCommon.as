@@ -8,6 +8,14 @@
 //Paste in image program, crop if needed.
 //Save inside a mod, and you are done. See NuTextExample.as for how to add the png as a font into kag.
 
+
+
+
+//TODO
+//Color per character.
+//Better angles.
+
+
 #include "NumanLib.as";
 #include "NuHub";
 
@@ -306,6 +314,8 @@ class NuText
 
     void Render(Vec2f _pos = Vec2f(0,0), u16 state = 0)
     {
+        if(font.basefont.would_crash) { return; }
+        
         /*if(!isWorldPos())
         {
             Render::SetTransformScreenspace();
@@ -314,12 +324,17 @@ class NuText
         {
             Render::SetTransformWorldspace();
         }*/
+
+        //if(state >= font.basefont.frame_on.size() || state >= font.basefont.color_on.size())
+        //{
+        //    Nu::Error("Input state above state size."); font.basefont.would_crash = true; return;
+        //}
         
         font.basefont.setScale(scale);//Set the scale.
 
         font.basefont.setAngle(angle);//Set the angle. For those weird people.
 
-        font.basefont.color_on[0] = text_color;//Set the color.
+        font.basefont.setDefaultColor(text_color);//Set the color.
 
         for(u16 i = 0; i < render_string.size(); i++)//For every character in this string.
         {
@@ -328,8 +343,7 @@ class NuText
             font.basefont.setDefaultPoints();//Set the points for how large this character is rendered.
 
             font.basefont.Render(render_string[i],//This frame. (character)
-                _pos + char_positions[i],//At the _pos plus the character position.
-                state//State. (not often used)
+                _pos + char_positions[i]//At the _pos plus the character position.
             );
         }
     }
@@ -369,6 +383,10 @@ class NuText
     {
         scale = value;
         refreshSizesAndPositions();
+    }
+    void setScale(float value)
+    {
+        setScale(Vec2f(value, value));
     }
 
     array<Vec2f> string_sizes;//Sizes for each character in the drawn string.

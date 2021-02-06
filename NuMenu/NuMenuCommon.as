@@ -675,7 +675,7 @@ Check mark option on right
         {
             if(isWorldPos() && get_screen_pos)//If isWorldPos and we aren't getting a raw pos. (I.E convert world to screen)
             {
-                return getDriver().getScreenPosFromWorldPos(getUpperLeft(get_screen_pos) + (getSize() / 2));//Get the world pos upper left, then add the size divided by two to it. Then convert it to screen pos. 
+                return getDriver().getScreenPosFromWorldPos(getUpperLeft() + (getSize() / 2));//Get the world pos upper left, then add the size divided by two to it. Then convert it to screen pos. 
             }
             else
             {
@@ -1808,7 +1808,6 @@ Check mark option on right
                 else { Nu::Error("Element specified " + element + " was null."); }
             }
             else { Nu::Error("Attempted to reposition text above text array at " + element); }
-            
         }
 
 
@@ -2211,6 +2210,10 @@ Check mark option on right
 
         bool Tick(u16 key_code, Vec2f point, Vec2f position = Vec2f_zero)
         {
+            if(!MenuBaseExEx::Tick())
+            {
+                return false;
+            }
             return Update(array<u16>(1, key_code), point, position);
         }
 
