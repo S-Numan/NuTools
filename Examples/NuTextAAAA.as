@@ -51,7 +51,7 @@ void onTick( CRules@ this )
 
                     screaming_pos.push_back(controls.getMouseWorldPos() - txt.string_size_total / 2);
                 
-                    screaming_angle_vel.push_back(XORRandom(32));
+                    screaming_angle_vel.push_back(XORRandom(50));
                 }
             }
         }

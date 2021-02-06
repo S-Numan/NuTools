@@ -50,9 +50,10 @@ Check mark option on right
 //Don't setMenuMoved(true) if no positions actually changed.
 //Moving interpolated when camera is moving isWorldPos(). it's shakey atm.
 //Add scale x/y to button, make it work with NuImage scale of course.
-//Remove the titlbar and replace with with an actual menu.
+//Remove the titlebar and replace with with an actual menu.//X button on titlebar that closes the menu.
 //Have values for the first part of a sprite. The middle part. And the end part. Modify NuImage for this.
 //Make setting to world pos actually set the upper left and lower right to the correct positions to not look like the menu changed position.
+
 
 
 //Option list for debugging blobs.
@@ -114,11 +115,14 @@ Check mark option on right
         CheckBox,//Button: Press once and the button is pressed. Press again and the button is unpressed.
         
         //TextWriter
-        TextBox,//Click this box, and you can type in text! Other options for selecting too.
+        InputText,//Click this box, and you can type in text! Other options for selecting too.
 
         //Holder
-        DropDownOptions,//Click this box to get a bunch of different boxes below it.
+        DropDownOptions,//Click this box to get a bunch of different boxes below it. It places other menus right below itself plus buffer then another menu below that using the y sizes of the menu added.
         //Can choose if this menu opens up or down.
+        //Slider to scroll through options provided there is not enough space for all them to display.
+        
+        Documents,//Below a possible titlebar, you get options to select that open a certain menu below. like -> |Lettuce|  |Shoes|  |Frogs|  . Select an option get get a menu below/above it and unselect the other options.
     }
 
     enum ButtonState
@@ -2824,7 +2828,7 @@ bool TransporterInit()
 void MenusPostHud(int id)
 {
     if(!TransporterInit()) { return; }
-    
+
     NuMenu::MenuRender(o_transporter, Render::layer_posthud);
 }
 

@@ -922,10 +922,13 @@ namespace Nu
             frame_points = Nu::getFrameSizes(
                 MultVec(frame_size, scale)//Frame size
             );
+
+            Vec2f center =  (frame_points[2] - frame_points[0]) / 2; 
+
             if(angle != 0.0f)
             {
                 for(u8 i = 0; i < frame_points.size(); i++){
-                    frame_points[i] = frame_points[i].RotateByDegrees(angle);
+                    frame_points[i] = frame_points[i].RotateByDegrees(angle, center);
                 }
             }
             
