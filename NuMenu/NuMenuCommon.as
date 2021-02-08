@@ -95,6 +95,8 @@ Check mark option on right
 
         HolderClass,//Holds their child menus and spoils them by positioning them to themself without extra work.
 
+        GridClass,//Works like the holder class, but has an array of holders to hold children below/above them.
+
         MenuClassesCount,//Always last, this specifies the amount of menu classes.
     }
 
@@ -121,6 +123,7 @@ Check mark option on right
         DropDownOptions,//Click this box to get a bunch of different boxes below it. It places other menus right below itself plus buffer then another menu below that using the y sizes of the menu added.
         //Can choose if this menu opens up or down.
         //Slider to scroll through options provided there is not enough space for all them to display.
+        //Can have automatically open. With no close/open button. Just already showing a list.
         
         Documents,//Below a possible titlebar, you get options to select that open a certain menu below. like -> |Lettuce|  |Shoes|  |Frogs|  . Select an option get get a menu below/above it and unselect the other options.
     }
