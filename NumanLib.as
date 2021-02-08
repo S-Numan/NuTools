@@ -293,7 +293,7 @@ namespace Nu
     //Returns if the point is within the radius
     bool isPointInRadius(Vec2f point, Vec2f radius_center, float radius)
     {
-        if((point.x - radius_center.x)^2 + (point.y - radius_center.y)^2 < radius^2)
+        if(Maths::Pow(point.x - radius_center.x, 2) + Maths::Pow(point.y - radius_center.y, 2) < Maths::Pow(radius, 2))
         {
             return true;
         }
