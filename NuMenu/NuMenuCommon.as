@@ -353,7 +353,7 @@ Check mark option on right
 
             radius = 0.0f;
 
-            render_func = @RENDER_CALLBACK(DefaultRenderCaller);
+            @render_func = @RENDER_CALLBACK(DefaultRenderCaller);
 
             render_layer = Render::layer_prehud;
         
@@ -1597,7 +1597,7 @@ Check mark option on right
         NuText@ getText(u16 element = Nu::PosCenter)
         {
             if(element >= text.size()) { Nu::Error("Tried to get text out of array bounds. Attempted to get text at the position " + element); return NuText(); }
-            //if(text[element] == null){Nu:Error("text at element " + element + " was null"); }
+            //if(text[element] == null){Nu::Error("text at element " + element + " was null"); }
             
             return @text[element];
         }
@@ -1821,13 +1821,13 @@ Check mark option on right
         
         Vec2f getTextPos(u16 array_position)
         {
-            if(array_position >= text_positions.size()){ Nu::error("Tried to get position out of bounds at " + array_position); return Vec2f(0,0); }
+            if(array_position >= text_positions.size()){ Nu::Error("Tried to get position out of bounds at " + array_position); return Vec2f(0,0); }
 
             return text_positions[array_position];
         }
         void setTextPos(Vec2f value, u16 array_position)
         {
-            if(array_position >= text_positions.size()){ Nu::error("Tried to get position out of bounds at " + array_position); return; }
+            if(array_position >= text_positions.size()){ Nu::Error("Tried to get position out of bounds at " + array_position); return; }
             
             text_positions[array_position] = value;
         }
@@ -2091,9 +2091,9 @@ Check mark option on right
 
             enableRadius = 0.0f;
 
-            release_func_owner = @null;
-            release_func = @null;
-            state_changed_func = @null;
+            @release_func_owner = @null;
+            @release_func = @null;
+            @state_changed_func = @null;
 
             command_id = 255;
         }
@@ -2782,7 +2782,7 @@ Check mark option on right
             error("transporter was null"); return;
         }
 
-        transporter.FRAME_TIME += Render::getRenderDeltaTime() * getTicksASecond();
+        transporter.FRAME_TIME += getRenderDeltaTime() * getTicksASecond();
     }
 
     void MenuRender(NuHub@ transporter, Render::ScriptLayer layer)
