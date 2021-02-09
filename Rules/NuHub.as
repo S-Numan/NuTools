@@ -1,4 +1,4 @@
-//#include "NuMenuCommon.as";//Why isn't this required?
+#include "NuMenuCommon.as";//Why isn't this required?
 #include "NuTextCommon.as";
 
 class NuHub

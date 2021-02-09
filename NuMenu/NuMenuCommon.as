@@ -2789,7 +2789,9 @@ Check mark option on right
     {
         Render::SetAlphaBlend(true);
         
-        for(u16 i = 0; i < transporter.menus.size(); i++)
+        u16 menu_count = transporter.menus.size();
+
+        for(u16 i = 0; i < menu_count; i++)
         {
             if(transporter[i] == null)
             {
