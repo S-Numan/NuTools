@@ -206,6 +206,7 @@ class NuFont
 
 
 //TODO, move things that can only be done from the basefont in NuFont to NuText.
+//Kerning. (same distance between every character)
 class NuText
 {
     NuText()
