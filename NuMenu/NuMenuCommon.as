@@ -125,7 +125,7 @@ Check mark option on right
         //Slider to scroll through options provided there is not enough space for all them to display.
         //Can have automatically open. With no close/open button. Just already showing a list.
         
-        Documents,//Below a possible titlebar, you get options to select that open a certain menu below. like -> |Lettuce|  |Shoes|  |Frogs|  . Select an option get get a menu below/above it and unselect the other options.
+        Tabs,//Below a possible titlebar, you get options to select that open a certain menu below. like -> |Lettuce|  |Shoes|  |Frogs|  . Select an option get get a menu below/above it and unselect the other options.
     }
 
     shared enum ButtonState
