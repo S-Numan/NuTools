@@ -72,7 +72,7 @@ Check mark option on right
 //
 
     //Actual classes.
-    enum MenuClasses
+    shared enum MenuClasses
     {
         MenuClassNotSet,//When you haven't set the class.
 
@@ -100,7 +100,7 @@ Check mark option on right
         MenuClassesCount,//Always last, this specifies the amount of menu classes.
     }
 
-    enum MenuConfiguration//Configuration for specific classes. For example you can have a Slider with the On off configuration or the Statusbar configuration.
+    shared enum MenuConfiguration//Configuration for specific classes. For example you can have a Slider with the On off configuration or the Statusbar configuration.
     {   
         //TODO, figure out how to make an auto-configeration system for slider and other classes. Maybe a global method or something. Make a method that allows you to pick the cofiguration you want too.
         //New -> Create a new file, add auto configs there as methods. Each method has the same name but a different argument type. The IMenu input type checks what class it is, then refers to the correct method.
@@ -128,7 +128,7 @@ Check mark option on right
         Documents,//Below a possible titlebar, you get options to select that open a certain menu below. like -> |Lettuce|  |Shoes|  |Frogs|  . Select an option get get a menu below/above it and unselect the other options.
     }
 
-    enum ButtonState
+    shared enum ButtonState
     {
         Idle,//Mouse is scared of button. Is not near and has not touched.
         Hover,//Mouse is hovering over the button without doing anything. The mouse has anxiety of what will happen if it touches the button.
@@ -145,7 +145,7 @@ Check mark option on right
         ButtonStateCount,//Always last, this specifies the amount of button states.
     }
 
-    SColor DebugColor(u16 state)//Debug color on each button state. For debugging.
+    shared SColor DebugColor(u16 state)//Debug color on each button state. For debugging.
     {
         SColor rec_color;
         switch(state)
@@ -188,7 +188,7 @@ Check mark option on right
         return rec_color;
     }
 
-    interface IMenu
+    shared interface IMenu
     {
         void initVars();
         void afterInitVars(string _name, u8 _menu_config, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0));
@@ -484,12 +484,12 @@ Check mark option on right
                 error("Tried to make menu its own owner.");
                 return false;
             }
-            if(_menu.getOwnerMenu() != null && _menu.getOwnerMenu().getNameHash() == getNameHash())
+            if(_menu.getOwnerMenu() != @null && _menu.getOwnerMenu().getNameHash() == getNameHash())
             {
                 error("Tried to intertwine ownership of menus.");
                 return false;
             }
-            if(getOwnerBlob() != null)
+            if(getOwnerBlob() != @null)
             {
                 error("You cannot have both a menu and blob as an owner at the same time.");
                 return false;
@@ -512,7 +512,7 @@ Check mark option on right
         }
         bool setOwnerBlob(CBlob@ _blob)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setOffset. As in offset to it's owner.
         {
-            if(getOwnerMenu() != null)
+            if(getOwnerMenu() != @null)
             {
                 error("You cannot have both a menu and blob as an owner at the same time.");
                 return false;
@@ -924,7 +924,7 @@ Check mark option on right
 
             //Automatically move to blob if there is an owner blob and getMoveToOwner is true.
             CBlob@ _owner_blob = getOwnerBlob();
-            if(_owner_blob != null && getMoveToOwner())
+            if(_owner_blob != @null && getMoveToOwner())
             {
                 if(isWorldPos())
                 {
@@ -944,13 +944,13 @@ Check mark option on right
             
 
             CPlayer@ player = getLocalPlayer();
-            if(player == null)//The player must exist to get the CControls. (and maybe some other stuff)
+            if(player == @null)//The player must exist to get the CControls. (and maybe some other stuff)
             {
                 return false;
             }
 
             CControls@ controls = player.getControls();
-            if(controls == null)//The controls must exist
+            if(controls == @null)//The controls must exist
             {
                 return false;
             }
@@ -1005,7 +1005,7 @@ Check mark option on right
                 CBlob@ _blob = getOwnerBlob();
 
                 //Move towards owner blob
-                if(_blob != null && getMoveToOwner())//If this menu has an owner blob and it is supposed to move towards it.
+                if(_blob != @null && getMoveToOwner())//If this menu has an owner blob and it is supposed to move towards it.
                 {
                     if(isWorldPos())
                     {
@@ -1417,7 +1417,7 @@ Check mark option on right
         
         Nu::NuImage@ getImage(u16 position = 0)
         {
-            if(images.size() <= position){ error("In getImage : tried to get past the highest element in the images array. Attempted to get image " + position); return null; }
+            if(images.size() <= position){ error("In getImage : tried to get past the highest element in the images array. Attempted to get image " + position); return @null; }
 
             return images[position];
         }
@@ -1441,7 +1441,7 @@ Check mark option on right
             {
                 Nu::NuImage@ image = getImage(i);
                     
-                if(image == null)
+                if(image == @null)
                 {
                     continue;
                 }
@@ -1493,7 +1493,7 @@ Check mark option on right
 
             for(u16 i = 0; i < images.size(); i++)
             {
-                if(images[i] == null)
+                if(images[i] == @null)
                 {
                     continue;
                 }
@@ -1597,14 +1597,14 @@ Check mark option on right
         NuText@ getText(u16 element = Nu::PosCenter)
         {
             if(element >= text.size()) { Nu::Error("Tried to get text out of array bounds. Attempted to get text at the position " + element); return NuText(); }
-            //if(text[element] == null){Nu::Error("text at element " + element + " was null"); }
+            //if(text[element] == @null){Nu::Error("text at element " + element + " was null"); }
             
             return @text[element];
         }
         void setText(NuText@ _text, u16 element = Nu::PosCenter)
         {
             if(element >= text.size()) { Nu::Error("Tried to set text out of array bounds. Attempted to get text at the position " + element); return; }
-            if(_text == null) { Nu::Error("Input parameter text was null."); return; }
+            if(_text == @null) { Nu::Error("Input parameter text was null."); return; }
 
             Vec2f text_pos;
             
@@ -1646,26 +1646,26 @@ Check mark option on right
             NuHub@ hub;
             if(!getRules().get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return @null; }
             NuFont@ _font = hub.getFont(font_name);
-            if(_font == null){ warning("Could not find font with font_name = " + font_name); return hub.getFont("Arial"); }
+            if(_font == @null){ warning("Could not find font with font_name = " + font_name); return hub.getFont("Arial"); }
 
             setFont(@_font, element, repos);
             return @_font;
         }
         void setFont(NuFont@ _font, u16 element = -1, bool repos = true)
         {
-            if(_font == null){ Nu::Error("Font was null."); return; }
+            if(_font == @null){ Nu::Error("Font was null."); return; }
             if(element == u16(-1))//No element specified.
             {
                 for(u16 i = 0; i < text.size(); i++)
                 {
-                    if(text[i] == null) { continue; }
+                    if(text[i] == @null) { continue; }
                     text[i].setFont(_font);
                     if(repos) { RepositionText(getSize(), i); }
                 }
             }
             else if(element < text.size())
             {
-                if(text[element] != null)
+                if(text[element] != @null)
                 {
                     text[element].setFont(_font);
                     if(repos) { RepositionText(getSize(), element); }
@@ -1682,13 +1682,13 @@ Check mark option on right
             {
                 for(u16 i = 0; i < text.size(); i++)
                 {
-                    if(text[i] == null) { continue; }
+                    if(text[i] == @null) { continue; }
                     return text[i].getColor();
                 }
             }
             else if(element < text.size())
             {
-                if(text[element] != null)
+                if(text[element] != @null)
                 {
                     return text[element].getColor();
                 }
@@ -1704,13 +1704,13 @@ Check mark option on right
             {
                 for(u16 i = 0; i < text.size(); i++)
                 {
-                    if(text[i] == null) { continue; }
+                    if(text[i] == @null) { continue; }
                     text[i].setColor(value);
                 }
             }
             else if(element < text.size())
             {
-                if(text[element] != null)
+                if(text[element] != @null)
                 {
                     text[element].setColor(value);
                 }
@@ -1725,13 +1725,13 @@ Check mark option on right
             {
                 for(u16 i = 0; i < text.size(); i++)
                 {
-                    if(text[i] == null) { continue; }
+                    if(text[i] == @null) { continue; }
                     return text[i].getScale();
                 }
             }
             else if(element < text.size())
             {
-                if(text[element] != null)
+                if(text[element] != @null)
                 {
                     return text[element].getScale();
                 }
@@ -1747,14 +1747,14 @@ Check mark option on right
             {
                 for(u16 i = 0; i < text.size(); i++)
                 {
-                    if(text[i] == null) { continue; }
+                    if(text[i] == @null) { continue; }
                     text[i].setScale(value);
                     if(repos) { RepositionText(getSize(), i); }
                 }
             }
             else if(element < text.size())
             {
-                if(text[element] != null)
+                if(text[element] != @null)
                 {
                     text[element].setScale(value);
                     if(repos) { RepositionText(getSize(), element); }
@@ -1780,7 +1780,7 @@ Check mark option on right
             {
                 for(u16 i = 0; i < Nu::POSPositionsCount; i++)
                 {           
-                    if(text[i] == null)
+                    if(text[i] == @null)
                     {
                         continue;
                     }
@@ -1799,7 +1799,7 @@ Check mark option on right
             }
             else if(element < text.size())
             {
-                if(text[element] != null)
+                if(text[element] != @null)
                 {
                     Vec2f text_pos;
             
@@ -2020,7 +2020,7 @@ Check mark option on right
 
             for(u16 i = 0; i < text.size(); i++)
             {
-                if(text[i] == null)
+                if(text[i] == @null)
                 {
                     continue;
                 }
@@ -2124,7 +2124,7 @@ Check mark option on right
         {
             MenuBaseExEx::setButtonState(_button_state);
 
-            if(state_changed_func != null)
+            if(state_changed_func != @null)
             {
                 state_changed_func(getLocalPlayer(), @this);            
             }
@@ -2138,7 +2138,7 @@ Check mark option on right
         void setCommandID(string value)
         {
             CBlob@ _owner = getOwnerBlob();
-            if(!send_to_rules && _owner == null){ error("owner blob was null when setting command id for blob. Did you want to set send_to_rules to true and send the command to rules instead?"); return; }
+            if(!send_to_rules && _owner == @null){ error("owner blob was null when setting command id for blob. Did you want to set send_to_rules to true and send the command to rules instead?"); return; }
             if(send_to_rules)
             {
                 command_id = getRules().getCommandID(value);
@@ -2270,7 +2270,7 @@ Check mark option on right
             if(_button_state == JustPressed || _button_state == Pressed || _button_state == Released || _button_state == AfterRelease)
             {
                 CBlob@ player_blob = player.getBlob();
-                if(player_blob != null)
+                if(player_blob != @null)
                 {
                     player_blob.set_bool("no_swing", true);
                 }
@@ -2322,7 +2322,7 @@ Check mark option on right
 
                     _rules.SendCommand(command_id, params);
                 }
-                else if(getOwnerBlob() != null)//If send_to_rules is false, send it to the owner_blob. Provided it exists.
+                else if(getOwnerBlob() != @null)//If send_to_rules is false, send it to the owner_blob. Provided it exists.
                 {
                     CBlob@ _owner = getOwnerBlob();
 
@@ -2331,15 +2331,15 @@ Check mark option on right
             }
 
             //Call function.
-            if(release_func != null)
+            if(release_func != @null)
             {
                 release_func(getLocalPlayer(), params, @this);
             }
 
             //Call function and include the owner blob.
-            if(release_func_owner != null)
+            if(release_func_owner != @null)
             {
-                if(getOwnerBlob() != null)
+                if(getOwnerBlob() != @null)
                 {
                     CBlob@ _owner = getOwnerBlob();
                     release_func_owner(getLocalPlayer(), params, @this, _owner);
@@ -2426,7 +2426,7 @@ Check mark option on right
             MenuBase::setInterpolated(value);
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
-                if(optional_menus[i] == null)
+                if(optional_menus[i] == @null)
                 {
                     continue;
                 }
@@ -2440,7 +2440,7 @@ Check mark option on right
             MenuBase::setIsWorldPos(value);
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
-                if(optional_menus[i] == null)
+                if(optional_menus[i] == @null)
                 {
                     continue;
                 }
@@ -2480,7 +2480,7 @@ Check mark option on right
 
         Vec2f getOptionalMenuPos(u16 option_menu = 0)//In relation to this menu
         {
-            if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
+            if(optional_menus.size() > option_menu && optional_menus[option_menu] != @null)
             {
                 return optional_menus[option_menu].getOffset();
             }
@@ -2498,7 +2498,7 @@ Check mark option on right
         
         bool setOptionalMenuPos(Vec2f value, u16 option_menu = 0)//Sets it in relation to this menu
         {
-            if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
+            if(optional_menus.size() > option_menu && optional_menus[option_menu] != @null)
             {
                 IMenu@ _menu = @optional_menus[option_menu];
                 _menu.setOffset(value);
@@ -2527,7 +2527,7 @@ Check mark option on right
 
         u8 getOptionalMenuState(u16 option_menu = 0)//Param refers to specific menu in array
         {
-            if(optional_menus.size() > option_menu && optional_menus[option_menu] != null)
+            if(optional_menus.size() > option_menu && optional_menus[option_menu] != @null)
             {
                 return optional_menus[option_menu].getMenuState();
             }
@@ -2578,7 +2578,7 @@ Check mark option on right
             optional_menu_id_count++;
 
 
-            if(optional_menus.size() != 0 && optional_menus[optional_menus.size() - 1] != null)
+            if(optional_menus.size() != 0 && optional_menus[optional_menus.size() - 1] != @null)
             {
                 IMenu@ added_menu = @optional_menus[optional_menus.size() - 1];
 
@@ -2604,7 +2604,7 @@ Check mark option on right
         {
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
-                if(optional_menus[i] == null)
+                if(optional_menus[i] == @null)
                 {
                     error("optional_menu was null");
                     continue;
@@ -2634,7 +2634,7 @@ Check mark option on right
 
             for(u16 i = 0; i < optional_menus.size(); i++)
             {
-                if(optional_menus[i] != null)
+                if(optional_menus[i] != @null)
                 {
                     optional_menus[i].Tick();
                 }
@@ -2671,7 +2671,7 @@ Check mark option on right
                     break;
                 }*/
                 RENDER_CALLBACK@ func = optional_menus[i].getRenderFunction();
-                if(func == null)
+                if(func == @null)
                 {
                     error("rendercallback function was null."); return true;
                 }
@@ -2754,14 +2754,14 @@ Check mark option on right
         u16 i;
         for(i = 0; i < transporter.getMenuListSize(); i++)
         {
-            if(transporter.menus[i] == null)
+            if(transporter.menus[i] == @null)
             {
                 error("menu should not be null."); continue;
             }
             
             transporter.menus[i].Tick();
         
-            if(transporter.menus[i].getMenuClass() == NuMenu::ButtonClass && transporter.buttons[i] == null)//Debug check only. TODO remove.
+            if(transporter.menus[i].getMenuClass() == NuMenu::ButtonClass && transporter.buttons[i] == @null)//Debug check only. TODO remove.
             {
                 error("Button desync somewhere."); continue;
             }
@@ -2793,7 +2793,7 @@ Check mark option on right
 
         for(u16 i = 0; i < menu_count; i++)
         {
-            if(transporter[i] == null)
+            if(transporter[i] == @null)
             {
                 error("Menu was somehow null in rendering. This should not happen."); continue;
             }
@@ -2802,7 +2802,7 @@ Check mark option on right
                 continue;//Skip
             }
             RENDER_CALLBACK@ func = transporter[i].getRenderFunction();
-            if(func == null)
+            if(func == @null)
             {
                 error("rendercallback function was null."); return;
             }
@@ -2817,11 +2817,11 @@ NuHub@ o_transporter = @null;//Outer transporter.
 
 bool TransporterInit()
 {
-    if(o_transporter == null)//Init.
+    if(o_transporter == @null)//Init.
     {
         getRules().get("NuHub", @o_transporter);
         print("NuMenu rendering transporter got.");
-        if(o_transporter == null)//Still equal to null?
+        if(o_transporter == @null)//Still equal to null?
         {
             error("Render function failed to get things to render.");
             return false;

@@ -3,7 +3,7 @@ namespace Nu
 {
 
     //Returns every player in the server in an array.
-    array<CPlayer@> getPlayers()
+    shared array<CPlayer@> getPlayers()
     {
         array<CPlayer@> players(getPlayerCount());
         
@@ -17,7 +17,7 @@ namespace Nu
 
     //1: Parameter of the team
     //Returns an array of players that are in that team. 
-    array<CPlayer@> getPlayersInTeam(u8 team)
+    shared array<CPlayer@> getPlayersInTeam(u8 team)
     {
         u16 i;//Init i.
         
@@ -41,7 +41,7 @@ namespace Nu
 
     //1: Parameter of the team.
     //Returns amount of players in the team. The player's team, not the blob team
-    u16 getTeamCount(u8 team)
+    shared u16 getTeamCount(u8 team)
     {
         u16 i, team_players;//Init vars.
 
@@ -56,7 +56,7 @@ namespace Nu
     }
 
     //Returns an array of all the player blobs. Players without blobs will have their spot be null. This array lines up with the getPlayers() array
-    array<CBlob@> getPlayerBlobs()
+    shared array<CBlob@> getPlayerBlobs()
     {
         array<CBlob@> player_blobs(getPlayerCount());
 
@@ -70,7 +70,7 @@ namespace Nu
 
     //1: Input string.
     //Returns true, if that string has only digits 1-9. Returns false if it has something else (spaces aren't digits).
-    bool IsNumeric(string _string)
+    shared bool IsNumeric(string _string)
     {
         for(uint i = 0; i < _string.size(); i++)
         {    
@@ -86,7 +86,7 @@ namespace Nu
     //1: Input string paramter.
     //2: Output bool value. If true, the string contained true. If false, the string contained false.
     //Returns a bool value of if the input_string is true or false. If the returned value happens to be false, it was neither true or false.
-    bool getBool(string input_string, bool &out bool_value)
+    shared bool getBool(string input_string, bool &out bool_value)
     {
         input_string = input_string.toLower();
         
@@ -126,14 +126,14 @@ namespace Nu
 
     //1: A string. The shortened/first half version of a player's username. Case sensitive.
     //Returns an array of players that have "shortname" at the start of their username. If their username is exactly the same, it will return an array containing only that player excluding the rest.
-    array<CPlayer@> getPlayersByShortUsername(string shortname)
+    shared array<CPlayer@> getPlayersByShortUsername(string shortname)
     {
         array<CPlayer@> playersout();//The main array for storing all the players which contain shortname
 
         for(int i = 0; i < getPlayerCount(); i++)//For every player
         {
             CPlayer@ player = getPlayer(i);//Grab the player
-            if(player == null)//If the player doesn't exist for whatever reason.
+            if(player == @null)//If the player doesn't exist for whatever reason.
             {
                 continue;//Skip past them.
             }
@@ -157,7 +157,7 @@ namespace Nu
 
     //1: A string. The shortened/first half version of a player's username. Case sensitive.
     //See getPlayersByShortUsername. This is more of an example of how to use than something you should use. Returns a single player if there was only one player, otherwise returns null.
-    CPlayer@ getPlayerByShortUsername(string shortname)
+    shared CPlayer@ getPlayerByShortUsername(string shortname)
     {
         array<CPlayer@> target_players = getPlayersByShortUsername(shortname);//Get a list of players that have this as the start of their username
         if(target_players.size() > 1)//If there is more than 1 player in the list
@@ -170,7 +170,7 @@ namespace Nu
             print("There is more than one possible player for the player param" + playernames);//tell the client that these players in the string were found
             return @null;//don't send the message to chat, don't do anything else
         }
-        else if(target_players == null || target_players.size() == 0)
+        else if(target_players == @null || target_players.size() == 0)
         {
             print("No player was found for the player param.");
             return @null;
@@ -184,7 +184,7 @@ namespace Nu
     //2: The radius around that point to get the blobs from. Any player blobs outside the radius will not be put in the array.
     //3: If this array should skip both blobs in inventories, and unactive blobs. This is by default true.
     //Returns an array of all players sorted by distance. Players without blobs are not included in this array.
-    array<CPlayer@> SortPlayersByDistance(Vec2f point, f32 radius, bool skip_unactive_and_inventory = true)
+    shared array<CPlayer@> SortPlayersByDistance(Vec2f point, f32 radius, bool skip_unactive_and_inventory = true)
     {
         u16 i;
 
@@ -196,11 +196,11 @@ namespace Nu
         for(i = 0; i < playerblobs.size(); i++)
         {
             CPlayer@ player = getPlayer(i);
-            if(player != null)
+            if(player != @null)
             {
                 CBlob@ player_blob = player.getBlob();
                 
-                if(player_blob != null//If the player has a blob. 
+                if(player_blob != @null//If the player has a blob. 
                 && (!skip_unactive_and_inventory || player_blob.isActive() || !player_blob.isInInventory()))//And if skip_unactive is true, only if the blob is active and not in an inventory.
                 {
                     @playerblobs[non_null_count] = @player_blob;
@@ -229,7 +229,7 @@ namespace Nu
     //3: The array of blobs that are sorted.
     //4: If this array should skip both blobs in inventories, and unactive blobs. This is by default false.
     //Returns an array of blobs sorted by distance taken from the blob_array parameter. Blobs outside the radius, blobs that don't exist, and other cases will not be added to the array.
-    array<CBlob@> SortBlobsByDistance(Vec2f point, f32 radius, array<CBlob@> blob_array, bool skip_unactive_and_inventory = false)
+    shared array<CBlob@> SortBlobsByDistance(Vec2f point, f32 radius, array<CBlob@> blob_array, bool skip_unactive_and_inventory = false)
     {
         u16 i, j;
 
@@ -241,7 +241,7 @@ namespace Nu
 
         for (i = 0; i < blob_array.size(); i++)//Make an array that contains the distance that each blob is from the point.
         {
-            if(blob_array[i] == null//If the blob does not exist
+            if(blob_array[i] == @null//If the blob does not exist
             || (skip_unactive_and_inventory && (blob_array[i].isActive() == false || blob_array[i].isInInventory())))//Or skip_unactive is true and the blob is not active or in an inventory
             {
                 continue;//Do not add this to the array
@@ -291,7 +291,7 @@ namespace Nu
     //2: The center of the radius (or circle if you want to call it a circle)
     //3: The radius.
     //Returns if the point is within the radius
-    bool isPointInRadius(Vec2f point, Vec2f radius_center, float radius)
+    shared bool isPointInRadius(Vec2f point, Vec2f radius_center, float radius)
     {
         if(Maths::Pow(point.x - radius_center.x, 2) + Maths::Pow(point.y - radius_center.y, 2) < Maths::Pow(radius, 2))
         {
@@ -304,35 +304,35 @@ namespace Nu
     //1: Value to be rounded.
     //2: Multiple to be rounded by.
     //Rounds by the given multiple. If the multiple is 5 and the value is 277, this will return 275. If the multiple is 10 and the value is 277, this would return 280. 
-    float RoundByMultiple(float value, float multiple = 10.0f)
+    shared float RoundByMultiple(float value, float multiple = 10.0f)
     {
         return Maths::Roundf(value / multiple * multiple);
     }
-    int RoundByMultiple(int value, int multiple = 10)//Same as above but for ints.
+    shared int RoundByMultiple(int value, int multiple = 10)//Same as above but for ints.
     {
         return Maths::Round(value / multiple * multiple);
     }
     //Same as above except instead of rounding up, it always rounds down.
-    float RoundDown(float value, float multiple = 10.0f)
+    shared float RoundDown(float value, float multiple = 10.0f)
     {
         return value - value % multiple;
     }
-    int RoundDown(int value, int multiple = 10)//For ints
+    shared int RoundDown(int value, int multiple = 10)//For ints
     {
         return value - value % multiple;
     }
-    float Floor(float value, float multiple = 10.0f)//Alias
+    shared float Floor(float value, float multiple = 10.0f)//Alias
     {
         return value - value % multiple;
     }
-    int Floor(int value, int multiple = 10)//Alias for ints
+    shared int Floor(int value, int multiple = 10)//Alias for ints
     {
         return value - value % multiple;    
     }
     
     //1: Point to get the tile under.
     //Returns the top of the tile under the point.
-    f32 getTileUnderPos(Vec2f pos)
+    shared f32 getTileUnderPos(Vec2f pos)
     {
         CMap@ map = getMap();	
         u16 tilesdown = 0;
@@ -354,7 +354,7 @@ namespace Nu
     }
 
     //Enum list of positions within 2 vec2fs.
-    enum POSPositions//Stores all positions that stuff can be in.
+    shared enum POSPositions//Stores all positions that stuff can be in.
     {
         POSTopLeft,//top left
         POSTopRight,//top right
@@ -378,7 +378,7 @@ namespace Nu
     //3: The position you desire.
     //4: Optional buffer. For example if you specify POSBottom and make the buffer 2.0f, it will push the position up by 2.
     //Returns false if the inserted position enum was not found. Insert an enum for a position based on given size. This will then give you that position in the size plus buffer.
-    bool getPosOnSize(u16 position, Vec2f size, Vec2f &out vec_pos, float buffer = 0.0f)
+    shared bool getPosOnSize(u16 position, Vec2f size, Vec2f &out vec_pos, float buffer = 0.0f)
     {
         switch(position)
         {
@@ -437,7 +437,7 @@ namespace Nu
     //4: The desired position.
     //5: Optional buffer. For example if you specify POSBottom and make the buffer 2.0f, it will push the position up by 2.
     //Returns false if the inserted position enum was not found. This method works just like getPosOnSize, but takes in dimensions of the point you want on the thing too. See param 2 for an example of what this does.
-    bool getPosOnSizeFull(u16 position, Vec2f size, Vec2f dimensions, Vec2f &out pos, float buffer = 0.0f)
+    shared bool getPosOnSizeFull(u16 position, Vec2f size, Vec2f dimensions, Vec2f &out pos, float buffer = 0.0f)
     {
         if(!getPosOnSize(position, size, pos, buffer))
         {
@@ -498,7 +498,7 @@ namespace Nu
     //1: The size of the image.
     //2: The size of the frame in the image
     //Returns the amount of frames in a given size.
-    u16 getFramesInSize(Vec2f image_size, Vec2f frame_size)
+    shared u16 getFramesInSize(Vec2f image_size, Vec2f frame_size)
     {
         Vec2f output;
 
@@ -512,7 +512,7 @@ namespace Nu
     //2: The size of the frame in the image
     //3: The frame you want in the image.
     //Returns the Vector of where the desired frame starts. (top left)
-    Vec2f getFrameStart(Vec2f image_size, Vec2f frame_size, u16 desired_frame)
+    shared Vec2f getFrameStart(Vec2f image_size, Vec2f frame_size, u16 desired_frame)
     {
         Vec2f frame_start = Vec2f(0,0);
 
@@ -526,7 +526,7 @@ namespace Nu
     //1: Where the frame starts
     //2: How big the frame is
     //3: Returns the end of a frame. (bottom right)
-    Vec2f getFrameEnd(Vec2f frame_start, Vec2f frame_size)
+    shared Vec2f getFrameEnd(Vec2f frame_start, Vec2f frame_size)
     {
         Vec2f frame_end = frame_start + frame_size;
 
@@ -537,7 +537,7 @@ namespace Nu
     //2: The size of the frame in the image
     //3: The frame you want in the image.
     //Returns an array of the four positions. Now in UV style! Buy now for only 19.99$ free shipping and handling.
-    array<Vec2f> getUVFrame(Vec2f image_size, Vec2f frame_size, u16 desired_frame)
+    shared array<Vec2f> getUVFrame(Vec2f image_size, Vec2f frame_size, u16 desired_frame)
     {
         Vec2f frame_start = getFrameStart(image_size, frame_size, desired_frame);
         Vec2f frame_end = getFrameEnd(frame_start, frame_size);
@@ -545,7 +545,7 @@ namespace Nu
         return getUVFrame(image_size, frame_start, frame_end);
     }
     //Same as above, but less user friendly. Set the frame start and end here instead of frame_size and desired frame.
-    array<Vec2f> getUVFrame(Vec2f image_size, Vec2f frame_start, Vec2f frame_end)
+    shared array<Vec2f> getUVFrame(Vec2f image_size, Vec2f frame_start, Vec2f frame_end)
     {
         Vec2f[] v_uv(4);
 
@@ -567,7 +567,7 @@ namespace Nu
     //1: The size of the frame
     //2: Optional extra Vec2f applied to each Vector in the returned array for ease.
     //Returns an array of the four positions (top left. top right. bottom left. bottom right.) of the frame.
-    array<Vec2f> getFrameSizes(Vec2f frame_size, Vec2f add_to = Vec2f(0,0))
+    shared array<Vec2f> getFrameSizes(Vec2f frame_size, Vec2f add_to = Vec2f(0,0))
     {
         Vec2f[] v_pos(4);
 
@@ -588,7 +588,7 @@ namespace Nu
     //1: The first vector.
     //2: The second Vector
     //Returns a vector of two vector's x's and y's multiplied together. 
-    Vec2f MultVec(Vec2f value1, Vec2f value2)
+    shared Vec2f MultVec(Vec2f value1, Vec2f value2)
     {
         value1.x = value1.x * value2.x;
         value1.y = value1.y * value2.y;
@@ -599,7 +599,7 @@ namespace Nu
 
     //1: The path to a file.
     //Returns the first parameter without any slashes or the file extension.
-    string CutOutFileName(string value)
+    shared string CutOutFileName(string value)
     {
         if(value.size() == 0)
         {
@@ -631,7 +631,7 @@ namespace Nu
     //2: Output callstack string
     //3: Optional skip parameter. This skips the amount of callstacks as input in. It is by default 1 to skip itself.
     //Gives out two variables that are the scriptstack and callstack. They are both numbered.
-    void getStackString(string &out scriptstack, string &out callstack, u16 skip = 1)
+    shared void getStackString(string &out scriptstack, string &out callstack, u16 skip = 1)
     {
         u16 i;
 
@@ -672,7 +672,7 @@ namespace Nu
     //4: Optional Title color.
     //5: Optional Skipped callstacks.
     //Throws an error to the console, with the script stack and callstack included and colored.
-    void StackAndMessage(string input, SColor message_color = SColor(255, 0, 50, 255), SColor regular_color = SColor(200, 255, 255, 255), SColor title_color = SColor(255, 0, 255, 255), u16 skip = 2)
+    shared void StackAndMessage(string input, SColor message_color = SColor(255, 0, 50, 255), SColor regular_color = SColor(200, 255, 255, 255), SColor title_color = SColor(255, 0, 255, 255), u16 skip = 2)
     {
         string scriptstack;
         string callstack;
@@ -695,7 +695,7 @@ namespace Nu
     }
     //1: Text to throw out as the message.
     //Calls StackAndMessage with error colors.
-    void Error(string input)
+    shared void Error(string input)
     {
         StackAndMessage(input, SColor(255, 255, 0, 0), SColor(200, 255, 255, 255), SColor(255, 255, 0, 200), 3);
     }
@@ -704,7 +704,7 @@ namespace Nu
     //1: Vec2f 1.
     //2: Vec2f 2.
     //Returns a float that is the distance between the two points.
-    float getDistance(Vec2f point1, Vec2f point2)//Add to NumanLib later
+    shared float getDistance(Vec2f point1, Vec2f point2)//Add to NumanLib later
     {
         float dis = (Maths::Pow(point1.x-point2.x,2)+Maths::Pow(point1.y-point2.y,2));
         return Maths::Sqrt(dis);
@@ -747,7 +747,7 @@ namespace Nu
 
 
 
-    class NuImage
+    shared class NuImage
     {
         NuImage()
         {
@@ -871,7 +871,7 @@ namespace Nu
             }
 
             ImageData@ _image = Texture::data(render_name);
-            if(_image == null) { error("image was null for some reason in NumanLib::NuImage::CreateImage"); return @null; }
+            if(_image == @null) { error("image was null for some reason in NumanLib::NuImage::CreateImage"); return @null; }
             if(_image.size() == 0) { warning("Image provided in NumanLib::NuImage::CreateImage was 0 in size"); return _image; }
 
             image_size = Vec2f(_image.width(), _image.height());

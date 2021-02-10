@@ -57,19 +57,19 @@ class NuHub
     
     void addFont(NuFont@ _font)
     {
-        if(_font == null){ error("addFont(NuFont@): attempted to add null font."); return;}
+        if(_font == @null){ error("addFont(NuFont@): attempted to add null font."); return;}
         
-        if(getFont(_font.basefont.name) != null) { warning("addFont(NuFont@): Font attempted to add already existed."); return; }
+        if(getFont(_font.basefont.name) != @null) { warning("addFont(NuFont@): Font attempted to add already existed."); return; }
         
         fonts.push_back(@_font);
     }
     void addFont(string font_name, string font_file, bool has_alpha = true)
     {
-        if(getFont(font_name) != null) { warning("addFont(string): Font attempted to add already existed."); return; }
+        if(getFont(font_name) != @null) { warning("addFont(string): Font attempted to add already existed."); return; }
 
         NuFont@ font = NuFont(font_name, font_file, has_alpha);
 
-        if(font == null)
+        if(font == @null)
         {
             Nu::Error("Font was still null after creation. Somehow.");
         }
@@ -91,7 +91,7 @@ class NuHub
 
     bool FontExists(string font_name)
     {
-        if(getFont(font_name) != null)
+        if(getFont(font_name) != @null)
         {
             return true;
         }
@@ -113,14 +113,21 @@ class NuHub
 
     bool addMenuToList(NuMenu::IMenu@ _menu)
     {
+        if(_menu == @null) { Nu::Error("Menu to be added was null"); return false; }
         menus.push_back(_menu);
         buttons.push_back(@null);
+        
+        //NuMenu::MenuButton@ button = cast<NuMenu::MenuButton@>(_menu);
+        //if(button != @null) { print("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWaWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"); }
+        //buttons.push_back(button);
 
         return true;
     }
 
     bool addMenuToList(NuMenu::MenuButton@ _menu)
     {
+        if(_menu == @null) { Nu::Error("Menu to be added was null"); return false; }
+
         menus.push_back(_menu);
         buttons.push_back(_menu);
 

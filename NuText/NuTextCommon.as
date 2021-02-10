@@ -19,17 +19,21 @@
 #include "NumanLib.as";
 #include "NuHub";
 
-const u32 CHARACTER_SPACE = 32;
+
 class NuFont
 {
     NuFont(string font_name, string font_path, bool _alpha = true)
     {
         print("");//KAG will instantly crash if I don't print this.
         
+        CHARACTER_SPACE = 32;
+
         has_alpha = _alpha;
 
         Setup(font_name, font_path);
     }
+
+    u32 CHARACTER_SPACE;
 
     private bool has_alpha;
     bool hasAlpha()
@@ -238,7 +242,7 @@ class NuText
     private NuFont@ font;
     void setFont(NuFont@ _font)
     {
-        if(_font == null){ Nu::Error("setFont(NuFont@): Font was null."); return; }
+        if(_font == @null){ Nu::Error("setFont(NuFont@): Font was null."); return; }
         @font = @_font;
 
         refreshSizesAndPositions();
@@ -248,7 +252,7 @@ class NuText
         NuHub@ hub;
         if(!getRules().get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
         NuFont@ _font = hub.getFont(font_name);
-        if(_font == null){ Nu::StackAndMessage("Font not found. Try creating a font with the name \"" + font_name + "\" via the hub with addFont(string font_name);"); return; }
+        if(_font == @null){ Nu::StackAndMessage("Font not found. Try creating a font with the name \"" + font_name + "\" via the hub with addFont(string font_name);"); return; }
 
         setFont(_font);
     }
@@ -278,13 +282,13 @@ class NuText
     SColor text_color;
     SColor getColor()
     {
-        if(font == null) { Nu::Error("Font was null."); return SColor(255, 255, 255, 0); }
+        if(font == @null) { Nu::Error("Font was null."); return SColor(255, 255, 255, 0); }
         
         return text_color;
     }
     void setColor(SColor value)
     {
-        if(font == null) { Nu::Error("Font was null."); return; }
+        if(font == @null) { Nu::Error("Font was null."); return; }
         
         text_color = value;
     }
@@ -293,13 +297,13 @@ class NuText
 
     float getAngle()
     {
-        if(font == null) { Nu::Error("Font was null."); return 0.0f; }
+        if(font == @null) { Nu::Error("Font was null."); return 0.0f; }
 
         return angle;
     }
     void setAngle(float value)
     {
-        if(font == null) { Nu::Error("Font was null."); return; }
+        if(font == @null) { Nu::Error("Font was null."); return; }
 
         angle = value;
         refreshSizesAndPositions();
@@ -402,7 +406,7 @@ class NuText
     //Refreshs the size each character is, and where the characters should be positioned.
     void refreshSizesAndPositions()
     {
-        if(font == null)
+        if(font == @null)
         {
             Nu::Error("Font is null."); return;
         }
@@ -411,7 +415,7 @@ class NuText
         string_size_total = Vec2f(0,0);
         char_positions = array<Vec2f>(render_string.size());
 
-        float next_line_distance = font.character_sizes[CHARACTER_SPACE].y * scale.y;
+        float next_line_distance = font.character_sizes[font.CHARACTER_SPACE].y * scale.y;
 
         for(u16 i = 0; i < render_string.size(); i++)//For every character
         {
