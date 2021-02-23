@@ -85,7 +85,8 @@ Check mark option on right
         ButtonClass,//Press a button. Buttons have many states. Catch em all!
         
         SliderClass,//Slide a slider left and right. Choose color of each side. Increments instead of smoothness is possible too. Both vertical and horizontal. Option to act more like the traditional kag heart system instead of a bar.
-        //Option to drag if held or only move if pressed once.
+        //Start and end percentage points
+        //Option to drag if held or only move if pressed once. Options to drag the start, end, or both points at once. And only while within?
         //Left/right top/down buttons. (buttons appaer to the left and right of the slider. Can press to move slider.)
         //Can cut texture in half or other amounts to display exact loss of health.
 
