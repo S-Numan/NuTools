@@ -42,7 +42,22 @@ void onTick( CRules@ this )
                 CBlob@ blob = player.getBlob();
                 if(blob != null)
                 {
-                    NuText@ txt = NuText("Calibri-Bold", "A");
+                    u8 rnd = XORRandom(50);
+                    
+                    NuText@ txt;
+                    if(rnd < 45)
+                    {
+                        @txt = @NuText("Calibri-Bold", "A");
+                    }
+                    else if(rnd < 49)
+                    {
+                        @txt = @NuText("Calibri-Bold", "AA\nAA");
+                    }
+                    else //if(rnd == 49)
+                    {
+                        @txt = @NuText("Calibri-Bold", "Applesauce!");
+                    }
+                    
                     txt.setScale(Vec2f(0.25f, 0.25f));
                     screaming.push_back(@txt);
                 
@@ -57,6 +72,9 @@ void onTick( CRules@ this )
         }
     }
 
+    CMap@ map = getMap();
+    Vec2f map_size = Vec2f(map.tilemapwidth * map.tilesize, map.tilemapheight * map.tilesize);
+
     for(u16 i = 0; i < screaming.size(); i++)
     {
         screaming[i].setColor(SColor(255, 255, 0, 0));
@@ -64,6 +82,33 @@ void onTick( CRules@ this )
         screaming[i].setAngle(screaming[i].getAngle() + screaming_angle_vel[i]);
 
         screaming_pos[i] += screaming_direction[i];
+
+
+        bool point_of_no_return = false;
+        if(screaming_pos[i].x > map_size.x)//Greater than map width
+        {
+            point_of_no_return = true;
+        }
+        else if(screaming_pos[i].y > map_size.y)//Greater than map height
+        {
+            point_of_no_return = true;
+        }
+        else if(screaming_pos[i].x + screaming[i].string_size_total.x < 0)//Less than map width
+        {
+            point_of_no_return = true;
+        }
+        else if(screaming_pos[i].y + screaming[i].string_size_total.y < 0)//Less than map height
+        {
+            point_of_no_return = true;
+        }
+
+        if(point_of_no_return)//Kill this text
+        {
+            screaming.removeAt(i);
+            screaming_pos.removeAt(i);
+            screaming_direction.removeAt(i);
+            i--;
+        }
     }
 }
 
