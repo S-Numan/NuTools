@@ -53,9 +53,13 @@ void onTick( CRules@ this )
                     {
                         @txt = @NuText("Calibri-Bold", "AA\nAA");
                     }
-                    else //if(rnd == 49)
+                    else if(rnd == 48)
                     {
                         @txt = @NuText("Calibri-Bold", "Applesauce!");
+                    }
+                    else
+                    {
+                        @txt = @NuText("Calibri-Bold", "B");
                     }
                     
                     txt.setScale(Vec2f(0.25f, 0.25f));
