@@ -62,7 +62,15 @@ void onTick( CRules@ this )
                         @txt = @NuText("Calibri-Bold", "B");
                     }
                     
-                    txt.setScale(Vec2f(0.25f, 0.25f));
+                    if(rnd > 0)
+                    {
+                        txt.setScale(Vec2f(0.25f, 0.25f));
+                    }
+                    else
+                    {
+                        txt.setScale(Vec2f(0.5f, 0.5f));
+                    }
+
                     screaming.push_back(@txt);
                 
                     //screaming_direction.push_back(RandomDirection());    
