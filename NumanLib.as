@@ -689,8 +689,10 @@ namespace Nu
 
         print(callstack, regular_color);
         
-        print("Message: " + input, message_color);
-
+        if(input.size() != 0)//If there is an input.
+        {
+            print("Message: " + input, message_color);
+        }
         //print("2==========2 ", message_color);
     }
     //1: Text to throw out as the message.
@@ -711,7 +713,14 @@ namespace Nu
         //return getDistanceToLine(point1, point1 + Vec2f(0,1), point2);
     }
 
-
+    //1: float 1.
+    //2: float 2.
+    //Returns a float that is the distance between the two floats.
+    shared float getDistance(float value1, float value2)//Add to NumanLib later
+    {
+        float dis = Maths::Abs(value1 - value2);
+        return dis;
+    }
 
 
 
