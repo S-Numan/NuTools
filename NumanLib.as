@@ -722,8 +722,66 @@ namespace Nu
         return dis;
     }
 
+    //1: Array of floats to pick between.
+    //2: Optional u32 seed.
+    //Returns the chance selected.
+    //You give a bar of values to this, and this randomly picks a part of that bar. Bigger values have a larger chance for this to randomly land on it and pick it.
+    shared u32 RandomWeightedPicker(array<float> chances, u32 seed = 0)
+    {
+        if(chances.size() == 0)
+        {
+            warning("No chances to pick from");
+            return 0;
+        }
 
+        if(seed == 0)
+        {
+            seed = (getGameTime() * 404 + 1337 - Time_Local());
+        }
 
+        u32 i;//Init i
+
+        float sum = 0.0f;//Sum of all chances
+
+        //Find the sum of all chances
+        for(i = 0; i < chances.size(); i++)
+        {
+            sum += chances[i];
+        }
+
+        Random@ rnd = Random(seed);//Random with seed
+
+        float random_number = (rnd.Next() + rnd.NextFloat()) % sum;//Get our random number between 0 and the sum
+
+        float current_pos = 0.0f;//Current pos in the bar
+
+        for(i = 0; i < chances.size(); i++)//For every chance
+        {
+            if(current_pos + chances[i] > random_number)
+            {
+                //We got em
+                break;//Exit out with i untouched
+            }
+            else//Random number has not yet reached the chance
+            {
+                current_pos += chances[i];//Add to current_pos
+            }
+        }
+
+        return i;//Return the chance that was got
+    }
+    //Example code
+    /*
+        array<string> spawned_items = array<string>(3);
+        array<float> chances = array<float>(3);
+        chances[0] = 0.4;
+        spawned_items[0] = "bomb";
+        chances[1] = 0.8;
+        spawned_items[1] = "mine";
+        chances[2] = 0.1;
+        spawned_items[2] = "keg";
+        print(spawned_items[Nu::RandomWeightedPicker(chances)]);
+    */
 
 
 
