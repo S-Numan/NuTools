@@ -1772,8 +1772,9 @@ Check mark option on right
         //
         //Text settings
 
-        bool draw_text;
+        bool draw_text;//If this is true, text will be drawn(if the text exists).
         bool reposition_text;//If this is true, the text's position will be reassigned every time the menu moves based on what text it is. top will be put back on the top every movement.
+        bool wrap_text;//If this is true, the text will wrap to stay in the menu. (width only)  
 
         void RepositionText(Vec2f size, u16 element = -1)
         {

@@ -17,7 +17,7 @@
 
 
 #include "NumanLib.as";
-#include "NuHub";
+#include "NuHub.as";
 
 
 class NuFont

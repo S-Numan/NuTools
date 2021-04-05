@@ -2,7 +2,7 @@
 
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
-#include "NuHub";
+#include "NuHub.as";
 
 bool init;
 
