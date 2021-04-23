@@ -43,7 +43,8 @@ namespace Nu
     //Returns amount of players in the team. The player's team, not the blob team
     shared u16 getTeamCount(u8 team)
     {
-        u16 i, team_players;//Init vars.
+        u16 i;
+        u16 team_players = 0;
 
         for(i = 0; i < getPlayerCount(); i++)//For every player
         {
@@ -1151,7 +1152,7 @@ Numan_library. Including
 #23. Transfer over health, items, position between two blobs. Return the new blob. Give option for both name of blob, and CBlob. Also can give CPlayer provided you want that automatically changed.
 #24. Angle difference.
 #25. Apply force in direction. this.AddForce(Vec2f(this.isFacingLeft() ? -velocity * Maths::Sin(angle) : velocity * Maths::Cos(angle), this.isFacingLeft() ? -velocity * Maths::Cos(angle) : velocity * Maths::Sin(angle))); Would this work?
-
+#27. How much of this blob does the inventory have.
 
 DrawTextWithWidth(string text, Vec2f pos, SColor color, float width) - Caps width, note this will require an array to save draw text stuff as the calculations should not be done every render call.
 

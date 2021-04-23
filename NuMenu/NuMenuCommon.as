@@ -53,7 +53,7 @@ Check mark option on right
 //Remove the titlebar and replace with with an actual menu.//X button on titlebar that closes the menu.
 //Have values for the first part of a sprite. The middle part. And the end part. Modify NuImage for this.
 //Make setting to world pos actually set the upper left and lower right to the correct positions to not look like the menu changed position.
-
+//Make an option to make the menu animated. Animation frames and how fast they loop through. See cfg animations. Maybe add it to NumanLib NuImage?
 
 
 //Option list for debugging blobs.
