@@ -1,0 +1,5 @@
+
+
+Fake pickup blob.
+One blob that teleports around. based on positions it is assigned to. These positions are for example, fake blobs; things that aren't blobs that can be picked up.
+Upon being picked up, it tells the fake blob that it was picked up. And it drops itself.
