@@ -808,7 +808,142 @@ namespace Nu
 
 
 
+    shared class IntKeyDictionary
+    {
+        IntKeyDictionary()
+        {
+            Keys = array<u32>();
+            KeyPointers = array<u32>();
+            Values = array<u32>();
+        }
 
+        array<u32> Keys;
+        array<u32> KeyPointers;
+        array<u32> Values;
+
+        //TODO?
+        //void set(u32 _key, Object &in ob)
+        //{
+        //}
+
+        void set(u32 _key, u32 _value)
+        {
+            u32 key_pointer;//Stores where the key points to
+
+            for(u32 i = 0; i < Keys.size(); i++)//For every key
+            {
+                if(Keys[i] == _key)//If the key already exists
+                {
+                    u32 key_pointer = KeyPointers[i];//Get what value the key points to
+                    Values[key_pointer] = _value;//Assign the value
+                    return;//End
+                }
+            }
+            
+            Keys.push_back(_key);//Add the key to the Keys array
+
+            key_pointer = Values.size();//Make a new key pointer pointing to the end of the values array
+            KeyPointers.push_back(key_pointer);//Add the key_pointer to the Keys array
+
+            Values.push_back(_value);//Add the value to the values array
+        }
+
+        bool get(u32 _key, u32 &out _value)
+        {
+            u32 key_pointer;//Stores where the key points to
+
+            for(u32 i = 0; i < Keys.size(); i++)//For every key
+            {
+                if(Keys[i] == _key)//If the key exists
+                {
+                    u32 key_pointer = KeyPointers[i];//Get what value the key points to
+                    _value = Values[key_pointer];//Get the value
+                    return true;//Return successful
+                }
+            }
+
+            return false;//Return as a failure
+        }
+
+        bool exists(u32 _key)
+        {
+            for(u32 i = 0; i < Keys.size(); i++)//For every key
+            {
+                if(Keys[i] == _key)//If the key exists
+                {
+                    return true;//Return a yes, the key exists
+                }
+            }
+
+            return false;
+        }
+
+        void delete(u32 _key)
+        {
+            for(u32 i = 0; i < Keys.size(); i++)//For every key
+            {
+                if(Keys[i] == _key)//If the key exists
+                {
+                    u32 key_pointer = KeyPointers[i];//Get what value the key points to
+                    Values.removeAt(key_pointer);//Remove the value
+                    Keys.removeAt(i);//Remove the key
+                    KeyPointers.removeAt(i);//Remove the key pointer
+
+                    //Move all key pointers 1 down from this position and after
+                    for(u32 q = i; q < KeyPointers.size(); q++)
+                    {
+                        KeyPointers[q]--;
+                    }
+
+                    return;//End
+                }
+            }
+        }
+
+        
+
+        void deleteAll()
+        {
+            Keys.resize(0);
+            KeyPointers.resize(0);
+            Values.resize(0);
+        }
+
+        u32 getSize()
+        {
+            return size();
+        }
+        u32 size()
+        {
+            return Keys.size();
+        }
+
+        bool isEmpty()
+        {
+            if(size() == 0)
+            {
+                return true;
+            }
+            
+            return false;
+        }
+
+        array<u32>@ getKeys()
+        {
+            return @Keys;
+        }
+
+        void savefile(string file_name)
+        {
+            print("savefile not implemented");
+        }
+
+        void loadfile(string file_name)
+        {
+            print("loadfile not implemented");
+        }
+
+    }
 
 
 
