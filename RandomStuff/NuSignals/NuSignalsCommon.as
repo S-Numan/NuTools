@@ -23,7 +23,7 @@ class SignalNetwork
 
         for(u32 i = 0; i < signal_outputs.size(); i++)
         {
-            signal_outputs.InputSignals(@signals);
+            signal_outputs[i].InputSignals(@signals);
         }
     }
 
@@ -49,7 +49,7 @@ class SignalNetwork
     }
 }
 
-funcdef void SIGNALS_GOT(SignalConnector@, IntKeyDictionary@);
+funcdef void SIGNALS_GOT(SignalConnector@, Nu::IntKeyDictionary@);
 
 class SignalConnector
 {
@@ -60,7 +60,7 @@ class SignalConnector
         const_signals = Nu::IntKeyDictionary();
         output_signals = Nu::IntKeyDictionary();
 
-        @signal_got_func = @ProcessSignals;
+        @signal_got_func = @SIGNALS_GOT(ProcessSignals);
     
         //network_output = false;//Forgot why these existed
         //network_input = false;
@@ -76,7 +76,7 @@ class SignalConnector
     {
         @signal_got_func = @value;
     }
-    void InputSignals(IntKeyDictionary@ input_signals)
+    void InputSignals(Nu::IntKeyDictionary@ input_signals)
     {
         if(signal_got_func != @null)
         {
@@ -86,7 +86,7 @@ class SignalConnector
 
     Nu::IntKeyDictionary@ output_signals;//Signals this connector has processed and is constantly inputting together.
 
-    void ProcessSignals(SignalConnector@ connector, IntKeyDictionary@ input_signals)//Please do not modify the input_signals, it is illergic to modification.
+    void ProcessSignals(SignalConnector@ connector, Nu::IntKeyDictionary@ input_signals)//Please do not modify the input_signals, it is illergic to modification.
     {
         if(!tick_function_added){ warning("Tick function not added for SignalConnector. Please call onTick of the SignalConnector class every tick for it to properly function."); }
         connector.output_signals.ConsumeDictionary(input_signals, true);
@@ -107,21 +107,21 @@ class SignalConnector
     void SetConstSignal(string _signal, s32 _value)
     {
         string signal_hash = _signal.getHash();
-        SetSignal(signal_hash, _value);
+        SetConstSignal(signal_hash, _value);
     }
     void SetConstSignal(s32 _signal, s32 _value)
     {
-        const_signals.set(signal, _value);
+        const_signals.set(_signal, _value);
     }
 
-    bool GetConstSignal(string signal, s32 &out _value)
+    bool GetConstSignal(string _signal, s32 &out _value)
     {
-        string signal_hash = signal.getHash();
-        return GetSignal(signal_hash, _value);
+        string signal_hash = _signal.getHash();
+        return GetConstSignal(signal_hash, _value);
     }
-    bool GetConstSignal(s32 signal, s32 &out _value)
+    bool GetConstSignal(s32 _signal, s32 &out _value)
     {
-        return const_signals.set(signal, _value);
+        return const_signals.get(_signal, _value);
     }
 
     array<s32> ConstKeys()

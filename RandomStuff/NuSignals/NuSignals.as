@@ -1,3 +1,5 @@
+#include "NuSignalsCommon.as";
+
 void onInit(CRules@ rules)
 {
     if(!isServer()){ return; }
