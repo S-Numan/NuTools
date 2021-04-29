@@ -1,6 +1,54 @@
 //V1.1
 namespace Nu
 {
+    shared u64 u64_max()
+    {
+        return 18446744073709551615;
+    }
+    shared s64 s64_max()
+    {
+        return 9223372036854775807;
+    }
+    shared s64 s64_min()
+    {
+        return -9223372036854775808;
+    }
+    shared u32 u32_max()
+    {
+        return 4294967295;
+    }
+    shared s32 s32_max()
+    {
+        return 2147483647;
+    }
+    shared s32 s32_min()
+    {
+        return -2147483648;
+    }
+    shared u16 u16_max()
+    {
+        return 65535;
+    }
+    shared s16 s16_max()
+    {
+        return 32767;
+    }
+    shared s16 s16_min()
+    {
+        return -32768;
+    }
+    shared u8 u8_max()
+    {
+        return 255;
+    }
+    shared s8 s8_max()
+    {
+        return 127;
+    }
+    shared s8 s8_min()
+    {
+        return -128;
+    }
 
     //Returns every player in the server in an array.
     shared array<CPlayer@> getPlayers()
@@ -813,12 +861,12 @@ namespace Nu
         IntKeyDictionary()
         {
             Keys = array<s32>();
-            KeyPointers = array<u32>();
+            KeyPointers = array<s32>();
             Values = array<s32>();
         }
 
         private array<s32> Keys;
-        private array<u32> KeyPointers;
+        private array<s32> KeyPointers;
         private array<s32> Values;
 
         //TODO?
@@ -828,13 +876,13 @@ namespace Nu
 
         void set(s32 _key, s32 _value)
         {
-            u32 key_pointer;//Stores where the key points to
+            s32 key_pointer;//Stores where the key points to
 
             for(u32 i = 0; i < Keys.size(); i++)//For every key
             {
                 if(Keys[i] == _key)//If the key already exists
                 {
-                    u32 key_pointer = KeyPointers[i];//Get what value the key points to
+                    key_pointer = KeyPointers[i];//Get what value the key points to
                     Values[key_pointer] = _value;//Assign the value
                     return;//End
                 }
@@ -850,13 +898,13 @@ namespace Nu
 
         bool get(s32 _key, s32 &out _value)
         {
-            u32 key_pointer;//Stores where the key points to
+            s32 key_pointer;//Stores where the key points to
 
             for(u32 i = 0; i < Keys.size(); i++)//For every key
             {
                 if(Keys[i] == _key)//If the key exists
                 {
-                    u32 key_pointer = KeyPointers[i];//Get what value the key points to
+                    key_pointer = KeyPointers[i];//Get what value the key points to
                     _value = Values[key_pointer];//Get the value
                     return true;//Return successful
                 }
@@ -884,7 +932,7 @@ namespace Nu
             {
                 if(Keys[i] == _key)//If the key exists
                 {
-                    u32 key_pointer = KeyPointers[i];//Get what value the key points to
+                    s32 key_pointer = KeyPointers[i];//Get what value the key points to
                     Values.removeAt(key_pointer);//Remove the value
                     Keys.removeAt(i);//Remove the key
                     KeyPointers.removeAt(i);//Remove the key pointer
