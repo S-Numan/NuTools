@@ -1,5 +1,4 @@
 #include "NumanLib.as";
-#include "NuWiresCommon.as";
 
 void onInit(CRules@ this)
 {

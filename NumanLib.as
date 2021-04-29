@@ -812,21 +812,21 @@ namespace Nu
     {
         IntKeyDictionary()
         {
-            Keys = array<u32>();
+            Keys = array<s32>();
             KeyPointers = array<u32>();
-            Values = array<u32>();
+            Values = array<s32>();
         }
 
-        array<u32> Keys;
-        array<u32> KeyPointers;
-        array<u32> Values;
+        private array<s32> Keys;
+        private array<u32> KeyPointers;
+        private array<s32> Values;
 
         //TODO?
-        //void set(u32 _key, Object &in ob)
+        //void set(s32 _key, Object &in ob)
         //{
         //}
 
-        void set(u32 _key, u32 _value)
+        void set(s32 _key, s32 _value)
         {
             u32 key_pointer;//Stores where the key points to
 
@@ -848,7 +848,7 @@ namespace Nu
             Values.push_back(_value);//Add the value to the values array
         }
 
-        bool get(u32 _key, u32 &out _value)
+        bool get(s32 _key, s32 &out _value)
         {
             u32 key_pointer;//Stores where the key points to
 
@@ -865,7 +865,7 @@ namespace Nu
             return false;//Return as a failure
         }
 
-        bool exists(u32 _key)
+        bool exists(s32 _key)
         {
             for(u32 i = 0; i < Keys.size(); i++)//For every key
             {
@@ -878,7 +878,7 @@ namespace Nu
             return false;
         }
 
-        void delete(u32 _key)
+        void delete(s32 _key)
         {
             for(u32 i = 0; i < Keys.size(); i++)//For every key
             {
@@ -900,8 +900,6 @@ namespace Nu
             }
         }
 
-        
-
         void deleteAll()
         {
             Keys.resize(0);
@@ -920,17 +918,58 @@ namespace Nu
 
         bool isEmpty()
         {
-            if(size() == 0)
-            {
-                return true;
-            }
-            
-            return false;
+            return (size() == 0);
         }
 
-        array<u32>@ getKeys()
+        array<s32> getKeys()//Gets keys for the array.
         {
-            return @Keys;
+            return Keys;
+        }
+
+        array<s32> getValuesInOrder()//Gets the values for the keys, in the order the keys are in provided you get the keys through the getKeys() method.
+        {
+            array<s32> orderedValues(Keys.size());
+
+            for(u32 i = 0; i < Keys.size(); i++)
+            {
+                s32 _value;
+                
+                get(Keys[i], _value);
+                
+                orderedValues[i] = _value;
+            }
+
+            return orderedValues;
+        }
+
+        //Merges another dictionaries with this dictionary.
+        //Adds all keys to this dictionary
+        //Provided the key already exists in this dictionary, an attempt to add the values together of each key is made.
+        void ConsumeDictionary(IntKeyDictionary@ dic, bool remove_zero = false)
+        {
+            array<s32> input_keys = dic.getKeys();//Get all keys for this input
+            array<s32> input_values = dic.getValuesInOrder();//Get all values for this input in the order of the keys
+        
+            for(u32 q = 0; q < input_keys.size(); q++)//For each key
+            {
+                s32 current_value;
+                if(!get(input_keys[q], current_value))//If the key does not exist in this dictionary
+                {
+                    set(input_keys[q], input_values[q]);//Add it
+                }
+                else//Key exists in this dictionary
+                {
+                    current_value += input_values[q];//Add the values together
+                    if(remove_zero && current_value == 0)//If the value is 0
+                    {
+                        delete(input_keys[q]);//Remove it
+                    }
+                    else//Value not equal to 0
+                    {
+                        set(input_keys[q], current_value);//Set the new value
+                    }
+                }
+            }
         }
 
         void savefile(string file_name)
@@ -942,7 +981,6 @@ namespace Nu
         {
             print("loadfile not implemented");
         }
-
     }
 
 
