@@ -12,9 +12,10 @@ void onInit(CRules@ this)
     dic.set(7, 7);
 
     dic.set(0, 0);
-    dic.set(9, 9);
 
     dic.delete(7);
+
+    dic.set(9, 9);
 
     u32 value1;
     u32 value2;

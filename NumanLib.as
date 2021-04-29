@@ -863,11 +863,15 @@ namespace Nu
             Keys = array<s32>();
             KeyPointers = array<s32>();
             Values = array<s32>();
+        
+            expected_size = 50;
         }
 
         private array<s32> Keys;
         private array<s32> KeyPointers;
         private array<s32> Values;
+
+        u32 expected_size;
 
         //TODO?
         //void set(s32 _key, Object &in ob)
@@ -876,41 +880,64 @@ namespace Nu
 
         void set(s32 _key, s32 _value)
         {
-            s32 key_pointer;//Stores where the key points to
-
-            for(u32 i = 0; i < Keys.size(); i++)//For every key
+            u32 i;
+            for(i = 0; i < Keys.size(); i++)//For every key
             {
                 if(Keys[i] == _key)//If the key already exists
                 {
-                    key_pointer = KeyPointers[i];//Get what value the key points to
-                    Values[key_pointer] = _value;//Assign the value
+                    Values[KeyPointers[i]] = _value;//Assign the value to where the key points to
                     return;//End
                 }
             }
-            
-            Keys.push_back(_key);//Add the key to the Keys array
 
-            key_pointer = Values.size();//Make a new key pointer pointing to the end of the values array
-            KeyPointers.push_back(key_pointer);//Add the key_pointer to the Keys array
+            bool free_key = false;
+
+            for(i = 0; i < Keys.size(); i++)//For every key.
+            {
+                if(Keys[i] == s32_min())//If the key is free.
+                {   //It's free estate.
+                    Keys[i] = _key;
+                    free_key = true;
+                    break;
+                }
+            }
+
+            if(!free_key)//No free key position found?
+            {
+                i = Keys.size();
+                Keys.push_back(_key);//Create more space for the new key and add it.
+                KeyPointers.push_back(0);//Create more space for the KeyPointers too.
+            }
+
+            for(u32 q = 0; q < Values.size(); q++)//For each value
+            {
+                if(Values[q] == s32_min())//If the value position is free
+                {
+                    KeyPointers[i] = q;//This is the new position that KeyPointers points to.
+                    Values[q] = _value;//Set new value at this position.
+                    return;//We're done here
+                }
+            }
+            
+            //No free value position found?
+
+            KeyPointers[i] = Values.size();//Make the new key pointer point to the end of the values array
 
             Values.push_back(_value);//Add the value to the values array
         }
 
         bool get(s32 _key, s32 &out _value)
         {
-            s32 key_pointer;//Stores where the key points to
-
             for(u32 i = 0; i < Keys.size(); i++)//For every key
             {
                 if(Keys[i] == _key)//If the key exists
                 {
-                    key_pointer = KeyPointers[i];//Get what value the key points to
-                    _value = Values[key_pointer];//Get the value
-                    return true;//Return successful
+                    _value = Values[KeyPointers[i]];//Get the value from where the key points to
+                    return true;//Return with a college degree
                 }
             }
 
-            return false;//Return as a failure
+            return false;//Return as a highschool dropout
         }
 
         bool exists(s32 _key)
@@ -933,15 +960,9 @@ namespace Nu
                 if(Keys[i] == _key)//If the key exists
                 {
                     s32 key_pointer = KeyPointers[i];//Get what value the key points to
-                    Values.removeAt(key_pointer);//Remove the value
-                    Keys.removeAt(i);//Remove the key
-                    KeyPointers.removeAt(i);//Remove the key pointer
-
-                    //Move all key pointers 1 down from this position and after
-                    for(u32 q = i; q < KeyPointers.size(); q++)
-                    {
-                        KeyPointers[q]--;
-                    }
+                    Values[key_pointer] = s32_min();//Remove the value
+                    Keys[i] = s32_min();//Remove the key
+                    KeyPointers[i] = s32_min();//Remove the key pointer
 
                     return;//End
                 }
@@ -950,10 +971,26 @@ namespace Nu
 
         void deleteAll()
         {
+            //if(Keys.size() > expected_size) { Keys.resize(expected_size) }
+            u32 i;
+            for(i = 0; i < Keys.size(); i++)
+            {
+                Keys[i] = s32_min();
+                KeyPointers[i] = s32_min();
+            }
+            for(i = 0; i < Values.size(); i++)
+            {
+                Values[i] = s32_min();
+            }            
+        }
+
+        void wipeArrays()
+        {
             Keys.resize(0);
             KeyPointers.resize(0);
             Values.resize(0);
         }
+        
 
         u32 getSize()
         {

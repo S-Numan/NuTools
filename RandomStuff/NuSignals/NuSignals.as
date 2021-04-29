@@ -1,5 +1,3 @@
-
-
 void onInit(CRules@ rules)
 {
     if(!isServer()){ return; }
