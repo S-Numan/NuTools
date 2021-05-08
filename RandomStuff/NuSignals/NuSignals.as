@@ -7,8 +7,6 @@ void onInit(CRules@ rules)
     array<SignalNetwork@> networks = array<SignalNetwork@>();
     
     rules.set("S-N", networks);//Signal networks. S-N for short.
-
-    networks = array<SignalNetwork@>();
 }
 
 void onTick(CRules@ rules)

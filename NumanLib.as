@@ -832,7 +832,16 @@ namespace Nu
         print(spawned_items[Nu::RandomWeightedPicker(chances)]);
     */
 
+    //1: Regular position in world space.
+    //Returns the tile position of this vector.
+    shared Vec2f TilePosify(Vec2f pos)
+    {
+        CMap@ map = getMap();
+        pos.x = Maths::Floor(pos.x) / map.tilesize;
+        pos.y = Maths::Floor(pos.y) / map.tilesize;
 
+        return pos;
+    }
 
 
 
@@ -997,6 +1006,18 @@ namespace Nu
             return size();
         }
         u32 size()
+        {
+            u32 count = 0;
+            for(u32 i = 0; i < Keys.size(); i++)
+            {
+                if(Keys[i] != s32_min())
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+        u32 realSize()
         {
             return Keys.size();
         }

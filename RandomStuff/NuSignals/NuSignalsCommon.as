@@ -62,14 +62,14 @@ class SignalConnector
 
         @signal_got_func = @SIGNALS_GOT(ProcessSignals);
     
-        //network_output = false;//Forgot why these existed
-        //network_input = false;
+        network_output = array<bool>(4, false);
+        network_input = array<bool>(4, false);
     }
 
     bool tick_function_added;
 
-    //bool network_output;
-    //bool network_input;
+    array<bool> network_output;//Starting from up, going clockwise. If a wire is added to a side that is true, it adds this object to it's output.
+    array<bool> network_input;//Starting from up, going clockwise. If a wire is added to a side that is true, it adds this object to it's input.
 
     private SIGNALS_GOT@ signal_got_func;//Got that funk, awh, forgot, thaht, lyrics.
     void addSignalListener(SIGNALS_GOT@ value)
