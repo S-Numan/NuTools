@@ -11,7 +11,7 @@ void onInit(CRules@ rules)
     rules.set("W-N", networks);//Wire networks. W-N for short.
     
     NuHub@ hub;
-    if(!getRules().get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
+    if(!rules.get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
 
     CMap@ map = getMap();//Get the map
         
@@ -120,7 +120,7 @@ bool CanBuildWire(Vec2f pos, u8 team, bool require_backwall = true)
 bool BuildWire(CRules@ rules, Vec2f pos, u8 team, bool require_backwall = true)
 {
     NuHub@ hub;
-    if(!getRules().get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return false; }
+    if(!rules.get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return false; }
 
     array<SignalNetwork@> networks;
     rules.get("W-N", networks);//Wire networks. W-N for short.
@@ -236,7 +236,7 @@ void ConvertConnectedWireNetwork(u8 team, u16 old_net, u16 new_net)
 void ConnectAdjacentBlobs(CRules@ rules, Vec2f pos, u8 team)
 {
     NuHub@ hub;
-    if(!getRules().get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
+    if(!rules.get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
 
     Vec2f wire_pos = Nu::TilePosify(pos);//Convert world position into tile space.
     u16 wire_offset_pos = wire_pos.x * wire_pos.y;
