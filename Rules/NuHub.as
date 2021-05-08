@@ -14,10 +14,16 @@ class NuHub
     {
         menus = array<NuMenu::IMenu@>();
         buttons = array<NuMenu::MenuButton@>();
+        
         fonts = array<NuFont@>();
+
+        wire_positions = array<array<u16>>(team_wire_amount);//Init the array that stores where all the wires are in the map with their connected network
     }
 
 
+    //
+    //Rendering
+    //
     int posthudid;
     int prehudid;
     int postworldid;
@@ -43,12 +49,25 @@ class NuHub
         FRAME_TIME = 0.0f;
         MARGIN = 255.0f;
     }
+    //
+    //Rendering
+    //
+
+    //
+    //Signals/Wires
+    //
+
+    u8 team_wire_amount = 3;
+    array<array<u16>> wire_positions;
+
+    //
+    //Signals/Wires
+    //
 
     //
     //Fonts
     //
-
-        
+    
     private array<NuFont@> fonts;
     array<NuFont@> getFonts()
     {
@@ -109,7 +128,9 @@ class NuHub
 
 
 
-
+    //
+    //Menus
+    //
 
     bool addMenuToList(NuMenu::IMenu@ _menu)
     {
@@ -230,5 +251,11 @@ class NuHub
     array<NuMenu::IMenu@> menus;
 
     array<NuMenu::MenuButton@> buttons;//Since casting is very broken, this is a way to sidestep the issue.
+
+    //
+    //Menus
+    //
+
+
 }
 //Don't let more of one of this exist at once.

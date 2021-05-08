@@ -1,10 +1,7 @@
 #include "NumanLib.as";
 #include "NuSignalsCommon.as";
 #include "NuWiresCommon.as";
-
-u8 team_wire_amount = 3;
-
-array<array<u16>> wire_positions;//Temp, probably.
+#include "NuHub.as";
 
 void onInit(CRules@ rules)
 {
@@ -13,14 +10,14 @@ void onInit(CRules@ rules)
     array<SignalNetwork@> networks = array<SignalNetwork@>();
     rules.set("W-N", networks);//Wire networks. W-N for short.
     
+    NuHub@ hub;
+    if(!getRules().get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
 
-    wire_positions = array<array<u16>>(team_wire_amount);//Init the array that stores where all the wires are in the map with their connected network
-    
     CMap@ map = getMap();//Get the map
-    
-    for(u8 i = 0; i < team_wire_amount; i++)//For every wire team in the wire positions array.
+        
+    for(u8 i = 0; i < hub.wire_positions.size(); i++)//For every wire team in the wire positions array.
     {
-        wire_positions[i] = array<u16>(map.tilemapwidth * map.tilemapheight, Nu::u16_max());//Alloacate the wire team to the size of the map for wires to be in. All positions contain no wires.
+        hub.wire_positions[i] = array<u16>(map.tilemapwidth * map.tilemapheight, Nu::u16_max());//Alloacate the wire team to the size of the map for wires to be in. All positions contain no wires.
     }
 }
 
@@ -70,16 +67,19 @@ void onTick(CRules@ rules)
 //Returns true if a wire of this team is at this position
 bool WireAtPos(Vec2f pos, u8 team)
 {
+    NuHub@ hub;
+    if(!getRules().get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return false; }
+
     Vec2f wire_pos = Nu::TilePosify(pos);
     u16 wire_offset_pos = wire_pos.x * wire_pos.y;
 
-    if(wire_positions.size() <= team || wire_positions[team].size() <= wire_offset_pos)
+    if(hub.wire_positions.size() <= team || hub.wire_positions[team].size() <= wire_offset_pos)
     {
         print("Tried to access the outside of the wire team array bounds.");
         return false;
     }
 
-    if(wire_positions[team][wire_offset_pos] != Nu::u16_max())//If the wire with this team is at this position
+    if(hub.wire_positions[team][wire_offset_pos] != Nu::u16_max())//If the wire with this team is at this position
     {
         return true;//Yup, a wire is here
     }
@@ -119,6 +119,9 @@ bool CanBuildWire(Vec2f pos, u8 team, bool require_backwall = true)
 //I'm aware this code is horrible
 bool BuildWire(CRules@ rules, Vec2f pos, u8 team, bool require_backwall = true)
 {
+    NuHub@ hub;
+    if(!getRules().get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return false; }
+
     array<SignalNetwork@> networks;
     rules.get("W-N", networks);//Wire networks. W-N for short.
 
@@ -136,10 +139,10 @@ bool BuildWire(CRules@ rules, Vec2f pos, u8 team, bool require_backwall = true)
 
     array<u16> net_directions = array<u16>(4);//Stores the network of the wire in every direction
     
-    net_directions[0] = wire_positions[team][wire_pos.x * (wire_pos.y - 1)];//above
-    net_directions[1] = wire_positions[team][wire_offset_pos + 1];//right
-    net_directions[2] = wire_positions[team][wire_pos.x * (wire_pos.y + 1)];//below
-    net_directions[3] = wire_positions[team][wire_offset_pos - 1];//left
+    net_directions[0] = hub.wire_positions[team][wire_pos.x * (wire_pos.y - 1)];//above
+    net_directions[1] = hub.wire_positions[team][wire_offset_pos + 1];//right
+    net_directions[2] = hub.wire_positions[team][wire_pos.x * (wire_pos.y + 1)];//below
+    net_directions[3] = hub.wire_positions[team][wire_offset_pos - 1];//left
 
     u16 i;
 
@@ -191,7 +194,7 @@ bool BuildWire(CRules@ rules, Vec2f pos, u8 team, bool require_backwall = true)
 
     }
 
-    wire_positions[team][wire_offset_pos] = net;//Assign this wire's network
+    hub.wire_positions[team][wire_offset_pos] = net;//Assign this wire's network
 
     ConnectAdjacentBlobs(rules, pos, team);//Connect adjacent blobs to this wire
 
@@ -232,10 +235,13 @@ void ConvertConnectedWireNetwork(u8 team, u16 old_net, u16 new_net)
 //Connects adjacent blobs to this position to the network of the wire on this position.
 void ConnectAdjacentBlobs(CRules@ rules, Vec2f pos, u8 team)
 {
+    NuHub@ hub;
+    if(!getRules().get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
+
     Vec2f wire_pos = Nu::TilePosify(pos);//Convert world position into tile space.
     u16 wire_offset_pos = wire_pos.x * wire_pos.y;
 
-    u16 net = wire_positions[team][wire_offset_pos];
+    u16 net = hub.wire_positions[team][wire_offset_pos];
 
 
     CMap@ map = getMap();
