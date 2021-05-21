@@ -50,6 +50,12 @@ namespace Nu
         return -128;
     }
 
+    shared u8 getInt(bool value)
+    {
+        if(value){ return 1; }
+        return 0;
+    }
+
     //Returns every player in the server in an array.
     shared array<CPlayer@> getPlayers()
     {
