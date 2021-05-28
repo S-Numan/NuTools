@@ -15,7 +15,7 @@ namespace NuRender
             return;
         }
         
-        if(!rules.get("NuHub", @i_hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use NuHub."); return; }
+        if(!rules.get("NuHub", @i_hub)) { error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use NuHub."); return; }
 
         init = true;//Initialized
     }

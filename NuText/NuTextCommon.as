@@ -251,7 +251,7 @@ class NuText
     void setFont(string font_name)
     {
         NuHub@ hub;
-        if(!getRules().get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
+        if(!getRules().get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return; }
         NuFont@ _font = hub.getFont(font_name);
         if(_font == @null){ Nu::StackAndMessage("Font not found. Try creating a font with the name \"" + font_name + "\" via the hub with addFont(string font_name);"); return; }
 

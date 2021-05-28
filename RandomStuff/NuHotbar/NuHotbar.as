@@ -6,7 +6,7 @@
 void onInit( CBlob@ this )
 {
     NuHub@ hub;//First we make the hub variable.
-    if(!this.get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use NuHUb."); return; }
+    if(!this.get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use NuHUb."); return; }
 
 
 }
