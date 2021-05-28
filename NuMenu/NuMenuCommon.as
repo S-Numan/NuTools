@@ -287,8 +287,6 @@ Check mark option on right
 
     }
 
-    funcdef bool RENDER_CALLBACK();//NuMenu::IMenu@ menu);//Kag just refuses to include this parameter
-
     //Base of all menus.
     class MenuBase : IMenu
     {
@@ -1151,7 +1149,7 @@ Check mark option on right
             {
                 for(u16 i = 0; i < backgrounds.size(); i++)
                 {
-                    backgrounds[i].Render(backgrounds[i].frame_on[getButtonState()], getUpperLeftInterpolated(), getButtonState());
+                    backgrounds[i].Render(getUpperLeftInterpolated(), -1, getButtonState());
                     //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), DebugColor(getButtonState()));
                 }
             }
@@ -1397,8 +1395,10 @@ Check mark option on right
 
             image.setDefaultFrame(image_frame_default);
             
-            image.setFourTwoFrames(JustHover, Hover, JustPressed, Pressed,
-                image_frame_hover, image_frame_press);
+            image.frame_on[JustHover] = image_frame_hover;
+            image.frame_on[Hover] = image_frame_hover;
+            image.frame_on[JustPressed] = image_frame_press;
+            image.frame_on[Pressed] = image_frame_press;
             
             Vec2f image_offset;
             
@@ -1499,7 +1499,7 @@ Check mark option on right
                     continue;
                 }
 
-                images[i].Render(images[i].frame_on[getButtonState()], getUpperLeftInterpolated(), getButtonState());
+                images[i].Render(getUpperLeftInterpolated(), -1, getButtonState());
                 //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), rec_color);
                 
                 //GUI::DrawIcon(images[i].name,//Icon name
@@ -2723,22 +2723,6 @@ Check mark option on right
         }
 
         rules.get("NuHub", @transporter);
-        
-    }
-
-    void onTick(CRules@ rules)
-    {
-        if(!isClient())
-        {
-            return;
-        }
-
-        if(transporter == @null)
-        {
-            error("transporter was null"); return;
-        }
-
-        transporter.FRAME_TIME = 0.0f;
     }
 
     void MenuTick()
@@ -2752,7 +2736,7 @@ Check mark option on right
         {
             error("transporter was null"); return;
         }
-        
+
         u16 i;
         for(i = 0; i < transporter.getMenuListSize(); i++)
         {
@@ -2775,101 +2759,12 @@ Check mark option on right
             }
         }
 
-    }
-
-    void onRender(CRules@ rules)
-    {
-        if(transporter == @null)
+        //Render
+        for(u16 i = 0; i < transporter.menus.size(); i++)
         {
-            error("transporter was null"); return;
+            transporter.RenderImage(transporter.menus[i].getRenderLayer(),
+                transporter.menus[i].getRenderFunction());//TODO, increase performance of this.
         }
-
-        transporter.FRAME_TIME += getRenderDeltaTime() * getTicksASecond();
+        //Render
     }
-
-    void MenuRender(NuHub@ transporter, Render::ScriptLayer layer)
-    {
-        Render::SetAlphaBlend(true);
-        
-        u16 menu_count = transporter.menus.size();
-
-        for(u16 i = 0; i < menu_count; i++)
-        {
-            if(transporter[i] == @null)
-            {
-                error("Menu was somehow null in rendering. This should not happen."); continue;
-            }
-            if(transporter[i].getRenderLayer() != layer)//Current layer is not equal?
-            {
-                continue;//Skip
-            }
-            RENDER_CALLBACK@ func = transporter[i].getRenderFunction();
-            if(func == @null)
-            {
-                error("rendercallback function was null."); return;
-            }
-            func();
-        }
-
-        Render::SetTransformWorldspace();//Have to do this or kag gets cranky as it forgot to do it itself.
-    }
-}
-
-NuHub@ o_transporter = @null;//Outer transporter.
-
-bool TransporterInit()
-{
-    if(o_transporter == @null)//Init.
-    {
-        getRules().get("NuHub", @o_transporter);
-        print("NuMenu rendering transporter got.");
-        if(o_transporter == @null)//Still equal to null?
-        {
-            error("Render function failed to get things to render.");
-            return false;
-        }
-    }
-    return true;
-}
-
-void MenusPostHud(int id)
-{
-    if(!TransporterInit()) { return; }
-
-    NuMenu::MenuRender(o_transporter, Render::layer_posthud);
-}
-
-void MenusPreHud(int id)
-{
-    if(!TransporterInit()) { return; }
-    
-    NuMenu::MenuRender(o_transporter, Render::layer_prehud);
-}
-
-void MenusPostWorld(int id)
-{
-    if(!TransporterInit()) { return; }
-    
-    NuMenu::MenuRender(o_transporter, Render::layer_postworld);
-}
-
-void MenusObjects(int id)
-{
-    if(!TransporterInit()) { return; }
-    
-    NuMenu::MenuRender(o_transporter, Render::layer_objects);
-}
-
-void MenusTiles(int id)
-{
-    if(!TransporterInit()) { return; }
-    
-    NuMenu::MenuRender(o_transporter, Render::layer_tiles);
-}
-
-void MenusBackground(int id)
-{
-    if(!TransporterInit()) { return; }
-    
-    NuMenu::MenuRender(o_transporter, Render::layer_background);
 }

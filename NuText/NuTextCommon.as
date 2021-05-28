@@ -349,8 +349,8 @@ class NuText
 
             font.basefont.setDefaultPoints();//Set the points for how large this character is rendered.
 
-            font.basefont.Render(render_string[i],//This frame. (character)
-                _pos + char_positions[i]//At the _pos plus the character position.
+            font.basefont.Render(_pos + char_positions[i],//At the _pos plus the character position.
+                render_string[i]//With this frame. (character)
             );
         }
     }

@@ -3,12 +3,14 @@
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
 #include "NuHub.as";
+#include "NuToolsRendering.as";
 
 bool init;
+NuHub@ hub;
 
 void onInit( CRules@ rules )//First time start only.
 {
-    NuHub@ hub = LoadStuff(rules);
+    @hub = @LoadStuff(rules);
     
     hub.SetupRendering();
 }
@@ -16,17 +18,18 @@ void onInit( CRules@ rules )//First time start only.
 NuHub@ LoadStuff( CRules@ rules)//Every reload and restart
 {
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
-    NuHub@ hub = NuHub();
+    NuHub@ _hub = NuHub();
 
-    rules.set("NuHub", @hub);
+    rules.set("NuHub", @_hub);
     
     print("NuHub Loaded");
 
 
+    NuRender::onInit(rules);
     NuMenu::onInit(rules);
 
 
-    addFonts(rules, hub);
+    addFonts(rules, _hub);
 
 
     
@@ -41,7 +44,7 @@ NuHub@ LoadStuff( CRules@ rules)//Every reload and restart
 
     init = true;
 
-    return @hub;
+    return @_hub;
 }
 
 void onReload( CRules@ rules )
@@ -51,11 +54,8 @@ void onReload( CRules@ rules )
 
 void onTick( CRules@ rules )
 {
-    NuHub@ hub;
-    rules.get("NuHub", @hub);
+    NuRender::onTick(rules);
 
-    NuMenu::onTick(rules);//Important NuMenu things.
-    
     NuMenu::MenuTick();//Run logic for the menus.
 }
 
@@ -63,7 +63,8 @@ void onRender( CRules@ rules )
 {
     if(!init) { return; }//Kag renders before onInit. Stop this.
 
-    NuMenu::onRender(rules);//Important NuMenu things.
+    NuRender::onRender(rules);
+
 }
 
 

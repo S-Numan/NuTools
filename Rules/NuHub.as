@@ -1,5 +1,50 @@
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
+#include "NumanLib.as";
+
+
+funcdef bool RENDER_CALLBACK();
+
+class RenderDetails
+{
+    RenderDetails(RENDER_CALLBACK@ _func)
+    {
+        @func = @_func;   
+
+        @image = @null;
+    }
+
+    RenderDetails(Nu::NuImage@ _image, Vec2f _pos, u16 _frame = 0, bool _world_pos = false, Vec2f _old_pos = Vec2f(-1.0f, -1.0f))
+    {
+        func = @null;
+
+        @image = @_image;
+        pos = _pos;
+        
+        if(_old_pos == Vec2f(-1.0f, -1.0f))//Old pos not set?
+        {
+            old_pos = _pos;//Set it to _pos
+        }
+        else//Old pos is set
+        {
+            old_pos = _old_pos;//Set it
+        }
+
+        frame = _frame;
+        world_pos = _world_pos;
+    }
+    private RENDER_CALLBACK@ func;
+    RENDER_CALLBACK@ getFunc()
+    {
+        return @func;
+    }
+
+    Nu::NuImage@ image;
+    Vec2f old_pos;
+    Vec2f pos;
+    u16 frame;
+    bool world_pos;
+}
 
 class NuHub
 {
@@ -18,6 +63,13 @@ class NuHub
         fonts = array<NuFont@>();
 
         wire_positions = array<array<u16>>(team_wire_amount);//Init the array that stores where all the wires are in the map with their connected network
+
+        render_details = array<array<NuMenu::RenderDetails@>>(Render::layer_count);
+
+        for(u16 i = 0; i < render_details.size(); i++)
+        {
+            render_details[i] = array<NuMenu::RenderDetails@>();
+        }
     }
 
 
@@ -32,13 +84,12 @@ class NuHub
     int backgroundid;
     void SetupRendering()
     {
-
-        posthudid = Render::addScript(Render::layer_posthud, "NuMenuCommon.as", "MenusPostHud", 0.0f);
-        prehudid = Render::addScript(Render::layer_prehud, "NuMenuCommon.as", "MenusPreHud", 0.0f);
-        postworldid = Render::addScript(Render::layer_postworld, "NuMenuCommon.as", "MenusPostWorld", 0.0f);
-        objectsid = Render::addScript(Render::layer_objects, "NuMenuCommon.as", "MenusObjects", 0.0f);
-        tilesid = Render::addScript(Render::layer_tiles, "NuMenuCommon.as", "MenusTiles", 0.0f);
-        backgroundid = Render::addScript(Render::layer_background, "NuMenuCommon.as", "MenusBackground", 0.0f);
+        posthudid = Render::addScript(Render::layer_posthud, "NuToolsRendering.as", "MenusPostHud", 0.0f);
+        prehudid = Render::addScript(Render::layer_prehud, "NuToolsRendering.as", "MenusPreHud", 0.0f);
+        postworldid = Render::addScript(Render::layer_postworld, "NuToolsRendering.as", "MenusPostWorld", 0.0f);
+        objectsid = Render::addScript(Render::layer_objects, "NuToolsRendering.as", "MenusObjects", 0.0f);
+        tilesid = Render::addScript(Render::layer_tiles, "NuToolsRendering.as", "MenusTiles", 0.0f);
+        backgroundid = Render::addScript(Render::layer_background, "NuToolsRendering.as", "MenusBackground", 0.0f);
     }
 
 
@@ -49,9 +100,34 @@ class NuHub
         FRAME_TIME = 0.0f;
         MARGIN = 255.0f;
     }
+
+
+    array<array<NuMenu::RenderDetails@>> render_details;
+
+    void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func)
+    {
+        if(layer > render_details.size()) { Nu::Error("Layer beyond max layer"); return; }
+
+        render_details[layer].push_back(@RenderDetails(_func));//Optimize this. Improve this. Think how the dictionary was optimized. Numan TODO
+    }
+    void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, u16 _frame = 0, bool is_world_pos = false)
+    {
+        if(layer > render_details.size()) { Nu::Error("Layer beyond max layer"); return; }
+
+        render_details[layer].push_back(@RenderDetails(_image, _pos, _frame, is_world_pos));//Optimize this. Improve this. Think how the dictionary was optimized. Numan TODO
+    }
+    void RenderClear()
+    {
+        for(u16 i = 0; i < render_details.size(); i++)
+        {
+            render_details[i].resize(0);//Wipe array. (TODO, OPTIMIZE THIS)
+        }
+    }
+
     //
     //Rendering
     //
+
 
     //
     //Signals/Wires
@@ -241,11 +317,11 @@ class NuHub
     }
 
     //Return IMenu at the position.
-    NuMenu::IMenu@ get_opIndex(int idx) const
-    {
-        if(idx >= menus.size()) { error("Tried to get menu out of bounds."); return @null; }
-        return @menus[idx];
-    }
+    //NuMenu::IMenu@ get_opIndex(int idx) const
+    //{
+    //    if(idx >= menus.size()) { error("Tried to get menu out of bounds."); return @null; }
+    //    return @menus[idx];
+    //}
     
 
     array<NuMenu::IMenu@> menus;

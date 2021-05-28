@@ -1130,30 +1130,30 @@ namespace Nu
             angle_vel = 0.0f;
         }
 
-        void setDefaultFrame(u16 frame)//Sets the regular frame for all states.
+        void setDefaultFrame(u16 frame)//Sets the frame for all states.
         {
             for(u16 i = 0; i < frame_on.size(); i++)
             {
-                frame_on[i] = frame;
+                setFrame(frame, i);
             }
         }
+        void setFrame(u16 frame, u16 i = 0)//Sets the frame
+        {
+            frame_on[i] = frame;
+        }
 
-        void setDefaultColor(SColor color)//Sets the regular color for all states.
+        void setDefaultColor(SColor color)//Sets the color for all states.
         {
             for(u16 i = 0; i < color_on.size(); i++)
             {
-                color_on[i] = color;
+                setColor(color, i);
             }
         }
-
-                            //  JustHover state Hover state Just Pressed  Pressed state--OnHoverFrame|OnPressFrame    
-        void setFourTwoFrames(u16 just_hover, u16 hover, u16 just_pressed, u16 pressed, u16 on_hover, u16 on_press)//In NuMenuCommon this is used to set frames for hover and press states easily.
+        void setColor(SColor color, u16 i = 0)//Sets the color
         {
-            frame_on[just_hover] = on_hover;
-            frame_on[hover] = on_hover;
-            frame_on[just_pressed] = on_press;
-            frame_on[pressed] = on_press;
+            color_on[i] = color;
         }
+        
         u16 name_id;//Used for keeping track of what image is what image. For when using several NuImages in one array for example. Loop through the array and compare enums to this.
         //Todo - replace name_id with a string name and hash?
 
@@ -1373,6 +1373,7 @@ namespace Nu
             would_crash = false;
             if(frame_points.size() == 0) {          Nu::Error("frame_points.size() was equal to 0");          would_crash = true; }
             if(uv_per_frame.size() == 0) {          Nu::Error("uv_per_frame.size() was equal to 0");          would_crash = true; }
+            if(uv_per_frame.size() <= frame) {      Nu::Error("uv_per_frame.size() == " + uv_per_frame.size() + " was less than or equal to frame " + frame); would_crash = true; return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
             if(uv_per_frame[frame].size() == 0) {   Nu::Error("uv_per_frame[frame].size() was equal to 0");   would_crash = true; }
             if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//This will crash instantly if it goes beyond this point, so exit out.
 
@@ -1387,13 +1388,16 @@ namespace Nu
 
 
 
-        void Render(u16 frame = -1, Vec2f _pos = Vec2f(0,0), u16 state = 0)
+        void Render(Vec2f _pos = Vec2f(0,0), s32 frame = -1, u16 state = 0)
         {
             if(frame == -1)
             {
                 frame = frame_on[state];
             }
-            Render::RawQuads(name, getVertexsForFrameAndPos(frame, _pos, state));
+
+            getVertexsForFrameAndPos(frame, _pos, state);
+
+            Render::RawQuads(name, v_raw);
         }
         
 
