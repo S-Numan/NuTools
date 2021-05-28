@@ -323,7 +323,12 @@ void onSetTile(CMap@ this, u32 index, TileType newtile, TileType oldtile)
     //Remove each wire behind this position   
 }
 
-void onRender(CRules@ this)
+void onRender(CRules@ rules)
 {
-    //Render wires
+    if(false)//If wires are not supposed to be rendered for this client
+    { return; }//Just don't render them
+    
+    NuHub@ hub;
+    if(!rules.get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuHubLogic is before anything else that tries to use it."); return; }
+    
 }
