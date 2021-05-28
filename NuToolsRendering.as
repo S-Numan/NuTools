@@ -15,7 +15,7 @@ namespace NuRender
             return;
         }
         
-        if(!rules.get("NuHub", @i_hub)) { error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use NuHub."); return; }
+        if(!InitHub(rules, @i_hub)) { return; }
 
         init = true;//Initialized
     }
@@ -96,17 +96,11 @@ namespace NuRender
 
 bool HubInit()
 {
-    if(o_hub == @null)//Init.
+    if(o_hub == @null)//If we don't have o_hub
     {
-        getRules().get("NuHub", @o_hub);
-        print("NuToolsRendering hub got.");
-        if(o_hub == @null)//Still equal to null?
-        {
-            Nu::Error("Render function failed to get the hub");
-            return false;
-        }
+        if(!InitHub(getRules(), @o_hub)) { return false; }//Try and get it
     }
-    return true;
+    return true;//We got it if it got here
 }
 
 void MenusPostHud(int id)

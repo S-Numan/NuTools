@@ -6,7 +6,7 @@ Nu::NuImage@ image;
 
 void onInit(CRules@ rules)
 {
-    if(!rules.get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return; }
+    if(!InitHub(rules, @hub)) { return; }
     
     @image = @Nu::NuImage();
 

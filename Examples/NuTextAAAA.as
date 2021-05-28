@@ -13,7 +13,7 @@ void onInit( CRules@ this )
     init = true;
 
     NuHub@ hub;
-    if(!this.get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return; }
+    if(!InitHub(this, @hub)) { return; }
 
     //hub.addFont("Arial.png");
 

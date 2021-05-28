@@ -3,15 +3,15 @@
 #include "NuTextCommon.as";//For text and fonts.
 #include "NuHub.as";//For hauling around menus and fonts.
 
-void onInit( CBlob@ this )
+void onInit( CBlob@ rules )
 {
     NuHub@ hub;//First we make the hub variable.
-    if(!this.get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use NuHUb."); return; }
+    if(!InitHub(rules, @hub)) { return; }
 
 
 }
 
-void onTick( CBlob@ this )
+void onTick( CBlob@ rules )
 {
     if(!isClient()) { return; }
     //Add hotbar to player blobs. Feel free to do this in the cfg of the blob.

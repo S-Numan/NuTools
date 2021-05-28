@@ -13,7 +13,7 @@ void onInit(CRules@ rules)
     rules.set("W-N", networks);//Wire networks. W-N for short.
     
     NuHub@ hub;
-    if(!rules.get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return; }
+    if(!InitHub(rules, @hub)) { return; }
 
     CMap@ map = getMap();//Get the map
         
@@ -72,7 +72,7 @@ void onTick(CRules@ rules)
 bool WireAtPos(Vec2f pos, u8 team)
 {
     NuHub@ hub;
-    if(!getRules().get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return false; }
+    if(!InitHub(getRules(), @hub)) { return false; }
 
     Vec2f wire_pos = Nu::TilePosify(pos);
     u16 wire_offset_pos = wire_pos.x * wire_pos.y;
@@ -124,7 +124,7 @@ bool CanBuildWire(Vec2f pos, u8 team, bool require_backwall = true)
 bool BuildWire(CRules@ rules, Vec2f pos, u8 team, bool require_backwall = true)
 {
     NuHub@ hub;
-    if(!rules.get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return false; }
+    if(!InitHub(rules, @hub)) { return false; }
 
     array<SignalNetwork@> networks;
     rules.get("W-N", networks);//Wire networks. W-N for short.
@@ -240,7 +240,7 @@ void ConvertConnectedWireNetwork(u8 team, u16 old_net, u16 new_net)
 void ConnectAdjacentBlobs(CRules@ rules, Vec2f pos, u8 team)
 {
     NuHub@ hub;
-    if(!rules.get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return; }
+    if(!InitHub(rules, @hub)) { return; }
 
     Vec2f wire_pos = Nu::TilePosify(pos);//Convert world position into tile space.
     u16 wire_offset_pos = wire_pos.x * wire_pos.y;
@@ -335,6 +335,6 @@ void onRender(CRules@ rules)
     { return; }//Just don't render them
     
     NuHub@ hub;
-    if(!rules.get("NuHub", @hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return; }
+    if(!InitHub(rules, @hub)) { return; }
     
 }

@@ -318,10 +318,7 @@ Check mark option on right
 
         void initVars()
         {
-            if(!getRules().get("NuHub", @transporter))
-            {
-                error("NuToolsLogic.as must be before anything else that uses NuMenu in gamemode.cfg");
-            }
+            if(!InitHub(getRules(), @transporter)) { return; }
 
             ticks_since_created = 0;
 
@@ -1644,10 +1641,8 @@ Check mark option on right
         
         NuFont@ setFont(string font_name, u16 element = -1, bool repos = true)
         {
-            NuHub@ hub;
-            if(!getRules().get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return @null; }
-            NuFont@ _font = hub.getFont(font_name);
-            if(_font == @null){ warning("Could not find font with font_name = " + font_name); return hub.getFont("Arial"); }
+            NuFont@ _font = transporter.getFont(font_name);
+            if(_font == @null){ warning("Could not find font with font_name = " + font_name); return transporter.getFont("Arial"); }
 
             setFont(@_font, element, repos);
             return @_font;
@@ -2722,7 +2717,7 @@ Check mark option on right
             return;
         }
 
-        rules.get("NuHub", @transporter);
+        if(!InitHub(rules, @transporter)) { return; }
     }
 
     void MenuTick()

@@ -13,7 +13,7 @@ void onInit( CRules@ this )
     }
 
     NuHub@ hub;//First we make the hub variable.
-    if(!this.get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use NuHUb."); return; }//Then we try to get it. 
+    if(!InitHub(this, @hub)) { return; }//Then we try to get it. 
     //The hub is the place that stores menus, helps you easily add them, and ticks them. (rendering is done elsewhere.) It also holds fonts, id's, lets you cast without kag breaking, and is generally useful.
 
 
@@ -158,7 +158,7 @@ void ButtonTestFunction(CPlayer@ caller, CBitStream params, NuMenu::IMenu@ menu)
 void onTick( CRules@ this )
 {
     NuHub@ hub;
-    if(!this.get("NuHub", @hub)) { error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use NuHub."); return; }
+    if(!InitHub(this, @hub)) { return; }
    
 
     DebugOptionChanger(hub);//A method for messing around with a menu.
