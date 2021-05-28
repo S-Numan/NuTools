@@ -1127,7 +1127,6 @@ namespace Nu
             auto_frame_points = true;
             would_crash = false;
             angle = 0.0f;
-            angle_vel = 0.0f;
         }
 
         void setDefaultFrame(u16 frame)//Sets the frame for all states.
@@ -1141,6 +1140,10 @@ namespace Nu
         {
             frame_on[i] = frame;
         }
+        u16 getFrame(u16 i = 0)//Sets the frame
+        {
+            return frame_on[i];
+        }
 
         void setDefaultColor(SColor color)//Sets the color for all states.
         {
@@ -1152,6 +1155,10 @@ namespace Nu
         void setColor(SColor color, u16 i = 0)//Sets the color
         {
             color_on[i] = color;
+        }
+        SColor getColor(u16 i = 0)
+        {
+            return color_on[i];
         }
         
         u16 name_id;//Used for keeping track of what image is what image. For when using several NuImages in one array for example. Loop through the array and compare enums to this.
@@ -1333,17 +1340,6 @@ namespace Nu
         {
             return angle;
         }
-        
-        private float angle_vel;
-        void setAngleVel(float value)
-        {
-            angle_vel = value;
-        }
-        float getAngleVel()
-        {
-            return angle_vel;
-        }
-
 
         private Vec2f scale;//Scale of the frame.
         void setScale(Vec2f _scale)//Sets the scale of the frame.
