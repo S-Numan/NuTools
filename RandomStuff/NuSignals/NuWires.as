@@ -3,6 +3,8 @@
 #include "NuWiresCommon.as";
 #include "NuHub.as";
 
+bool init = false;
+
 void onInit(CRules@ rules)
 {
     if(!isServer()){ return; }
@@ -19,6 +21,8 @@ void onInit(CRules@ rules)
     {
         hub.wire_positions[i] = array<u16>(map.tilemapwidth * map.tilemapheight, Nu::u16_max());//Alloacate the wire team to the size of the map for wires to be in. All positions contain no wires.
     }
+
+    init = true;
 }
 
 u16 getFreeSignalNetwork(CRules@ rules)
@@ -325,6 +329,8 @@ void onSetTile(CMap@ this, u32 index, TileType newtile, TileType oldtile)
 
 void onRender(CRules@ rules)
 {
+    if(!init) { return; }//If init has not yet happened
+
     if(false)//If wires are not supposed to be rendered for this client
     { return; }//Just don't render them
     
