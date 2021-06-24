@@ -318,7 +318,7 @@ Check mark option on right
 
         void initVars()
         {
-            if(!InitHub(getRules(), @transporter)) { return; }
+            if(!getHub(@transporter)) { return; }
 
             ticks_since_created = 0;
 
@@ -2717,7 +2717,7 @@ Check mark option on right
             return;
         }
 
-        if(!InitHub(rules, @transporter)) { return; }
+        if(!getHub(@transporter)) { return; }
     }
 
     void MenuTick()

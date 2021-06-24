@@ -14,7 +14,7 @@ void onInit( CRules@ this )
     init = true;
 
     NuHub@ hub;
-    if(!InitHub(this, @hub)) { return; }
+    if(!getHub(@hub)) { return; }
 
     //Example of how to add a font.
     //hub.addFont("FontName",//Font render name.

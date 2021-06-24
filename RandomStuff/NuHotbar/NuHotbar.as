@@ -6,7 +6,7 @@
 void onInit( CBlob@ rules )
 {
     NuHub@ hub;//First we make the hub variable.
-    if(!InitHub(rules, @hub)) { return; }
+    if(!getHub(@hub)) { return; }
 
 
 }

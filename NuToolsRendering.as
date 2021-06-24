@@ -15,7 +15,7 @@ namespace NuRender
             return;
         }
         
-        if(!InitHub(rules, @i_hub)) { return; }
+        if(!getHub(@i_hub)) { return; }
 
         init = true;//Initialized
     }
@@ -98,7 +98,7 @@ bool HubInit()
 {
     if(o_hub == @null)//If we don't have o_hub
     {
-        if(!InitHub(getRules(), @o_hub)) { return false; }//Try and get it
+        if(!getHub(@o_hub)) { return false; }//Try and get it
     }
     return true;//We got it if it got here
 }

@@ -13,7 +13,7 @@ void onInit( CRules@ this )
     init = true;
 
     NuHub@ hub;
-    if(!InitHub(this, @hub)) { return; }
+    if(!getHub(@hub)) { return; }
 
     //hub.addFont("Arial.png");
 

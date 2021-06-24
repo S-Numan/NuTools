@@ -6,7 +6,7 @@ Nu::NuImage@ image;
 
 void onInit(CRules@ rules)
 {
-    if(!InitHub(rules, @hub)) { return; }
+    if(!getHub(@hub)) { return; }
     
     @image = @Nu::NuImage();
 

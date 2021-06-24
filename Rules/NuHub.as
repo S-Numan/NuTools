@@ -46,9 +46,9 @@ class RenderDetails
     bool world_pos;
 }
 
-bool InitHub(CRules@ rules, NuHub@ &out _hub)
+bool getHub(NuHub@ &out _hub)
 {
-    if(!rules.get("NuHub", @_hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return false; }
+    if(!getRules().get("NuHub", @_hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return false; }
     return true;
 }
 
