@@ -1,4 +1,5 @@
-//V1.1
+//This file is a library of functions, it contains many convenient functions to make modding kag easier.
+
 namespace Nu
 {
     shared u64 u64_max()

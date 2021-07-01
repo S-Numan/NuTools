@@ -1,3 +1,5 @@
+//This file handles misc rendering.
+
 #include "NumanLib.as";
 #include "NuHub.as";
 

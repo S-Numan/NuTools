@@ -1,3 +1,6 @@
+//This file was replaced to handle loading gamemode.cfg better. Unfortunately, the required scripts to do this don't exist.
+//At the moment this file only runs example_gamemoe.cfg if the gamemode name is "Testing" and otherwise functions normally.
+
 // default startup functions for autostart scripts
 
 void RunServer()

@@ -1,4 +1,4 @@
-//This file should go before all other files that use NuMenu in gamemode.cfg
+//This file handles misc logic and rendering related things in this mod. This file should go before all other files that use NuHub in gamemode.cfg.
 
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";

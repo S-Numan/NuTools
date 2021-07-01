@@ -1,3 +1,5 @@
+//This file contains a class called NuHub, which has the purpose of carrying around a bunch of of data to make getting and setting it around easier.
+
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
 #include "NumanLib.as";
