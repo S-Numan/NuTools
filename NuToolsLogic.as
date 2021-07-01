@@ -116,7 +116,7 @@ namespace NumanLib
     {
         if(cmd == rules.getCommandID("clientmessage") )//sends message to a specified client
         {
-            if((!isClient())) { return; }
+            if(!isClient()) { return; }
 
             string text = params.read_string();
             u8 alpha = params.read_u8();
