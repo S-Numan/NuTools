@@ -849,10 +849,49 @@ namespace Nu
         return pos;
     }
 
+    //1: The player the message is sent to.
+    //2: The message sent to the player's chat box.
+    //3: Optional color of the text in the chat box. (default red)
+    //Sends a message to a specific player's chat box.
+    void sendClientMessage(CPlayer@ player, string message, SColor color = SColor(255, 255, 0, 0))//Now with color
+    {
+        CRules@ rules = getRules();
 
+        CBitStream params;//Assign the params
+        params.write_string(message);
+        params.write_u8(color.getAlpha());
+        params.write_u8(color.getRed());
+        params.write_u8(color.getGreen());
+        params.write_u8(color.getBlue());
 
+        rules.SendCommand(rules.getCommandID("clientmessage"), params, player);
+    }
 
+    //1: The message sent to all player's chat boxes.
+    //2: Optional color of the message. (default red)
+    //Sends a message to EVERY player's chat box.
+    void sendAllMessage(string message, SColor color = SColor(255, 255, 0, 0))
+    {
+        for(u16 i = 0; i < getPlayerCount(); i++)
+        {
+            CPlayer@ player = getPlayer(i);
+            if(player == null) { continue; }
+            sendClientMessage(player, message, color);
+        }
+    }
 
+    //1: The player this message is sent to.
+    //2: The message contents.
+    //Sends a drop down from the top of screen message to the specified player, this is referred to as a "engine message".
+    void sendEngineMessage(CPlayer@ player, string message)//Message that comes down from the top of the screen.
+    {
+        CRules@ rules = getRules();
+
+        CBitStream params;//Assign the params
+        params.write_string(message);
+
+        rules.SendCommand(rules.getCommandID("enginemessage"), params, player);
+    }
 
 
 
@@ -1426,8 +1465,6 @@ Numan_library. Including
 11. Is block below? 
 12. Is block left?
 13. Is block right?(maybe merge into one with a directional parameter)
-#14. Send chat message to player (CommandChat.as)
-#15. Send chat message to all players 
 #17. Get player associated with id.
 #18. Time since map loaded.
 #19. Get blocks in radius. (blocky radius, jagged array of blocks)
