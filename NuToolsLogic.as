@@ -64,8 +64,6 @@ void onTick( CRules@ rules )
     NuRender::onTick(rules);
 
     NuMenu::MenuTick();//Run logic for the menus.
-
-    NumanLib::onTick(rules);
 }
 
 void onRender( CRules@ rules )
