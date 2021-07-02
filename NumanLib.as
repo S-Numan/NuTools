@@ -1446,21 +1446,19 @@ namespace Nu
         //
         void setFrame(u16 _frame) override//Sets the frame
         {
-            Nu::Error("Method not supposed to be used.");
+            setFrame(_frame, 0);
         }
         u16 getFrame() override//Sets the frame
         { 
-            Nu::Error("Method not supposed to be used.");
-            return 0;
+            return getFrame(0);
         }
         void setColor(SColor _color) override//Sets the color
         {
-            Nu::Error("Method not supposed to be used.");
+            setColor(_color, 0);
         }
         SColor getColor() override
         {
-            Nu::Error("Method not supposed to be used.");
-            return SColor(0, 0, 0, 0);
+            return getColor(0);
         }
         //
         //Overrides
