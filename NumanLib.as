@@ -1146,17 +1146,16 @@ namespace Nu
         {
             Setup();
         }
-        NuImage(u16 state_count)
-        {
-            Setup(state_count);
-        }
 
-        void Setup(u16 state_count = 1)
+        private u16 frame;
+        private SColor color;
+
+        void Setup()
         {
             name = "";
             name_id = 0;
-            frame_on = array<u16>(state_count, 0);
-            color_on = array<SColor>(state_count, SColor(255, 255, 255, 255));
+            frame = 0;
+            color = SColor(255, 255, 255, 255);
             Vec2f offset = Vec2f(0,0);
 
             is_texture = false;
@@ -1169,36 +1168,22 @@ namespace Nu
             angle = 0.0f;
         }
 
-        void setDefaultFrame(u16 frame)//Sets the frame for all states.
+        void setFrame(u16 _frame)//Sets the frame
         {
-            for(u16 i = 0; i < frame_on.size(); i++)
-            {
-                setFrame(frame, i);
-            }
+            frame = _frame;
         }
-        void setFrame(u16 frame, u16 i = 0)//Sets the frame
+        u16 getFrame()//Sets the frame
         {
-            frame_on[i] = frame;
-        }
-        u16 getFrame(u16 i = 0)//Sets the frame
-        {
-            return frame_on[i];
+            return frame;
         }
 
-        void setDefaultColor(SColor color)//Sets the color for all states.
+        void setColor(SColor _color)//Sets the color
         {
-            for(u16 i = 0; i < color_on.size(); i++)
-            {
-                setColor(color, i);
-            }
+            color = _color;
         }
-        void setColor(SColor color, u16 i = 0)//Sets the color
+        SColor getColor()
         {
-            color_on[i] = color;
-        }
-        SColor getColor(u16 i = 0)
-        {
-            return color_on[i];
+            return color;
         }
         
         u16 name_id;//Used for keeping track of what image is what image. For when using several NuImages in one array for example. Loop through the array and compare enums to this.
@@ -1245,9 +1230,6 @@ namespace Nu
             return frame_size;
         }
         
-
-        array<u16> frame_on;//Stores what frame the image is on depending on what state this is in
-        array<SColor> color_on;//Color depending on the state
         Vec2f offset;//Position of image in relation to something else.
 
 
@@ -1402,41 +1384,131 @@ namespace Nu
 
         //TODO, don't run this every render call. Only recalculate if needed.
         array<Vertex> v_raw;//For rendering.
-        array<Vertex> getVertexsForFrameAndPos(u16 frame, Vec2f _pos = Vec2f(0,0), u16 state = 0)//Gets what this should render.
+        array<Vertex> getVertexsForFrameAndPos(u16 _frame, Vec2f _pos, SColor _color = SColor(255, 255, 255, 255))//Gets what this should render.
         {
             if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//Already sent the error log, this could of crashed. So just stop to not spam.
             if(!is_texture){ Nu::Error("Tried getVertexsForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
             would_crash = false;
             if(frame_points.size() == 0) {          Nu::Error("frame_points.size() was equal to 0");          would_crash = true; }
             if(uv_per_frame.size() == 0) {          Nu::Error("uv_per_frame.size() was equal to 0");          would_crash = true; }
-            if(uv_per_frame.size() <= frame) {      Nu::Error("uv_per_frame.size() == " + uv_per_frame.size() + " was less than or equal to frame " + frame); would_crash = true; return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
-            if(uv_per_frame[frame].size() == 0) {   Nu::Error("uv_per_frame[frame].size() was equal to 0");   would_crash = true; }
+            if(uv_per_frame.size() <= _frame) {      Nu::Error("uv_per_frame.size() == " + uv_per_frame.size() + " was less than or equal to _frame " + _frame); would_crash = true; return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
+            if(uv_per_frame[_frame].size() == 0) {   Nu::Error("uv_per_frame[_frame].size() was equal to 0");   would_crash = true; }
             if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//This will crash instantly if it goes beyond this point, so exit out.
 
             Vec2f _offset = MultVec(offset, scale);
 
-            v_raw[0] = Vertex(_offset + _pos + frame_points[0], z[0], uv_per_frame[frame][0], color_on[state]);
-			v_raw[1] = Vertex(_offset + _pos + frame_points[1], z[1], uv_per_frame[frame][1], color_on[state]);//Set the colors yourself.
-			v_raw[2] = Vertex(_offset + _pos + frame_points[2], z[2], uv_per_frame[frame][2], color_on[state]);
-			v_raw[3] = Vertex(_offset + _pos + frame_points[3], z[3], uv_per_frame[frame][3], color_on[state]);
+            v_raw[0] = Vertex(_offset + _pos + frame_points[0], z[0], uv_per_frame[_frame][0], _color);
+			v_raw[1] = Vertex(_offset + _pos + frame_points[1], z[1], uv_per_frame[_frame][1], _color);//Set the colors yourself.
+			v_raw[2] = Vertex(_offset + _pos + frame_points[2], z[2], uv_per_frame[_frame][2], _color);
+			v_raw[3] = Vertex(_offset + _pos + frame_points[3], z[3], uv_per_frame[_frame][3], _color);
             return v_raw;
         }
 
 
 
-        void Render(Vec2f _pos = Vec2f(0,0), s32 frame = -1, u16 state = 0)
+        void Render(Vec2f _pos = Vec2f(0,0), s32 _frame = -1, SColor _color = SColor(255, 255, 255, 255))
         {
-            if(frame == -1)
+            if(_frame == -1)
             {
-                frame = frame_on[state];
+                _frame = 0;
             }
 
-            getVertexsForFrameAndPos(frame, _pos, state);
+            getVertexsForFrameAndPos(_frame, _pos, _color);
 
             Render::RawQuads(name, v_raw);
         }
         
 
+    }
+
+    shared class NuStateImage : NuImage
+    {
+        NuStateImage()
+        {
+            Setup(1);
+        }
+        NuStateImage(u16 state_count)
+        {
+            Setup(state_count);
+        }
+
+        array<u16> frame_on;//Stores what frame the image is on depending on what state this is in
+        array<SColor> color_on;//Color depending on the state
+
+        void Setup(u16 state_count)
+        {
+            frame_on = array<u16>(state_count, 0);
+            color_on = array<SColor>(state_count, SColor(255, 255, 255, 255));
+            NuImage::Setup();
+        }
+
+        //Overrides
+        //
+        void setFrame(u16 _frame) override//Sets the frame
+        {
+            Nu::Error("Method not supposed to be used.");
+        }
+        u16 getFrame() override//Sets the frame
+        { 
+            Nu::Error("Method not supposed to be used.");
+            return 0;
+        }
+        void setColor(SColor _color) override//Sets the color
+        {
+            Nu::Error("Method not supposed to be used.");
+        }
+        SColor getColor() override
+        {
+            Nu::Error("Method not supposed to be used.");
+            return SColor(0, 0, 0, 0);
+        }
+        //
+        //Overrides
+
+        void setDefaultFrame(u16 frame)//Sets the frame for all states.
+        {
+            for(u16 i = 0; i < frame_on.size(); i++)
+            {
+                setFrame(frame, i);
+            }
+        }
+        void setFrame(u16 _frame, u16 i)//Sets the frame
+        {
+            frame_on[i] = _frame;
+        }
+        u16 getFrame(u16 i)//Sets the frame
+        {
+            return frame_on[i];
+        }
+
+        void setDefaultColor(SColor color)//Sets the color for all states.
+        {
+            for(u16 i = 0; i < color_on.size(); i++)
+            {
+                setColor(color, i);
+            }
+        }
+        void setColor(SColor _color, u16 i)//Sets the color
+        {
+            color_on[i] = _color;
+        }
+        SColor getColor(u16 i)
+        {
+            return color_on[i];
+        }
+
+        void Render(u16 state, Vec2f _pos = Vec2f(0,0), SColor _color = SColor(255, 255, 255, 255))
+        {
+            u16 _frame = frame_on[state];
+            _color = color_on[state];
+
+            Render(_pos, _frame, _color);
+        }
+
+        void Render(Vec2f _pos = Vec2f(0,0), s32 _frame = -1, SColor _color = SColor(255, 255, 255, 255)) override
+        {
+            NuImage::Render(_pos, _frame, _color);
+        }
     }
 
 }

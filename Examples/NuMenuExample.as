@@ -35,7 +35,7 @@ void onInit( CRules@ this )
 
     random_menu.clearBackgrounds();//Here we wipe the MenuHolder's background.
 
-    Nu::NuImage@ random_image = Nu::NuImage(Nu::POSPositionsCount);//Here we create an image with POSPositionCount states (for color and frames and stuff) 
+    Nu::NuStateImage@ random_image = Nu::NuStateImage(Nu::POSPositionsCount);//Here we create a state image with POSPositionCount states (for color and frames and stuff) 
 
     random_image.CreateImage("random_menu_image", "RenderExample.png");//Creates an image from a png
 

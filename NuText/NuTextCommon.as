@@ -341,7 +341,7 @@ class NuText
 
         font.basefont.setAngle(angle);//Set the angle. For those weird people.
 
-        font.basefont.setDefaultColor(text_color);//Set the color.
+        font.basefont.setColor(text_color);//Set the color.
 
         for(u16 i = 0; i < render_string.size(); i++)//For every character in this string.
         {

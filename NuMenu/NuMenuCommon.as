@@ -274,9 +274,9 @@ Check mark option on right
         RENDER_CALLBACK@ getRenderFunction();
         bool DefaultRenderCaller();
         
-        array<Nu::NuImage@> getBackgrounds();
-        Nu::NuImage@ getBackground(u16 element);
-        void addBackground(Nu::NuImage@ _background);
+        array<Nu::NuStateImage@> getBackgrounds();
+        Nu::NuStateImage@ getBackground(u16 element);
+        void addBackground(Nu::NuStateImage@ _background);
         void removeBackground(u16 element);
         void clearBackgrounds();
 
@@ -353,12 +353,12 @@ Check mark option on right
 
             render_layer = Render::layer_prehud;
         
-            backgrounds = array<Nu::NuImage@>();
+            backgrounds = array<Nu::NuStateImage@>();
         }
 
         void afterInitVars(string _name, u8 _menu_config ,Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0))
         {
-            Nu::NuImage@ _background = Nu::NuImage(ButtonStateCount);
+            Nu::NuStateImage@ _background = Nu::NuStateImage(ButtonStateCount);
             _background.CreateImage("testy_testers", "RenderExample.png");
             _background.setFrameSize(Vec2f(32, 32));
             for(u16 i = 0; i < ButtonStateCount; i++)
@@ -1081,17 +1081,17 @@ Check mark option on right
             return Render();
         }
         
-        private array<Nu::NuImage@> backgrounds;
-        array<Nu::NuImage@> getBackgrounds()
+        private array<Nu::NuStateImage@> backgrounds;
+        array<Nu::NuStateImage@> getBackgrounds()
         {
             return backgrounds;
         }
-        Nu::NuImage@ getBackground(u16 element)
+        Nu::NuStateImage@ getBackground(u16 element)
         {
             if(element >= backgrounds.size()) { error("tried to get past backgrounds array max."); return @null; }
             return backgrounds[element];
         }
-        void addBackground(Nu::NuImage@ _background)
+        void addBackground(Nu::NuStateImage@ _background)
         {
             _background.setPointLowerRight(getSize());
             backgrounds.push_back(@_background);
@@ -1146,7 +1146,7 @@ Check mark option on right
             {
                 for(u16 i = 0; i < backgrounds.size(); i++)
                 {
-                    backgrounds[i].Render(getUpperLeftInterpolated(), -1, getButtonState());
+                    backgrounds[i].Render(getButtonState(), getUpperLeftInterpolated());
                     //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), DebugColor(getButtonState()));
                 }
             }
@@ -1200,7 +1200,7 @@ Check mark option on right
 
             initial_press = false;
         
-            images = array<Nu::NuImage@>(Nu::POSPositionsCount);
+            images = array<Nu::NuStateImage@>(Nu::POSPositionsCount);
 
             menu_sounds_on = array<string>(ButtonStateCount, "");
             menu_volume = 1.0f;
@@ -1370,10 +1370,10 @@ Check mark option on right
         bool reposition_images;//If this is true, the images's positions will be reassigned every time the menu moves based on what image position it is in. top will be put back on the top every movement.
         
         
-        private array<Nu::NuImage@> images;
+        private array<Nu::NuStateImage@> images;
 
         
-        Nu::NuImage@ setImage(string image_name, Vec2f image_frame_size, u16 image_frame_default, u16 image_frame_hover, u16 image_frame_press, u16 position = 0)
+        Nu::NuStateImage@ setImage(string image_name, Vec2f image_frame_size, u16 image_frame_default, u16 image_frame_hover, u16 image_frame_press, u16 position = 0)
         {
             if(images.size() <= position){ error("In setImage : tried to get past the highest element in the images array. Attempted to get image " + position ); return @null; }
             
@@ -1381,7 +1381,7 @@ Check mark option on right
             //render_name = render_name.substr(render_name.findLast("/"));
             //print("render_name = " + render_name);
 
-            Nu::NuImage@ image = Nu::NuImage(ButtonStateCount);
+            Nu::NuStateImage@ image = Nu::NuStateImage(ButtonStateCount);
             
             //image.CreateImage("_i", image_name);//Debug later
             image.CreateImage(render_name, image_name);
@@ -1413,7 +1413,7 @@ Check mark option on right
             return image;
         }
         
-        Nu::NuImage@ getImage(u16 position = 0)
+        Nu::NuStateImage@ getImage(u16 position = 0)
         {
             if(images.size() <= position){ error("In getImage : tried to get past the highest element in the images array. Attempted to get image " + position); return @null; }
 
@@ -1437,7 +1437,7 @@ Check mark option on right
         {
             for(u16 i = 0; i < Nu::POSPositionsCount; i++)
             {
-                Nu::NuImage@ image = getImage(i);
+                Nu::NuStateImage@ image = getImage(i);
                     
                 if(image == @null)
                 {
@@ -1496,7 +1496,7 @@ Check mark option on right
                     continue;
                 }
 
-                images[i].Render(getUpperLeftInterpolated(), -1, getButtonState());
+                images[i].Render(getButtonState(), getUpperLeftInterpolated());
                 //GUI::DrawRectangle(getUpperLeftInterpolated(), getLowerRightInterpolated(), rec_color);
                 
                 //GUI::DrawIcon(images[i].name,//Icon name
@@ -2022,7 +2022,7 @@ Check mark option on right
                     continue;
                 }
                 
-                text[i].Render(getUpperLeftInterpolated() + text_positions[i], getButtonState());
+                text[i].Render(getUpperLeftInterpolated() + text_positions[i]);
             }
         }
     }
