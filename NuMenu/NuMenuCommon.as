@@ -54,6 +54,7 @@ Check mark option on right
 //Have values for the first part of a sprite. The middle part. And the end part. Modify NuImage for this.
 //Make setting to world pos actually set the upper left and lower right to the correct positions to not look like the menu changed position.
 //Make an option to make the menu animated. Animation frames and how fast they loop through. See cfg animations. Maybe add it to NumanLib NuImage?
+//Add way to have only one button at once be hovered on/pressed. No multi button pressing/hovering.
 
 
 //Option list for debugging blobs.

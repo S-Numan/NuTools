@@ -3,3 +3,8 @@
 Fake pickup blob.
 One blob that teleports around. based on positions it is assigned to. These positions are for example, fake blobs; things that aren't blobs that can be picked up.
 Upon being picked up, it tells the fake blob that it was picked up. And it drops itself.
+
+
+(joke idea)
+Play Minesweeper to destroy enemy doors in front of you. Failing to play minesweeper causes a massive explosion after a short fuse.
+(joke idea)
