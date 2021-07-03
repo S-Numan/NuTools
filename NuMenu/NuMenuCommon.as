@@ -2694,8 +2694,10 @@ Check mark option on right
 
     shared enum GridStyle
     {
-        NormalGrid,
+        NormalGrid,//No changes
 
+        //ShelveGrid has only 4 horizontal menu slots.
+        //The first is normal, to the left. The rest have a special offset pushing them to the right. the second is on the left, the third is in the middle, and the forth is at the very right.
         ShelveGrid,
     }
 
@@ -2727,13 +2729,16 @@ Check mark option on right
         
             menus = array<array<NuMenu::IMenu@>>();
 
+            focused = true;
+
             grid_style = 0;
 
-            grid_buffer = Vec2f(256.0f, 256.0f);
+            grid_buffer = Vec2f(128.0f, 128.0f);
 
             top_left_buffer = Vec2f(0.0f, 0.0f);
         }
 
+        bool focused;//Think windows 7/10, where you click something and it becomes 'focused'. It becomes the thing currently selected. any button presses only take place in focused menus. something like that. TODO
 
         private u8 grid_style;//Enum style of grid.
 
@@ -2774,6 +2779,14 @@ Check mark option on right
         void setBuffer(Vec2f _buffer)
         {
             grid_buffer = _buffer;
+            
+            for(u16 x = 0; x < menus.size(); x++)
+            {
+                for(u16 y = 0; y < menus[x].size(); y++)
+                {
+                    AssignOffset(x, y);
+                }
+            }
         }
 
 
@@ -2792,13 +2805,17 @@ Check mark option on right
             StretchArray(x, y);
             
             @menus[x][y] = @_menu;//Assign the menu
+        
+            AssignOffset(x, y);
+
+            MoveHeldMenu(x, y);
         }
 
-        void StretchArray(u16 x, u16 y)
+        void StretchArray(u16 x, u16 y)//TODO, performance optimization. This is called way too many times and the array resizes way too much.
         {
             if(x >= menus.size())//If the array is not big enough in width
             {
-                print("resize x to " + (x + 1));
+                //print("resize x to " + (x + 1));
                 menus.resize(x + 1);//Resize the array's width to allow the menu to be put in the desired position
 
                 for(u16 i = x; i < x; i++)//For every newly sized spot in the array
@@ -2808,7 +2825,7 @@ Check mark option on right
             }
             if(y >= menus[x].size())//If the array is not big enough in height
             {
-                print("resize y to " + (y + 1));
+                //print("resize y to " + (y + 1));
                 menus[x].resize(y + 1);//Resize the array's height to allow the menu to be put in the desired position
             }
         }
@@ -2841,7 +2858,13 @@ Check mark option on right
             MenuBase::setMenuJustMoved(value);
             if(value)
             {
-                MoveHeldMenus();
+                for(u16 x = 0; x < menus.size(); x++)
+                {
+                    for(u16 y = 0; y < menus[x].size(); y++)
+                    {
+                        MoveHeldMenu(x, y);
+                    }
+                }
             }
         }
         
@@ -2872,25 +2895,25 @@ Check mark option on right
                 }
             }
             
-            MoveHeldMenus();
+            for(u16 x = 0; x < menus.size(); x++)
+            {
+                for(u16 y = 0; y < menus[x].size(); y++)
+                {
+                    MoveHeldMenu(x, y);
+                }
+            }
         }
         //
         //Overries
         //
 
-        void MoveHeldMenus()
+        private void MoveHeldMenu(u16 x, u16 y)
         {
-            for(u16 x = 0; x < menus.size(); x++)
-            {
-                for(u16 y = 0; y < menus[x].size(); y++)
-                {
-                    if(menus[x][y] == @null) { Nu::Error("optional_menu was null"); continue; }//Menu null?
+            if(menus[x][y] == @null) { Nu::Error("optional_menu was null"); return; }//Menu null?
 
-                    if(!menus[x][y].getMoveToOwner()) { continue; }//Menu not supposed to move towards its owner?
-                    
-                    menus[x][y].setPos(getPos() + menus[x][y].getOffset());//Move menu with owner.
-                }
-            }
+            if(!menus[x][y].getMoveToOwner()) { return; }//Menu not supposed to move towards its owner?
+            
+            menus[x][y].setPos(getPos() + menus[x][y].getOffset());//Move menu with owner.
         }
 
         void AssignOffset(u16 x, u16 y)

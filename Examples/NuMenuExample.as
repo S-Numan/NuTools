@@ -20,33 +20,59 @@ void onInit( CRules@ this )
     print("Menu Example Creation");
 
 
-    NuMenu::MenuHolder@ random_menu = NuMenu::MenuHolder(//This menu is a MenuHolder. The MenuHolder inherits from BaseMenu, and is designed to hold other menus in an array.
+    NuMenu::GridMenu@ grid_menu = NuMenu::GridMenu(//This menu is a GridMenu. The MenuHolder inherits from BaseMenu, and is designed to hold other menus in an array in a grid fashion.
         Vec2f(64, 64),//The top left of the menu.
-        Vec2f(128 * 2, 128 * 2),//The bottom right of the menu.
+        Vec2f(128 * 1, 128 * 1),//The bottom right of the menu.
         "TestMenu");//Name of the menu which you can get later.
 
     //Some useful functions.
-    //random_menu.setUpperLeft(Vec2f(0,0));
-    //random_menu.setLowerRight(Vec2f(0,0));
-    //random_menu.setPos(Vec2f(0,0));
-    //random_menu.getMiddle();
+    //grid_menu.setUpperLeft(Vec2f(0,0));
+    //grid_menu.setLowerRight(Vec2f(0,0));
+    //grid_menu.setPos(Vec2f(0,0));
+    //grid_menu.getMiddle();
 
-    random_menu.setIsWorldPos(false);//At any time you can swap a menu to be on world position, or screen position. This tells the menu to work on the screen.
+    grid_menu.setIsWorldPos(false);//At any time you can swap a menu to be on world position, or screen position. This tells the menu to work on the screen.
 
-    random_menu.clearBackgrounds();//Here we wipe the MenuHolder's background.
+    grid_menu.clearBackgrounds();//Here we wipe the MenuHolder's background.
 
-    Nu::NuStateImage@ random_image = Nu::NuStateImage(Nu::POSPositionsCount);//Here we create a state image with POSPositionCount states (for color and frames and stuff) 
+    Nu::NuStateImage@ grid_image = Nu::NuStateImage(Nu::POSPositionsCount);//Here we create a state image with POSPositionCount states (for color and frames and stuff) 
 
-    random_image.CreateImage("random_menu_image", "RenderExample.png");//Creates an image from a png
+    grid_image.CreateImage("grid_menu_image", "RenderExample.png");//Creates an image from a png
 
-    random_image.setFrameSize(Vec2f(32, 32));//Here we set the frame size of the image.
+    grid_image.setFrameSize(Vec2f(32, 32));//Here we set the frame size of the image.
 
-    random_image.setDefaultFrame(3);//Sets the default frame to frame 3.
+    grid_image.setDefaultFrame(3);//Sets the default frame to frame 3.
 
-    random_menu.addBackground(random_image);//And here we add the random_image as the background. The background image streches to meet the upper left and lower right.
+    grid_menu.addBackground(grid_image);//And here we add the grid_image as the background. The background image streches to meet the upper left and lower right.
 
 
-    hub.addMenuToList(random_menu);//This tells the random_menu to be ticked. And it stores it for other places to easily grab it.
+    //How would you assign a grid of buttons to the menu?
+
+    grid_menu.top_left_buffer = Vec2f(8.0f, 8.0f);//This allows you to change the distance of all the buttons from the top left of the menu
+
+    grid_menu.setBuffer(Vec2f(32.0f, 32.0f));//This sets the buffer between buttons on the menu
+
+    for(u16 x = 0; x < 4; x++)//Grid width
+    {
+        for(u16 y = 0; y < 4; y++)//Grid height
+        {
+            NuMenu::MenuButton@ buttony = NuMenu::MenuButton(Vec2f(32, 32), Vec2f(32 * 2, 32 * 2), x + "ButtonName" + y);//Create any menu of any sort and do whatever you want with it.        
+            grid_menu.setMenu(x,//Set the position on the width of the grid
+                y,//The position on the height of the grid
+                @buttony);//And add the button
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    hub.addMenuToList(grid_menu);//This tells the grid_menu to be ticked. It also stores it for other places to easily grab it.
 
 
     //Other menus.
@@ -143,10 +169,25 @@ void onInit( CRules@ this )
     hub.addMenuToList(text_menu1);//Add it.
 
 
+
+
+
+
+
+
+
+
+
+
 }
 
 void onReload( CRules@ this )
 {
+    NuHub@ hub;
+    if(!getHub(@hub)) { return; }
+    
+    hub.ClearMenuList();//refresh all menu's on reload
+    
     onInit(this);
 }
 //                    -Caller of button-     -Params-     -Menu pressed-
