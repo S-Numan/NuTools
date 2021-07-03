@@ -81,7 +81,7 @@ namespace NuRender
                     {
                         pos = Vec2f_lerp(details.old_pos, pos, i_hub.FRAME_TIME);//Interpolate
                     }
-                    details.image.Render(pos, details.frame);//Render it.
+                    details.image.Render(pos);//Render it.
                 }
                 else//Neither.
                 {

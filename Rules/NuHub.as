@@ -32,7 +32,8 @@ class RenderDetails
             old_pos = _old_pos;//Set it
         }
 
-        frame = _frame;
+        setFrame(_frame);
+        
         world_pos = _world_pos;
     }
     private RENDER_CALLBACK@ func;
@@ -42,9 +43,17 @@ class RenderDetails
     }
 
     Nu::NuImage@ image;
+    u16 getFrame()
+    {
+        return image.getFrame();
+    }
+    void setFrame(u16 _frame)
+    {
+        image.setFrame(_frame);
+    }
+    
     Vec2f old_pos;
     Vec2f pos;
-    u16 frame;
     bool world_pos;
 }
 

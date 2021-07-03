@@ -1406,14 +1406,9 @@ namespace Nu
 
 
 
-        void Render(Vec2f _pos = Vec2f(0,0), s32 _frame = -1, SColor _color = SColor(255, 255, 255, 255))
+        void Render(Vec2f _pos = Vec2f(0,0))
         {
-            if(_frame == -1)
-            {
-                _frame = 0;
-            }
-
-            getVertexsForFrameAndPos(_frame, _pos, _color);
+            getVertexsForFrameAndPos(frame, _pos, color);
 
             Render::RawQuads(name, v_raw);
         }
@@ -1495,17 +1490,17 @@ namespace Nu
             return color_on[i];
         }
 
-        void Render(u16 state, Vec2f _pos = Vec2f(0,0), SColor _color = SColor(255, 255, 255, 255))
+        void Render(u16 state, Vec2f _pos = Vec2f(0,0))
         {
-            u16 _frame = frame_on[state];
-            _color = color_on[state];
+            frame = frame_on[state];
+            color = color_on[state];
 
-            Render(_pos, _frame, _color);
+            Render(_pos);
         }
 
-        void Render(Vec2f _pos = Vec2f(0,0), s32 _frame = -1, SColor _color = SColor(255, 255, 255, 255)) override
+        void Render(Vec2f _pos = Vec2f(0,0)) override
         {
-            NuImage::Render(_pos, _frame, _color);
+            NuImage::Render(_pos);
         }
     }
 
