@@ -1237,8 +1237,6 @@ namespace Nu
         //Below goes into rendering
         //
 
-        //Todo, createimage from sprite.
-
         //This creates a texture and/or sets up a few things for this image to work with it.
         ImageData@ CreateImage(string render_name, string file_path)
         {
