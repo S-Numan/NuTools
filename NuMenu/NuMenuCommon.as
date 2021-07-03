@@ -332,6 +332,8 @@ Check mark option on right
 
             @owner_menu = @null;
             @owner_blob = @null;
+            owner_blob_id = Nu::u16_max();
+            
             move_to_owner = true;
 
             button_state = Idle;
@@ -501,10 +503,11 @@ Check mark option on right
         //Blob
         //
 
+        private u16 owner_blob_id;//ID of the owner blob, sets owner_blob to null if the blob is dead.
         private CBlob@ owner_blob;//The owner of this menu, usually the one that spawned this menu in.
-        CBlob@ getOwnerBlob()
+        CBlob@ getOwnerBlob()//Warning, this can instantly crash kag if the owner blob dies and you still mess around with the button/menu or something.
         {
-            return owner_blob;
+            return @owner_blob;
         }
         bool setOwnerBlob(CBlob@ _blob)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setOffset. As in offset to it's owner.
         {
@@ -515,6 +518,7 @@ Check mark option on right
             }
 
             @owner_blob = @_blob;
+            owner_blob_id = owner_blob.getNetworkID();
             return true;
         }
 
@@ -920,15 +924,22 @@ Check mark option on right
 
             //Automatically move to blob if there is an owner blob and getMoveToOwner is true.
             CBlob@ _owner_blob = getOwnerBlob();
-            if(_owner_blob != @null && getMoveToOwner())
+            if(_owner_blob != @null)
             {
-                if(isWorldPos())
+                if(getBlobByNetworkID(owner_blob_id) == @null)//Did the owner_blob just die?
                 {
-                    setPos(_owner_blob.getPosition() + getOffset());
-                }
-                else//Screen pos
+                    @owner_blob = @null;//Set owner_blob to dead.
+                }//Fairy important, can cause instant crashing without.
+                if(getMoveToOwner())
                 {
-                    setPos(getDriver().getScreenPosFromWorldPos(_owner_blob.getPosition()) + getOffset());
+                    if(isWorldPos())
+                    {
+                        setPos(_owner_blob.getPosition() + getOffset());
+                    }
+                    else//Screen pos
+                    {
+                        setPos(getDriver().getScreenPosFromWorldPos(_owner_blob.getPosition()) + getOffset());
+                    }
                 }
             }
 
@@ -2290,7 +2301,7 @@ Check mark option on right
             {
                 setButtonState(_button_state);//Set the button state.
             }
-            print("update done");
+
             return true;
         }
 
