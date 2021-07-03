@@ -16,7 +16,7 @@ class RenderDetails
         @image = @null;
     }
 
-    RenderDetails(Nu::NuImage@ _image, Vec2f _pos, u16 _frame = 0, bool _world_pos = false, Vec2f _old_pos = Vec2f(-1.0f, -1.0f))
+    RenderDetails(Nu::NuImage@ _image, Vec2f _pos, bool _world_pos = false, Vec2f _old_pos = Vec2f(-1.0f, -1.0f))
     {
         func = @null;
 
@@ -31,8 +31,6 @@ class RenderDetails
         {
             old_pos = _old_pos;//Set it
         }
-
-        setFrame(_frame);
         
         world_pos = _world_pos;
     }
@@ -43,14 +41,14 @@ class RenderDetails
     }
 
     Nu::NuImage@ image;
-    u16 getFrame()
+    /*u16 getFrame()
     {
         return image.getFrame();
     }
     void setFrame(u16 _frame)
     {
         image.setFrame(_frame);
-    }
+    }*///This truly needed?
     
     Vec2f old_pos;
     Vec2f pos;
@@ -61,6 +59,19 @@ bool getHub(NuHub@ &out _hub)
 {
     if(!getRules().get("NuHub", @_hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return false; }
     return true;
+}
+
+void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func)
+{
+    NuHub@ hub;
+    if(!getHub(@hub)) { return; }
+    hub.RenderImage(layer, _func);
+}
+void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false)
+{
+    NuHub@ hub;
+    if(!getHub(@hub)) { return; }
+    hub.RenderImage(layer, _image, _pos, is_world_pos);
 }
 
 class NuHub
@@ -81,6 +92,7 @@ class NuHub
 
         wire_positions = array<array<u16>>(team_wire_amount);//Init the array that stores where all the wires are in the map with their connected network
 
+        render_filled_spots = array<u16>(Render::layer_count, 0);
         render_details = array<array<NuMenu::RenderDetails@>>(Render::layer_count);
 
         for(u16 i = 0; i < render_details.size(); i++)
@@ -119,14 +131,17 @@ class NuHub
     }
 
 
+    private array<u16> render_filled_spots;
     private array<array<NuMenu::RenderDetails@>> render_details;
-    u16 RenderDetailLayerSize(Render::ScriptLayer layer)
+    u16 RenderDetailFilledOn(Render::ScriptLayer layer)
     {
-        return render_details[layer].size();
+        if(layer > render_filled_spots.size()) { Nu::Error("Layer beyond max layer"); return 0; }
+        return render_filled_spots[layer];
     }
     RenderDetails@ RenderDetailAt(Render::ScriptLayer layer, u16 _pos)
     {
-        if(_pos >= render_details[layer].size()){ Nu::Error("Tried to get past render detail count in the render_details array. Attempted to get position " + _pos); }
+        if(layer > render_details.size()) { Nu::Error("Layer beyond max layer"); return @null; }
+        if(_pos >= render_filled_spots[layer]){ Nu::Error("Tried to get past render detail count in the render_details array. Attempted to get position " + _pos); }
         return @render_details[layer][_pos];
     }
 
@@ -135,19 +150,41 @@ class NuHub
     {
         if(layer > render_details.size()) { Nu::Error("Layer beyond max layer"); return; }
 
-        render_details[layer].push_back(@RenderDetails(_func));//Optimize this. Improve this. Think how the dictionary was optimized. Numan TODO
+        if(render_details[layer].size() == render_filled_spots[layer])//render_details not large enough?
+        {
+            render_details[layer].push_back(@RenderDetails(_func));//Make more space and put it in
+        }
+        else//Render details is large enough?
+        {
+            @render_details[layer][render_filled_spots[layer]] = @RenderDetails(_func);//Put it in at the next open space
+        }
+    
+        render_filled_spots[layer]++;
     }
-    void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, u16 _frame = 0, bool is_world_pos = false)
+    void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false)
     {
         if(layer > render_details.size()) { Nu::Error("Layer beyond max layer"); return; }
 
-        render_details[layer].push_back(@RenderDetails(_image, _pos, _frame, is_world_pos));//Optimize this. Improve this. Think how the dictionary was optimized. Numan TODO
+        if(render_details[layer].size() == render_filled_spots[layer])//render_details not large enough?
+        {
+            render_details[layer].push_back(@RenderDetails(_image, _pos, is_world_pos));//Make more space and put it in
+        }
+        else//Render details is large enough?
+        {
+            @render_details[layer][render_filled_spots[layer]] = @RenderDetails(_image, _pos, is_world_pos);//Put it in at the next open space
+        }        
+    
+        render_filled_spots[layer]++;
     }
     void RenderClear()
     {
         for(u16 i = 0; i < render_details.size(); i++)
         {
-            render_details[i].resize(0);//Wipe array. (TODO, OPTIMIZE THIS)
+            render_filled_spots[i] = 0;
+            for(u16 q = 0; q < render_details[i].size(); q++)
+            {
+                @render_details[i][q] = @null;
+            }
         }
     }
 

@@ -2290,6 +2290,7 @@ Check mark option on right
             {
                 setButtonState(_button_state);//Set the button state.
             }
+            print("update done");
             return true;
         }
 
