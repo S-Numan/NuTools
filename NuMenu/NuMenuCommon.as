@@ -2692,6 +2692,259 @@ Check mark option on right
         }
     }
 
+    shared enum GridStyle
+    {
+        NormalGrid,
+
+        ShelveGrid,
+    }
+
+    class GridMenu : MenuBase
+    {
+        GridMenu(string _name, u8 _menu_config = NuMenu::Custom)
+        {
+            if(!isClient()) { return; }
+
+            initVars();
+            afterInitVars(_name, _menu_config);
+
+            setMenuClass(GridClass);
+        }
+
+        GridMenu(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
+        {
+            if(!isClient()) { return; }
+
+            initVars();
+            afterInitVars(_name, _menu_config, _upper_left, _lower_right);
+
+            setMenuClass(GridClass);
+        }
+
+        void afterInitVars(string _name, u8 _menu_config, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0))
+        {
+            MenuBase::afterInitVars(_name, _menu_config, _upper_left, _lower_right);
+        
+            menus = array<array<NuMenu::IMenu@>>();
+
+            grid_style = 0;
+
+            grid_buffer = Vec2f(256.0f, 256.0f);
+
+            top_left_buffer = Vec2f(0.0f, 0.0f);
+        }
+
+
+        private u8 grid_style;//Enum style of grid.
+
+        void setGridStyle(u8 value)
+        {
+            if(value == NormalGrid)
+            {
+                
+            }
+            else if(value == ShelveGrid)
+            {
+                menus.resize(4);
+                for(u16 i = 0; i < menus.size(); i++)
+                {
+                    menus[i].resize(1);
+                }
+            }
+            else 
+            {
+                Nu::Error("GridStyle not found"); return;
+            }
+
+
+            grid_style = value;
+        }
+        u8 getGridStyle()
+        {
+            return grid_style;
+        }
+
+        Vec2f top_left_buffer;//Buffer from the top left of the menu
+        private Vec2f grid_buffer;//Buffer between menus
+
+        Vec2f getBuffer()
+        {
+            return grid_buffer;
+        }
+        void setBuffer(Vec2f _buffer)
+        {
+            grid_buffer = _buffer;
+        }
+
+
+        private array<array<NuMenu::IMenu@>> menus;
+
+        IMenu@ getMenu(u16 x, u16 y)
+        {
+            if(x >= menus.size()){ Nu::Error("Went beyond x bound in menu array. " + x); return @null; }
+            if(y >= menus[x].size()){ Nu::Error("Went beyond y bound in menu array. " + y); return @null; }
+            return @menus[x][y];
+        }
+        void setMenu(u16 x, u16 y, IMenu@ _menu)
+        {
+            if(_menu == @null){ Nu::Error("Menu was null."); return; }//Provided the menu is not null
+            
+            StretchArray(x, y);
+            
+            @menus[x][y] = @_menu;//Assign the menu
+        }
+
+        void StretchArray(u16 x, u16 y)
+        {
+            if(x >= menus.size())//If the array is not big enough in width
+            {
+                print("resize x to " + (x + 1));
+                menus.resize(x + 1);//Resize the array's width to allow the menu to be put in the desired position
+
+                for(u16 i = x; i < x; i++)//For every newly sized spot in the array
+                {
+                    menus[i] = array<NuMenu::IMenu@>();//Assign it an array 
+                }
+            }
+            if(y >= menus[x].size())//If the array is not big enough in height
+            {
+                print("resize y to " + (y + 1));
+                menus[x].resize(y + 1);//Resize the array's height to allow the menu to be put in the desired position
+            }
+        }
+
+        void removeMenu(u16 x, u16 y)
+        {
+            if(x >= menus.size()){ Nu::Error("Went beyond x bound in menu array. " + x); return; }
+            if(y >= menus[x].size()){ Nu::Error("Went beyond y bound in menu array. " + y); return; }
+            @menus[x][y] = @null;
+        }
+        void arrayClear()
+        {
+            menus.clear();
+        }
+        u16 arrayWidth()
+        {
+            return menus.size();
+        }
+        u16 arrayHeight(u16 x = 0)
+        {
+            return menus[x].size();
+        }
+
+
+        //
+        //Overrides
+        //
+        void setMenuJustMoved(bool value) override
+        {
+            MenuBase::setMenuJustMoved(value);
+            if(value)
+            {
+                MoveHeldMenus();
+            }
+        }
+        
+        void setInterpolated(bool value) override
+        {
+            MenuBase::setInterpolated(value);
+            for(u16 x = 0; x < menus.size(); x++)
+            {
+                for(u16 y = 0; y < menus[x].size(); y++)
+                {
+                    if(menus[x][y] == @null) { continue; }
+
+                    menus[x][y].setInterpolated(value);
+                }
+            }
+        }
+
+        void setIsWorldPos(bool value) override
+        {
+            MenuBase::setIsWorldPos(value);
+            for(u16 x = 0; x < menus.size(); x++)
+            {
+                for(u16 y = 0; y < menus[x].size(); y++)
+                {
+                    if(menus[x][y] == @null) { continue; }
+                    
+                    menus[x][y].setIsWorldPos(value);
+                }
+            }
+            
+            MoveHeldMenus();
+        }
+        //
+        //Overries
+        //
+
+        void MoveHeldMenus()
+        {
+            for(u16 x = 0; x < menus.size(); x++)
+            {
+                for(u16 y = 0; y < menus[x].size(); y++)
+                {
+                    if(menus[x][y] == @null) { Nu::Error("optional_menu was null"); continue; }//Menu null?
+
+                    if(!menus[x][y].getMoveToOwner()) { continue; }//Menu not supposed to move towards its owner?
+                    
+                    menus[x][y].setPos(getPos() + menus[x][y].getOffset());//Move menu with owner.
+                }
+            }
+        }
+
+        void AssignOffset(u16 x, u16 y)
+        {
+            if(x >= menus.size()) { Nu::Error("Went beyond x bound in menu array. " + x); return; }
+            if(y >= menus[x].size()) { Nu::Error("Went beyond y bound in menu array. " + y); return; }
+            if(menus[x][y] == @null) { Nu::Error("Specified menu was null."); return; }
+
+            Vec2f _buffer = getBuffer();
+            
+            _buffer.x = _buffer.x * x + top_left_buffer.x;
+            _buffer.y = _buffer.y * y + top_left_buffer.y;
+
+            menus[x][y].setOffset(_buffer);
+        }
+
+
+        bool Tick() override
+        {
+            if(!MenuBase::Tick()){ return false; }
+
+            for(u16 x = 0; x < menus.size(); x++)
+            {
+                for(u16 y = 0; y < menus[x].size(); y++)
+                {
+                    if(menus[x][y] != @null)
+                    {
+                        menus[x][y].Tick();
+                    }
+                }
+            }
+            return true;
+        }
+
+        bool Render() override
+        {
+            if(!MenuBase::Render()){ return false; }
+
+            for(u16 x = 0; x < menus.size(); x++)
+            {
+                for(u16 y = 0; y < menus[x].size(); y++)
+                {
+                    RENDER_CALLBACK@ func = menus[x][y].getRenderFunction();
+                    if(func == @null)
+                    {
+                        Nu::Error("rendercallback function was null."); return true;
+                    }
+                    func();
+                }
+            }
+
+            return true;
+        }
+    }
 
     /*class ListMenu
     {
