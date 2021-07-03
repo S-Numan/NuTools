@@ -1,13 +1,10 @@
 #include "NumanLib.as";//For NuImage and other misc.
 #include "NuHub.as";
 
-NuHub@ hub;
 Nu::NuImage@ image;
 
 void onInit(CRules@ rules)
 {
-    if(!getHub(@hub)) { return; }
-    
     @image = @Nu::NuImage();
 
     image.CreateImage("RenderExample.png");//Image that is rendered
@@ -32,11 +29,10 @@ void onInit(CRules@ rules)
 
 void onTick(CRules@ rules)
 {
-    hub.RenderImage(
+    RenderImage(
         Render::layer_posthud,//Layer drawn on
         image,//Image drawn
         Vec2f(0.0f,0.0f),//Position
-        image.getFrame(),//Frame
         false);//Is drawn on the world. (false for screenpos, true for worldpos)
 }
 
