@@ -48,11 +48,11 @@ namespace NuRender
     {
         Render::SetAlphaBlend(true);
         
-        u16 image_count = hub.render_details[layer].size();
+        u16 image_count = hub.RenderDetailLayerSize(layer);
 
         for(u16 i = 0; i < image_count; i++)
         {
-            RenderDetails@ details = @hub.render_details[layer][i];
+            RenderDetails@ details = @hub.RenderDetailAt(layer, i);
             if(details == @null)
             {
                 error("Image was somehow null in rendering. This should not happen."); continue;

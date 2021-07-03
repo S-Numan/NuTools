@@ -119,7 +119,17 @@ class NuHub
     }
 
 
-    array<array<NuMenu::RenderDetails@>> render_details;
+    private array<array<NuMenu::RenderDetails@>> render_details;
+    u16 RenderDetailLayerSize(Render::ScriptLayer layer)
+    {
+        return render_details[layer].size();
+    }
+    RenderDetails@ RenderDetailAt(Render::ScriptLayer layer, u16 _pos)
+    {
+        if(_pos >= render_details[layer].size()){ Nu::Error("Tried to get past render detail count in the render_details array. Attempted to get position " + _pos); }
+        return @render_details[layer][_pos];
+    }
+
 
     void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func)
     {
