@@ -3,7 +3,7 @@
 #include "NuTextCommon.as";//For text and fonts.
 #include "NuHub.as";//For hauling around menus and fonts.
 
-u16 temp_hotbarsize = 8;
+u16 temp_hotbarsize = 10;
 NuMenu::GridMenu@ hotbar = @null;
 
 void onInit( CBlob@ blob )
@@ -23,39 +23,26 @@ void setHotbar(CBlob@ blob, u8 hotbar_length)
     @hotbar = @NuMenu::GridMenu(//This menu is a GridMenu. The GridMenu inherits from BaseMenu, and is designed to hold other menus in an array in a grid fashion.
         "hb_" + blob.getNetworkID());//Name of the menu which you can get later.
 
+    //hotbar.setPos(Vec2f(0,0));
+
+
     hotbar.die_when_no_owner = true;
 
-    //Some useful functions.
-    //hotbar.setUpperLeft(Vec2f(0,0));
-    //hotbar.setLowerRight(Vec2f(0,0));
-    //hotbar.setPos(Vec2f(0,0));
-    //hotbar.getMiddle();
 
-    hotbar.setIsWorldPos(false);//At any time you can swap a menu to be on world position, or screen position. This tells the menu to work on the screen.
-
-    hotbar.clearBackgrounds();//Here we wipe the GridMenu's background.
-
-    Nu::NuStateImage@ grid_image = Nu::NuStateImage(Nu::POSPositionsCount);//Here we create a state image with POSPositionCount states (for color and frames and stuff) 
-
-    grid_image.CreateImage("hotbar_image", "RenderExample.png");//Creates an image from a png
-
-    grid_image.setFrameSize(Vec2f(32, 32));//Here we set the frame size of the image.
-
-    grid_image.setDefaultFrame(3);//Sets the default frame to frame 3.
-
-    hotbar.addBackground(grid_image);//And here we add the grid_image as the background. The background image streches to meet the upper left and lower right.
-
-
-
-    hotbar.top_left_buffer = Vec2f(8.0f, 8.0f);//This allows you to change the distance of all the buttons from the top left of the menu
+    hotbar.top_left_buffer = Vec2f(0.0f, 0.0f);//This allows you to change the distance of all the buttons from the top left of the menu
 
     hotbar.setBuffer(Vec2f(32.0f, 32.0f));//This sets the buffer between buttons on the menu
 
+    hotbar.StretchArray(temp_hotbarsize, 0);
+
     for(u16 x = 0; x < temp_hotbarsize; x++)//Grid width
     {
-        NuMenu::MenuButton@ button = NuMenu::MenuButton(Vec2f(32, 32), Vec2f(32 * 2, 32 * 2), "" + x);  
+        NuMenu::MenuButton@ button = NuMenu::MenuButton("" + x);
+        button.setSize(Vec2f(32, 32));  
 
         button.addReleaseListener(@ButtonPressed);//A function.
+
+        button.addFreeCode(KEY_KEY_0 + ((x + 1) % 10));
 
         hotbar.setMenu(x,//Set the position on the width of the grid
             0,//The position on the height of the grid
@@ -77,29 +64,19 @@ void setHotbar(CBlob@ blob, u8 hotbar_length)
 void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u16 key_code)
 {
     if(!isClient()) { return; }
-    print("function: button was pressed. Button had name " + button.getName());
-
-    string button_name = button.getName();
     
-    u16 BPOS = button_name.findFirst("B");
-
-    u16 num = parseInt(button_name.substr(0, BPOS));
-
-    print("num = " + num);
+    //u16 num = parseInt(button.getName().substr(0, BPOS));
 
     string blob;
 
     //Read params for blob.
     if(!params.saferead_string(blob)) { blob = ""; }//If no blob is found in params, make the blob string blank. Otherwise make blob be the blob
-    
-    print("blob = " + blob);
-
-
-    print("key_code = " + key_code);
+    if(blob != ""){ params.write_string(blob); params.ResetBitIndex(); }//Rewrite this parameter that was removed
 
     if(key_code == KEY_RBUTTON)
     {
         params.Clear(); //Clear params
+        button.resizeBackgrounds(1);
 
         CBlob@ caller_blob = caller.getBlob();
         CBlob@ carried_blob = @null;
@@ -109,10 +86,25 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
         }
         if(carried_blob != @null)
         {
-            print("carried_blob name = " + carried_blob.getName());
             params.write_string(carried_blob.getName());
-            blob = params.read_string();
-            print("blob= " + blob);
+
+            CSprite@ carried_sprite = carried_blob.getSprite();
+            if(carried_sprite != @null)
+            {//Assign sprite as image on button
+
+                Nu::NuStateImage@ _background = Nu::NuStateImage(NuMenu::ButtonStateCount);
+
+                _background.CreateImage(carried_sprite.getFilename(), @carried_sprite);
+
+                for(u16 i = 0; i < NuMenu::ButtonStateCount; i++)
+                {
+                    _background.color_on[i] = NuMenu::DebugColor(i);
+                }
+
+                button.addBackground(@_background);
+            }
+            
+            params.ResetBitIndex();
         }
     }
 }

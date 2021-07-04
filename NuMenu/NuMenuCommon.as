@@ -46,7 +46,6 @@ Check mark option on right
 //Test does not reposition when not interpolated. Look into this
 //Menu opening/closing animations. Full animations that you can put in a sprite sheet and configure.
 //Check if the camera moved, put info in transporter.
-//Rapid button pressing does not work.
 //Don't setMenuMoved(true) if no positions actually changed.
 //Moving interpolated when camera is moving isWorldPos(). it's shakey atm.
 //Add scale x/y to button, make it work with NuImage scale of course.
@@ -55,6 +54,7 @@ Check mark option on right
 //Make setting to world pos actually set the upper left and lower right to the correct positions to not look like the menu changed position.
 //Make an option to make the menu animated. Animation frames and how fast they loop through. See cfg animations. Maybe add it to NumanLib NuImage?
 //Add way to have only one button at once be hovered on/pressed. No multi button pressing/hovering.
+//With 32 by 32 buttons spaced 32 away from each other, it is possible to hover over two buttons at once. Investigate.
 
 
 //Option list for debugging blobs.
@@ -67,6 +67,7 @@ Check mark option on right
 //1. Before the first tick, the checkbox in menuholder runs away from it's owner. Fix plz.
 //2. Remake text. All text. Add shaky text. And different color text for each induvidual letter.
 //3. Fix button rendering to render like it should. Not just via a method, but a render script.
+//4. Rapid button pressing does not work. Urgent for hotbar stuff
 
 //
 //TODO LIST
@@ -283,6 +284,7 @@ Check mark option on right
         void addBackground(Nu::NuStateImage@ _background);
         void removeBackground(u16 element);
         void clearBackgrounds();
+        void resizeBackgrounds(u16 value);
 
         Render::ScriptLayer getRenderLayer();
         void setRenderLayer(Render::ScriptLayer value);
@@ -1178,6 +1180,11 @@ Check mark option on right
         {
             backgrounds.clear();
         }
+        void resizeBackgrounds(u16 value)
+        {
+            backgrounds.resize(value);
+        }
+        
         //TODO, add remove options to remove by name and hash
 
         Render::ScriptLayer render_layer;
@@ -1345,56 +1352,12 @@ Check mark option on right
 
         bool initial_press;
 
+        //Point available 
         u8 getPressingState(Vec2f point, u8 _button_state, bool left_button, bool left_button_release, bool left_button_just)
         {
             if(isPointInMenu(point))//Is the mouse within the menu?
             {
-                if(_button_state == Released//If the button is Released.
-                || (_button_state == AfterRelease && left_button))//Or if the button is AfterRelease and left_button is still true.
-                {
-                    _button_state = AfterRelease;//The button is AfterRelease.
-                }
-                else if(initial_press)//If the button was initially pressed.
-                {
-                    if(left_button)//Left button held?
-                    {
-                        _button_state = Pressed;//Button is pressed
-                    }
-                    else if(left_button_release)//Left button released?
-                    {
-                        _button_state = Released;//Button was released on.
-                        initial_press = false;//No longer pressed.
-                    }
-                }
-                else if(left_button_just)//Mouse button just pressed?
-                {
-                    if(left_button_release)//Same tick press and release.
-                    {
-                        _button_state = Released;//Button was released
-                        initial_press = false;//No longer pressed.
-                    }
-                    else//Normal behavior
-                    {
-                        initial_press = true;//This button was initially pressed.
-                        _button_state = JustPressed;//It was also just pressed.
-                    }
-                }//Only buttons with "initial_press" equal to true will have their button logic working.
-                
-                else if(!left_button)//If the button was not initially pressed and left mouse button is not being held
-                {
-                    if(_button_state == Hover)//If we are currently hovering.
-                    {
-                        _button_state = Hover;//Continue hovering.
-                    }
-                    else if(_button_state == JustHover)//If this button was just being hovered above
-                    {
-                        _button_state = Hover;//Continue hovering.
-                    }
-                    else if(_button_state != JustHover)//If we aren't hovering, we should be.
-                    {
-                        _button_state = JustHover;//Button is being hovered over.
-                    }
-                }
+                return getPressingState(_button_state, left_button, left_button_release, left_button_just);
             }
             else//Not in menu
             {
@@ -1418,6 +1381,59 @@ Check mark option on right
                 else if(_button_state != Idle)//If the position is in the button, was not initially pressed, is not hovering, and is not idle.
                 {
                     _button_state = Idle;//Make the mouse button idle.
+                }
+            }
+
+            return _button_state;
+        }
+
+        //No point required
+        u8 getPressingState(u8 _button_state, bool left_button, bool left_button_release, bool left_button_just)
+        {
+            if(_button_state == Released//If the button is Released.
+            || (_button_state == AfterRelease && left_button))//Or if the button is AfterRelease and left_button is still true.
+            {
+                _button_state = AfterRelease;//The button is AfterRelease.
+            }
+            else if(initial_press)//If the button was initially pressed.
+            {
+                if(left_button)//Left button held?
+                {
+                    _button_state = Pressed;//Button is pressed
+                }
+                else if(left_button_release)//Left button released?
+                {
+                    _button_state = Released;//Button was released on.
+                    initial_press = false;//No longer pressed.
+                }
+            }
+            else if(left_button_just)//Mouse button just pressed?
+            {
+                if(left_button_release)//Same tick press and release.
+                {
+                    _button_state = Released;//Button was released
+                    initial_press = false;//No longer pressed.
+                }
+                else//Normal behavior
+                {
+                    initial_press = true;//This button was initially pressed.
+                    _button_state = JustPressed;//It was also just pressed.
+                }
+            }//Only buttons with "initial_press" equal to true will have their button logic working.
+            
+            else if(!left_button)//If the button was not initially pressed and left mouse button is not being held
+            {
+                if(_button_state == Hover)//If we are currently hovering.
+                {
+                    _button_state = Hover;//Continue hovering.
+                }
+                else if(_button_state == JustHover)//If this button was just being hovered above
+                {
+                    _button_state = Hover;//Continue hovering.
+                }
+                else if(_button_state != JustHover)//If we aren't hovering, we should be.
+                {
+                    _button_state = JustHover;//Button is being hovered over.
                 }
             }
 
@@ -1450,7 +1466,11 @@ Check mark option on right
         
         private array<Nu::NuStateImage@> images;
 
-        
+        Nu::NuStateImage@ setImage(CSprite@ _sprite, u16 image_frame_default, u16 image_frame_hover, u16 image_frame_press, u16 position = 0)
+        {
+            return setImage(_sprite.getFilename(), Vec2f(_sprite.getFrameWidth(), _sprite.getFrameHeight()), image_frame_default, image_frame_hover, image_frame_press, position);
+        }
+
         Nu::NuStateImage@ setImage(string image_name, Vec2f image_frame_size, u16 image_frame_default, u16 image_frame_hover, u16 image_frame_press, u16 position = 0)
         {
             if(images.size() <= position){ error("In setImage : tried to get past the highest element in the images array. Attempted to get image " + position ); return @null; }
@@ -2169,6 +2189,12 @@ Check mark option on right
 
             command_id = 255;
             @params = @CBitStream();
+
+            key_codes = array<u16>(2);
+            key_codes[0] = KEY_LBUTTON;
+            key_codes[1] = KEY_RBUTTON;
+
+            free_codes = array<u16>(0);
         }
 
 
@@ -2229,6 +2255,27 @@ Check mark option on right
         float enableRadius;//The radius at which the button can be pressed
 
 
+        array<u16> key_codes;//keys you press generally when hovering over the button to use the button.
+        void addKeyCode(u16 value)
+        {
+            key_codes.push_back(value);
+        }
+        void clearKeyCodes()
+        {
+            key_codes.clear();
+        }
+
+        array<u16> free_codes;//keys you can press anywhere to use the button
+        void addFreeCode(u16 value)
+        {
+            free_codes.push_back(value);
+        }
+        void clearFreeCodes()
+        {
+            free_codes.clear();
+        }
+        
+
         bool Tick() override
         {
             if(!MenuBaseExEx::Tick())
@@ -2248,12 +2295,8 @@ Check mark option on right
             {
                 pos = controls.getMouseScreenPos();
             }
-
-            array<u16> key_codes(2);
-            key_codes[0] = KEY_LBUTTON;
-            key_codes[1] = KEY_RBUTTON; 
             
-            return Update(key_codes, pos);
+            return Update(pos);
         }
 
         bool Tick(Vec2f position)
@@ -2275,69 +2318,100 @@ Check mark option on right
             {
                 pos = controls.getMouseScreenPos();
             }
-
-            array<u16> key_codes(2);
-            key_codes[0] = KEY_LBUTTON;
-            key_codes[1] = KEY_RBUTTON; 
             
-            return Update(key_codes, pos, position);
+            return Update(pos, position);
         }
 
-        bool Tick(u16 key_code, Vec2f point, Vec2f position = Vec2f_zero)
+        bool Tick(Vec2f point, Vec2f position = Vec2f_zero)
         {
             if(!MenuBaseExEx::Tick())
             {
                 return false;
             }
-            return Update(array<u16>(1, key_code), point, position);
+            return Update(point, position);
         }
 
-        //Examples: point parameter for the mouse position, the position parameter is for the blob. position parameter only really useful when it comes to radius stuff.
-        bool Update(array<u16> key_codes, Vec2f point, Vec2f position = Vec2f_zero)
+        //1: point parameter for the mouse position
+        //2: position parameter is for the blob. position parameter is only useful when it comes to radius stuff.
+        bool Update(Vec2f point, Vec2f position = Vec2f_zero)
         {
+            u16 i;
+
             CPlayer@ player = getLocalPlayer();
 
             CControls@ controls = player.getControls();
             
-            if(key_codes.size() == 0)
+            if(key_codes.size() == 0 && free_codes.size() == 0)
             {
                 Nu::Error("Input key codes size was equal to 0");
             }
+
+            u8 _button_state = getButtonState();//Get the button state.
 
             s16 key_button = -1;
             s16 key_button_release = -1;
             s16 key_button_just = -1;
 
-            //Assign true if any of the input keys are being pressed.
-            for(u16 i = 0; i < key_codes.size(); i++)
+
+            bool free_code_pressed = false;
+            for(i = 0; i < free_codes.size(); i++)
             {
                 if(key_button == -1){
-                    if(controls.isKeyPressed(key_codes[i])){//Pressing
-                        key_button = key_codes[i];
+                    if(controls.isKeyPressed(free_codes[i])){//Pressing
+                        key_button = free_codes[i];
+                        free_code_pressed = true;
                     }
                 }
                 if(key_button_release == -1){
-                    if(controls.isKeyJustReleased(key_codes[i])){//Just released
-                        key_button_release = key_codes[i];
+                    if(controls.isKeyJustReleased(free_codes[i])){//Just released
+                        key_button_release = free_codes[i];
+                        free_code_pressed = true;
                     }
                 }
                 if(key_button_just == -1){
-                    if(controls.isKeyJustPressed(key_codes[i])){//Just pressed
-                        key_button_just = key_codes[i];
+                    if(controls.isKeyJustPressed(free_codes[i])){//Just pressed
+                        key_button_just = free_codes[i];
+                        free_code_pressed = true;
                     }
                 }
             }
-            
-            u8 _button_state = getButtonState();//Get the button state.
 
-            if(enableRadius == 0.0f || position == Vec2f_zero ||//Provided both these values have been assigned, the statement below will check.
-            Nu::getDistance(position, getMiddle()) < enableRadius)//The button is within enable(interact) distance.
+            //If any free_code has been pressed, there is no need to run logic for other pressing
+            if(!free_code_pressed)
             {
-                _button_state = getPressingState(point, _button_state, (key_button != -1), (key_button_release != -1), (key_button_just != -1));//Get the pressing state. That pun in intentional.
+                //Assign true if any of the input keys are being pressed.
+                for(i = 0; i < key_codes.size(); i++)
+                {
+                    if(key_button == -1){
+                        if(controls.isKeyPressed(key_codes[i])){//Pressing
+                            key_button = key_codes[i];
+                        }
+                    }
+                    if(key_button_release == -1){
+                        if(controls.isKeyJustReleased(key_codes[i])){//Just released
+                            key_button_release = key_codes[i];
+                        }
+                    }
+                    if(key_button_just == -1){
+                        if(controls.isKeyJustPressed(key_codes[i])){//Just pressed
+                            key_button_just = key_codes[i];
+                        }
+                    }
+                }
+
+                if(enableRadius == 0.0f || position == Vec2f_zero ||//Provided both these values have been assigned, the statement below will check.
+                Nu::getDistance(position, getMiddle()) < enableRadius)//The button is within enable(interact) distance.
+                {
+                    _button_state = getPressingState(point, _button_state, (key_button != -1), (key_button_release != -1), (key_button_just != -1));//Get the pressing state. That pun in intentional.
+                }
+                else//enableRadius and position were assigned, and the button was out of range.
+                {
+                    _button_state = Disabled;//The button is disabled
+                }
             }
-            else//enableRadius and position were assigned, and the button was out of range.
+            else//free_code pressing
             {
-                _button_state = Disabled;//The button is disabled
+                _button_state = getPressingState(_button_state, (key_button != -1), (key_button_release != -1), (key_button_just != -1));
             }
 
             //Anti swinging.

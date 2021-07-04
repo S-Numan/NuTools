@@ -1265,11 +1265,27 @@ namespace Nu
 
             return @_image;
         }
+        /*//tex returns null for some reason
         ImageData@ CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
         {
-            ImageData@ tex = Texture::dataFromSprite(s);//Get the sprite data.
+            if(Texture::exists(render_name)){ print("texture " + render_name + " already exists"); }
+            if(s == @null){ Nu::Error("Sprite was equal to null"); return @null; }
+            
+            ImageData@ tex = @Texture::dataFromSprite(@s);//Get the sprite data.//This returns null for some reason
+            if(tex == @null){ Nu::Error("ImageData@ tex was somehow null?"); return @null; }
+            
             Texture::createFromData(render_name, tex);//Create a texture from it.
             return @CreateImage(render_name);//Give this menu the texture.
+        }*/
+        ImageData@ CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
+        {
+            if(s == @null){ Nu::Error("Sprite was equal to null"); return @null; }
+
+            ImageData@ tex = @CreateImage(render_name, s.getFilename());//Give this menu the texture.
+
+            setFrameSize(Vec2f(s.getFrameWidth(), s.getFrameHeight()));
+
+            return @tex;
         }
         ImageData@ CreateImage(string file_path)//Takes just a file path.
         {
@@ -1452,6 +1468,16 @@ namespace Nu
         SColor getColor() override
         {
             return getColor(0);
+        }
+
+        ImageData@ CreateImage(string render_name, CSprite@ s) override//Takes a sprite instead.
+        {
+            ImageData@ tex = NuImage::CreateImage(render_name, s);
+            if(tex == @null) { return @null; }
+
+            setDefaultFrame(s.getFrame());
+
+            return @tex;
         }
         //
         //Overrides
