@@ -42,8 +42,11 @@ void setHotbar(CBlob@ blob, u8 hotbar_length)
 
         button.addReleaseListener(@ButtonPressed);//A function.
 
-        button.addFreeCode(KEY_KEY_0 + ((x + 1) % 10));
-
+        if(x < 10)//Caps hotkeys to the 0-9 keys
+        {
+            button.addFreeCode(KEY_KEY_0 + ((x + 1) % 10));//Equation that does that 1-10 + 0 hotbar layout for the buttons. button0 gets KEY_KEY_1, and button9 gets KEY_KEY_0.
+        }
+        
         hotbar.setMenu(x,//Set the position on the width of the grid
             0,//The position on the height of the grid
             @button);//And add the button
