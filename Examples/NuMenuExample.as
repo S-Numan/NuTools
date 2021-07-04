@@ -20,7 +20,7 @@ void onInit( CRules@ this )
     print("Menu Example Creation");
 
 
-    NuMenu::GridMenu@ grid_menu = NuMenu::GridMenu(//This menu is a GridMenu. The MenuHolder inherits from BaseMenu, and is designed to hold other menus in an array in a grid fashion.
+    NuMenu::GridMenu@ grid_menu = NuMenu::GridMenu(//This menu is a GridMenu. The GridMenu inherits from BaseMenu, and is designed to hold other menus in an array in a grid fashion.
         Vec2f(64, 64),//The top left of the menu.
         Vec2f(128 * 1, 128 * 1),//The bottom right of the menu.
         "TestMenu");//Name of the menu which you can get later.
@@ -33,7 +33,7 @@ void onInit( CRules@ this )
 
     grid_menu.setIsWorldPos(false);//At any time you can swap a menu to be on world position, or screen position. This tells the menu to work on the screen.
 
-    grid_menu.clearBackgrounds();//Here we wipe the MenuHolder's background.
+    grid_menu.clearBackgrounds();//Here we wipe the GridMenu's background.
 
     Nu::NuStateImage@ grid_image = Nu::NuStateImage(Nu::POSPositionsCount);//Here we create a state image with POSPositionCount states (for color and frames and stuff) 
 
