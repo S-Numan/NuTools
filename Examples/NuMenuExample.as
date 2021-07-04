@@ -112,8 +112,8 @@ void onInit( CRules@ this )
 
     //To send params,
 
-    CBitStream params;//Create your params.
-    button1.params = params;//Put them in the button.
+    CBitStream@ params;//Create your params.
+    @button1.params = @params;//Put them in the button.
 
 
     hub.addMenuToList(button1);//Add it to the do menu stuff array.
@@ -191,7 +191,7 @@ void onReload( CRules@ this )
     onInit(this);
 }
 //                    -Caller of button-     -Params-     -Menu pressed-
-void ButtonTestFunction(CPlayer@ caller, CBitStream params, NuMenu::IMenu@ menu)
+void ButtonTestFunction(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ menu, u16 key_code)
 {
     print("function: button was pressed. Button had name " + menu.getName());
 }

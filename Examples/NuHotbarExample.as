@@ -2,7 +2,7 @@
 
 void onInit( CRules@ this )
 {
-
+    print("Hotbar Example Creation");
 }
 
 void onReload( CRules@ this )
@@ -22,17 +22,19 @@ void onTick( CRules@ this )
         if(controls.isKeyJustPressed(KEY_KEY_Z))
         {
             CBlob@ plob = getLocalPlayerBlob();
-            
-            if(!plob.hasScript("NuHotbar.as"))
+            if(plob != null)
             {
-                plob.AddScript("NuHotbar.as");
-                //TODO. Add config settings here.
-                
-                print("hotbar added.");
-            }
-            else
-            {
-                print("hotbar already exists.");
+                if(!plob.hasScript("NuHotbar.as"))
+                {
+                    plob.AddScript("NuHotbar.as");
+                    //TODO. Add config settings here.
+                    
+                    print("hotbar added.");
+                }
+                else
+                {
+                    print("hotbar already exists.");
+                }
             }
         }
     }

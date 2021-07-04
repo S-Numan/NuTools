@@ -2105,10 +2105,8 @@ Check mark option on right
         }
     }
 
-    //In order: caller, params, self.
-    funcdef void RELEASE_CALLBACK(CPlayer@, CBitStream, IMenu@);
-    //In order: caller, params, self, owner.
-    funcdef void RELEASE_CALLBACK_OWNER(CPlayer@, CBitStream, IMenu@, CBlob@);
+    //In order: caller, params, self, key code.
+    funcdef void RELEASE_CALLBACK(CPlayer@, CBitStream@, IMenu@, u16);
     //In order: caller, self.
     funcdef void STATE_CHANGED_CALLBACK(CPlayer@, IMenu@);
 
@@ -2166,17 +2164,16 @@ Check mark option on right
 
             enableRadius = 0.0f;
 
-            @release_func_owner = @null;
             @release_func = @null;
             @state_changed_func = @null;
 
             command_id = 255;
+            @params = @CBitStream();
         }
 
 
         //The function called upon being pressed.
         private RELEASE_CALLBACK@ release_func;
-        private RELEASE_CALLBACK_OWNER@ release_func_owner;
 
         //Function called upon the button state being changed.
         private STATE_CHANGED_CALLBACK@ state_changed_func;
@@ -2185,10 +2182,6 @@ Check mark option on right
         void addReleaseListener(RELEASE_CALLBACK@ value)
         {
             @release_func = @value;
-        }
-        void addReleaseListener(RELEASE_CALLBACK_OWNER@ value)
-        {
-            @release_func_owner = @value;
         }
         void addStateChangedListener(STATE_CHANGED_CALLBACK@ value)
         {
@@ -2226,7 +2219,7 @@ Check mark option on right
 
         u8 command_id;//The command id send out upon being pressed. But an actual id this time.
         bool send_to_rules;//If this is false, it will attempt to send the command_id to the owner blob. Otherwise it will send it to CRules.
-        CBitStream params;//The params to accompany above
+        CBitStream@ params;//The params to accompany above
 
 
         bool kill_on_release;//Does nothing. Just holds a value in case someone wants to use it.
@@ -2311,21 +2304,27 @@ Check mark option on right
                 Nu::Error("Input key codes size was equal to 0");
             }
 
-            bool key_button = false;
-            bool key_button_release = false;
-            bool key_button_just = false;
+            s16 key_button = -1;
+            s16 key_button_release = -1;
+            s16 key_button_just = -1;
 
             //Assign true if any of the input keys are being pressed.
             for(u16 i = 0; i < key_codes.size(); i++)
             {
-                if(!key_button){
-                    key_button = controls.isKeyPressed(key_codes[i]);//Pressing
+                if(key_button == -1){
+                    if(controls.isKeyPressed(key_codes[i])){//Pressing
+                        key_button = key_codes[i];
+                    }
                 }
-                if(!key_button_release){
-                    key_button_release = controls.isKeyJustReleased(key_codes[i]);//Just released
+                if(key_button_release == -1){
+                    if(controls.isKeyJustReleased(key_codes[i])){//Just released
+                        key_button_release = key_codes[i];
+                    }
                 }
-                if(!key_button_just){
-                    key_button_just = controls.isKeyJustPressed(key_codes[i]);//Just pressed
+                if(key_button_just == -1){
+                    if(controls.isKeyJustPressed(key_codes[i])){//Just pressed
+                        key_button_just = key_codes[i];
+                    }
                 }
             }
             
@@ -2334,7 +2333,7 @@ Check mark option on right
             if(enableRadius == 0.0f || position == Vec2f_zero ||//Provided both these values have been assigned, the statement below will check.
             Nu::getDistance(position, getMiddle()) < enableRadius)//The button is within enable(interact) distance.
             {
-                _button_state = getPressingState(point, _button_state, key_button, key_button_release, key_button_just);//Get the pressing state. That pun in intentional.
+                _button_state = getPressingState(point, _button_state, (key_button != -1), (key_button_release != -1), (key_button_just != -1));//Get the pressing state. That pun in intentional.
             }
             else//enableRadius and position were assigned, and the button was out of range.
             {
@@ -2360,7 +2359,11 @@ Check mark option on right
             //Command sending.
             if(_button_state == Released)//If the button was released.
             {
-                sendReleaseCommand();//Send the command.
+                if(key_button_release != -1)//If the key was just released
+                {
+                    key_button = key_button_release;//To make sure we're using the right key.
+                }
+                sendReleaseCommand(key_button);//Send the command.
             }
 
             //Set state.
@@ -2382,7 +2385,7 @@ Check mark option on right
             return true;
         }
 
-        void sendReleaseCommand()
+        void sendReleaseCommand(s16 key_code)
         {
             if(kill_on_release)//If this button is suppose to be killed on release.
             {
@@ -2409,21 +2412,7 @@ Check mark option on right
             //Call function.
             if(release_func != @null)
             {
-                release_func(getLocalPlayer(), params, @this);
-            }
-
-            //Call function and include the owner blob.
-            if(release_func_owner != @null)
-            {
-                if(getOwnerBlob() != @null)
-                {
-                    CBlob@ _owner = getOwnerBlob();
-                    release_func_owner(getLocalPlayer(), params, @this, _owner);
-                }
-                else
-                {
-                    error("Owner of button was null");
-                }
+                release_func(getLocalPlayer(), @params, @this, key_code);
             }
         }
     }
@@ -3007,13 +2996,12 @@ Check mark option on right
             {
                 for(u16 y = 0; y < menus[x].size(); y++)
                 {
-                    if(menus[x][y] != @null)
-                    {
-                        menus[x][y].Tick();
-                        if(menus[x][y].getKillMenu()) { removeMenu(x, y); continue; }//If the menu is to be killed, then remove it.
+                    if(menus[x][y] == @null) { continue; }
+                    
+                    menus[x][y].Tick();
+                    if(menus[x][y].getKillMenu()) { removeMenu(x, y); continue; }//If the menu is to be killed, then remove it.
 
-                        menus[x][y].PostTick();
-                    }
+                    menus[x][y].PostTick();
                 }
             }
             return true;
@@ -3027,6 +3015,8 @@ Check mark option on right
             {
                 for(u16 y = 0; y < menus[x].size(); y++)
                 {
+                    if(menus[x][y] == @null) { continue; }//If there isn't a button in this position, don't render it.
+                    
                     RENDER_CALLBACK@ func = menus[x][y].getRenderFunction();
                     if(func == @null)
                     {
