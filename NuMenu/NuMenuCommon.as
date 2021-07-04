@@ -196,6 +196,7 @@ Check mark option on right
         void afterInitVars(string _name, u8 _menu_config, Vec2f _upper_left = Vec2f(0,0), Vec2f _lower_right = Vec2f(0,0));
 
         u32 getTicksSinceCreated();
+        void setTicksSinceCreated(u32 value);
 
         void KillMenu();
         bool getKillMenu();
@@ -204,6 +205,7 @@ Check mark option on right
         int getNameHash();
         void setName(string value);
 
+        void OwnerChanged();
         IMenu@ getOwnerMenu();
         bool setOwnerMenu(IMenu@ _menu);
         CBlob@ getOwnerBlob();
@@ -268,6 +270,7 @@ Check mark option on right
         bool isPointInMenu(Vec2f value);
 
         bool Tick();
+        bool PostTick();//Happens after Tick happens.
 
         void InterpolatePositions();
         
@@ -321,7 +324,9 @@ Check mark option on right
         {
             if(!getHub(@transporter)) { return; }
 
-            ticks_since_created = 0;
+            post_tick_ran = false;
+
+            ticks_since_created = Nu::u32_max();
 
             default_buffer = 4.0f;
             is_world_pos = false;
@@ -331,6 +336,7 @@ Check mark option on right
             name = "";
             name_hash = 0;
 
+            die_when_no_owner = false;
             @owner_menu = @null;
             @owner_blob = @null;
             owner_blob_id = Nu::u16_max();
@@ -384,10 +390,14 @@ Check mark option on right
             setMenuConfig(_menu_config);
         }
 
-        u32 ticks_since_created;
+        private u32 ticks_since_created;
         u32 getTicksSinceCreated()
         {
             return ticks_since_created;
+        }
+        void setTicksSinceCreated(u32 value)
+        {
+            ticks_since_created = value;
         }
 
         NuHub@ transporter;
@@ -468,6 +478,18 @@ Check mark option on right
         //Owners
         //
 
+        bool die_when_no_owner;//Kills the menu when there is no owner.
+        void OwnerChanged()//When the owner status is changed. Either added or removed.
+        {
+            if(die_when_no_owner)//If this menu is supposed to die when it has no owner.
+            {
+                if(getOwnerBlob() == @null && getOwnerMenu() == @null)//If this menu has no owner
+                {
+                    KillMenu();//Kill it
+                }
+            }
+        }
+
         //Menu
         //
 
@@ -478,23 +500,29 @@ Check mark option on right
         }
         bool setOwnerMenu(IMenu@ _menu)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setOffset. As in offset to it's owner.
         {
-            if(_menu.getNameHash() == getNameHash())
+            if(_menu != @null)
             {
-                error("Tried to make menu its own owner.");
-                return false;
-            }
-            if(_menu.getOwnerMenu() != @null && _menu.getOwnerMenu().getNameHash() == getNameHash())
-            {
-                error("Tried to intertwine ownership of menus.");
-                return false;
-            }
-            if(getOwnerBlob() != @null)
-            {
-                error("You cannot have both a menu and blob as an owner at the same time.");
-                return false;
+                if(_menu.getNameHash() == getNameHash())
+                {
+                    error("Tried to make menu its own owner.");
+                    return false;
+                }
+                if(_menu.getOwnerMenu() != @null && _menu.getOwnerMenu().getNameHash() == getNameHash())
+                {
+                    error("Tried to intertwine ownership of menus.");
+                    return false;
+                }
+                if(getOwnerBlob() != @null)
+                {
+                    error("You cannot have both a menu and blob as an owner at the same time.");
+                    return false;
+                }
             }
 
             @owner_menu = @_menu;
+
+            OwnerChanged();
+
             return true;
         }
 
@@ -512,14 +540,23 @@ Check mark option on right
         }
         bool setOwnerBlob(CBlob@ _blob)//Be aware, when this menu is moving with it's owner setPos stuff will not do much. You need to change setOffset. As in offset to it's owner.
         {
-            if(getOwnerMenu() != @null)
+            if(_blob != @null)
             {
-                error("You cannot have both a menu and blob as an owner at the same time.");
-                return false;
+                if(getOwnerMenu() != @null)
+                {
+                    error("You cannot have both a menu and blob as an owner at the same time.");
+                    return false;
+                }
+
+
+
+                owner_blob_id = _blob.getNetworkID();
             }
 
             @owner_blob = @_blob;
-            owner_blob_id = owner_blob.getNetworkID();
+            
+            OwnerChanged();
+
             return true;
         }
 
@@ -904,14 +941,21 @@ Check mark option on right
                 return false;//Inform anything that uses this method that something went wrong.
             }
 
-            if(getTicksSinceCreated() == 0)//Menu just created. First tick
+            ticks_since_created++;//A tick has passed.
+            //Side note, ticks_since_created starts at the max value. Therefor on the first tick it overflows to 0.
+
+            if(ticks_since_created == 0)//Menu just created. First tick
             {
                 //setMenuJustMoved(true);//I have no idea why, but if the menu does not tick right after being created, the background size will be at (0,0) and as such is invisible. This fixes that. But first, figure out why.
             }
-
-            if(didMenuJustMove())//If the menu just moved
+            if(ticks_since_created == 1)//Second tick
             {
-                setMenuJustMoved(false);//Well it didn't just move anymore.
+                if(!post_tick_ran)//Second tick and PostTick() has not been ran?
+                {
+                    Nu::Error("Menu with name \"" + getName() + "\" has not had their PostTick() function run properly. Remember to run PostTick() after Tick()");//Error
+                    KillMenu();//Kill
+                    return false;//Exit
+                }
             }
 
             //Set the interpolated values to the positions.
@@ -922,6 +966,10 @@ Check mark option on right
             upper_left[1] = getUpperLeft();
             lower_right[1] = getLowerRight();
 
+            if(didMenuJustMove())//If the menu just moved
+            {
+                setMenuJustMoved(false);//Well it didn't just move anymore.
+            }
 
             //Automatically move to blob if there is an owner blob and getMoveToOwner is true.
             CBlob@ _owner_blob = getOwnerBlob();
@@ -929,9 +977,10 @@ Check mark option on right
             {
                 if(getBlobByNetworkID(owner_blob_id) == @null)//Did the owner_blob just die?
                 {
-                    @owner_blob = @null;//Set owner_blob to dead.
+                    setOwnerBlob(@null);//Set owner_blob to dead/null.
+                    @_owner_blob = @null;//And the temp variable.
                 }//Fairy important, can cause instant crashing without.
-                if(getMoveToOwner())
+                if(_owner_blob != @null && getMoveToOwner())//Owner blob is not null, and this menu is supposed to move towards its owner.
                 {
                     if(isWorldPos())
                     {
@@ -944,13 +993,11 @@ Check mark option on right
                 }
             }
 
-
-            //One more tick has passed since the state was changed.
-            setTicksSinceStateChange(getTicksSinceStateChange() + 1);
-
-            ticks_since_created++;//A tick has passed.
+            if(getKillMenu())//If the menu is queued to be killed, don't do any further logic to avoid errors.
+            {
+                return false;
+            }
             
-
             CPlayer@ player = getLocalPlayer();
             if(player == @null)//The player must exist to get the CControls. (and maybe some other stuff)
             {
@@ -965,6 +1012,20 @@ Check mark option on right
 
 
             return true;//Everything worked out correctly.
+        }
+
+        bool post_tick_ran;//Has post_tick been ran?
+        bool PostTick()
+        {
+            if(ticks_since_created == 0)//First tick?
+            {
+                post_tick_ran = true;
+            }
+
+            //One more tick has passed since the state was changed.
+            setTicksSinceStateChange(getTicksSinceStateChange() + 1);
+
+            return true;
         }
 
         //
@@ -1131,6 +1192,11 @@ Check mark option on right
 
         bool Render()//Overwrite this method if you want a different look.
         {
+            if(getKillMenu())//If the menu is to be killed.
+            {
+                return false;//Don't render anything
+            }
+
             Driver@ driver = getDriver();
 
             if(!isWorldPos())
@@ -2647,6 +2713,7 @@ Check mark option on right
                 if(optional_menus[i] != @null)
                 {
                     optional_menus[i].Tick();
+                    optional_menus[i].PostTick();
                 }
             }
             return true;
@@ -2943,6 +3010,9 @@ Check mark option on right
                     if(menus[x][y] != @null)
                     {
                         menus[x][y].Tick();
+                        if(menus[x][y].getKillMenu()) { removeMenu(x, y); continue; }//If the menu is to be killed, then remove it.
+
+                        menus[x][y].PostTick();
                     }
                 }
             }
@@ -3030,16 +3100,19 @@ Check mark option on right
             }
             
             transporter.menus[i].Tick();
-        
-            if(transporter.menus[i].getMenuClass() == NuMenu::ButtonClass && transporter.buttons[i] == @null)//Debug check only. TODO remove.
-            {
-                error("Button desync somewhere."); continue;
-            }
-
+            
             if(transporter.menus[i].getKillMenu())//Kill the menu?
             {
                 transporter.removeMenuFromList(i);//Remove it.
                 i--;//One step back.
+                continue;//Next menu
+            }
+            
+            transporter.menus[i].PostTick();
+
+            if(transporter.menus[i].getMenuClass() == NuMenu::ButtonClass && transporter.buttons[i] == @null)//Debug check only. TODO remove.
+            {
+                error("Button desync somewhere."); continue;
             }
         }
 
