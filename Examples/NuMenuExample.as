@@ -193,7 +193,7 @@ void onReload( CRules@ this )
 //                    -Caller of button-     -Params-     -Menu pressed-
 void ButtonTestFunction(CPlayer@ caller, CBitStream params, NuMenu::IMenu@ menu)
 {
-    print("function: button was pressed.");
+    print("function: button was pressed. Button had name " + menu.getName());
 }
 
 void onTick( CRules@ this )
