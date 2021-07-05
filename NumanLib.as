@@ -854,7 +854,7 @@ namespace Nu
     //2: The message sent to the player's chat box.
     //3: Optional color of the text in the chat box. (default red)
     //Sends a message to a specific player's chat box.
-    void sendClientMessage(CPlayer@ player, string message, SColor color = SColor(255, 255, 0, 0))//Now with color
+    shared void sendClientMessage(CPlayer@ player, string message, SColor color = SColor(255, 255, 0, 0))//Now with color
     {
         CRules@ rules = getRules();
 
@@ -871,7 +871,7 @@ namespace Nu
     //1: The message sent to all player's chat boxes.
     //2: Optional color of the message. (default red)
     //Sends a message to EVERY player's chat box.
-    void sendAllMessage(string message, SColor color = SColor(255, 255, 0, 0))
+    shared void sendAllMessage(string message, SColor color = SColor(255, 255, 0, 0))
     {
         for(u16 i = 0; i < getPlayerCount(); i++)
         {
@@ -884,7 +884,7 @@ namespace Nu
     //1: The player this message is sent to.
     //2: The message contents.
     //Sends a drop down from the top of screen message to the specified player, this is referred to as a "engine message".
-    void sendEngineMessage(CPlayer@ player, string message)//Message that comes down from the top of the screen.
+    shared void sendEngineMessage(CPlayer@ player, string message)//Message that comes down from the top of the screen.
     {
         CRules@ rules = getRules();
 
@@ -893,6 +893,47 @@ namespace Nu
 
         rules.SendCommand(rules.getCommandID("enginemessage"), params, player);
     }
+
+    //1: The blob that both has it's inventory checked, and item held.
+    //2: The blob to be held by pblob.
+    //3: Controls if the blob held by pblob is put in the inventory of pblob instead of dropped on the ground to make space for get_blob.
+    //Takes get_blob from pblob's inventory and makes it held by pblob. 
+    shared void SwitchFromInventory(CBlob@ pblob, CBlob@ get_blob, bool inventorise_held = true)
+    {
+        if(pblob == @null) { return; Nu::Error("pblob was null"); }
+        if(get_blob == @null) { return; Nu::Error("get_blob was null"); }
+
+        CInventory@ inv = pblob.getInventory();
+        if(inv == @null) { return; }
+
+        CBlob@ carried_blob = pblob.getCarriedBlob();
+
+        if(inventorise_held && carried_blob != @null && !inv.canPutItem(carried_blob))//Supposed to put the currently not null held item in the inventory but it isn't possible?
+        {
+            return;//CEASE
+        }
+
+        CRules@ rules = getRules();
+        CBitStream params;
+
+        params.write_bool(inventorise_held);
+        params.write_u16(pblob.getNetworkID());
+        params.write_u16(get_blob.getNetworkID());
+
+        rules.SendCommand(rules.getCommandID("switchfrominventory"), params, false);//Send command to server only
+    }
+    //Exact same as above, except takes a string in place of the get_blob and converts it to a blob.
+    shared void SwitchFromInventory(CBlob@ pblob, string s_get_blob, bool inventorise_held = true)
+    {
+        CInventory@ inv = pblob.getInventory();
+        if(inv == @null) { return; }
+        
+        CBlob@ get_blob = inv.getItem(s_get_blob);
+        if(get_blob == @null) { return; }
+
+        SwitchFromInventory(pblob, get_blob, inventorise_held);
+    }
+
 
 
 

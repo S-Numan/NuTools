@@ -17,7 +17,7 @@ void setHotbar(CBlob@ blob, u8 hotbar_length)
 {
     if(!isClient()) { return; }
 
-    NuHub@ hub;//First we make the hub variable.
+    NuHub@ hub;
     if(!getHub(@hub)) { return; }
 
     @hotbar = @NuMenu::GridMenu(//This menu is a GridMenu. The GridMenu inherits from BaseMenu, and is designed to hold other menus in an array in a grid fashion.
@@ -33,9 +33,9 @@ void setHotbar(CBlob@ blob, u8 hotbar_length)
 
     hotbar.setBuffer(Vec2f(32.0f, 32.0f));//This sets the buffer between buttons on the menu
 
-    hotbar.StretchArray(temp_hotbarsize, 0);
+    hotbar.StretchArray(hotbar_length, 0);
 
-    for(u16 x = 0; x < temp_hotbarsize; x++)//Grid width
+    for(u16 x = 0; x < hotbar_length; x++)//Grid width
     {
         NuMenu::MenuButton@ button = NuMenu::MenuButton("" + x);
         button.setSize(Vec2f(32, 32));  
@@ -76,17 +76,20 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
     if(!params.saferead_string(blob)) { blob = ""; }//If no blob is found in params, make the blob string blank. Otherwise make blob be the blob
     if(blob != ""){ params.write_string(blob); params.ResetBitIndex(); }//Rewrite this parameter that was removed
 
+
+    CBlob@ caller_blob = caller.getBlob();
+    CBlob@ carried_blob = @null;
+    if(caller_blob != @null) 
+    {
+        @carried_blob = @caller_blob.getCarriedBlob();
+    }
+
     if(key_code == KEY_RBUTTON)
     {
         params.Clear(); //Clear params
         button.resizeBackgrounds(1);
 
-        CBlob@ caller_blob = caller.getBlob();
-        CBlob@ carried_blob = @null;
-        if(caller_blob != @null) 
-        {
-            @carried_blob = @caller_blob.getCarriedBlob();
-        }
+        
         if(carried_blob != @null)
         {
             params.write_string(carried_blob.getName());
@@ -109,6 +112,10 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
             
             params.ResetBitIndex();
         }
+    }
+    else if(caller_blob != @null && blob != "")//Key code is probably LButton(or 0-10). Thus, get the item out of the inventory or put it in if it exists.
+    {
+        Nu::SwitchFromInventory(caller_blob, blob);
     }
 }
 

@@ -1,4 +1,5 @@
 //This file handles misc logic and rendering related things in this mod. This file should go before all other files that use NuHub in gamemode.cfg.
+//TODO, swap the sending command system from CRules to a single NuTools blob. The command will only send to the blob and cause less max commands issues and be more performant hopfully. Use a method to send a command.
 
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
@@ -103,6 +104,7 @@ namespace NumanLib
         rules.addCommandID("teleport");
         rules.addCommandID("enginemessage");
         rules.addCommandID("announcement");
+        rules.addCommandID("switchfrominventory");
 
     }
 
@@ -114,7 +116,63 @@ namespace NumanLib
 
     void onCommand(CRules@ rules, u8 cmd, CBitStream@ params)
     {
-        if(cmd == rules.getCommandID("clientmessage") )//sends message to a specified client
+        if(cmd == rules.getCommandID("switchfrominventory"))
+        {
+            if(!isServer()) { return; }
+
+            bool inventorise_held;
+            u16 blob_id;
+            u16 getblob_id;
+
+            if(!params.saferead_bool(inventorise_held)) { Nu::Error("bool get was null"); return; }
+            if(!params.saferead_u16(blob_id)) { Nu::Error("ID get was null"); return; }
+            if(!params.saferead_u16(getblob_id)) { Nu::Error("ID get was null"); return; }
+
+            CBlob@ pblob = getBlobByNetworkID(blob_id);
+            if(pblob == @null) { return; }
+
+            CInventory@ inv = pblob.getInventory();
+            if(inv == @null) { return; }
+
+            CBlob@ getblob = getBlobByNetworkID(getblob_id);
+            if(getblob == @null) { return; }
+
+            if(!inv.isInInventory(getblob)) { return; }//If getblob is not in pblob's inventory
+
+            CBlob@ carried_blob = pblob.getCarriedBlob();
+            if(carried_blob != @null)
+            {
+                if(inventorise_held)//Supposed to put the currently held item in the inventory?
+                {
+                    if(!inv.canPutItem(carried_blob))//If it can't be put in the inventory
+                    {
+                        return;//CEASE
+                    }
+                    else//It is possible?
+                    {
+                        if(!pblob.server_PutInInventory(carried_blob)) { Nu::Error("Failed to put blob in inventory."); return; }//Put it in
+                    }
+
+                    if(carried_blob.getName() == getblob.getName())//If the getblob is the same type as the carried_blob.
+                    {
+                        return;//Do nothing more.
+                    }
+                }
+                else//No inventorizing
+                {
+                    pblob.DropCarried();//Just drop it
+                }
+            }
+            //From this point onwards, pblob is no longer holding a blob. 
+
+            
+            if(!pblob.server_PutOutInventory(getblob)) { Nu::Error("Failed to put blob out inventory."); return; }//Take it out
+
+            if(!pblob.server_Pickup(getblob)) { Nu::Error("Failed to pickup blob taken out of inventory."); return; }//Pick it up
+
+            //Mission success
+        }
+        else if(cmd == rules.getCommandID("clientmessage") )//sends message to a specified client
         {
             if(!isClient()) { return; }
 
