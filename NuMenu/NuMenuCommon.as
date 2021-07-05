@@ -3133,14 +3133,14 @@ Check mark option on right
 
     NuHub@ transporter;
 
-    void onInit(CRules@ rules)
+    void onInit(CRules@ rules, NuHub@ _hub)
     {
         if(!isClient())
         {
             return;
         }
 
-        if(!getHub(@transporter)) { return; }
+        @transporter = @_hub;
     }
 
     void MenuTick()

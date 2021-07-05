@@ -10,14 +10,14 @@ namespace NuRender
     bool init = false;//Has initialized yet?
     NuHub@ i_hub = @null;//Inner hub
 
-    void onInit(CRules@ rules)
+    void onInit(CRules@ rules, NuHub@ _hub)
     {
         if(!isClient())
         {
             return;
         }
         
-        if(!getHub(@i_hub)) { return; }
+        @i_hub = @_hub;
 
         init = true;//Initialized
     }

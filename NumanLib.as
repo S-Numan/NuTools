@@ -1197,6 +1197,7 @@ namespace Nu
 
         void Setup()
         {
+            if(!isClient()) { Nu::Error("NuImage was created serverside. This should not happen."); }
             name = "";
             name_id = 0;
             frame = 0;

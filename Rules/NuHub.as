@@ -63,12 +63,16 @@ bool getHub(NuHub@ &out _hub)
 
 void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func)
 {
+    if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
+
     NuHub@ hub;
     if(!getHub(@hub)) { return; }
     hub.RenderImage(layer, _func);
 }
 void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false)
 {
+    if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
+
     NuHub@ hub;
     if(!getHub(@hub)) { return; }
     hub.RenderImage(layer, _image, _pos, is_world_pos);
@@ -113,6 +117,8 @@ class NuHub
     int backgroundid;
     void SetupRendering()
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
+        
         posthudid = Render::addScript(Render::layer_posthud, "NuToolsRendering.as", "MenusPostHud", 0.0f);
         prehudid = Render::addScript(Render::layer_prehud, "NuToolsRendering.as", "MenusPreHud", 0.0f);
         postworldid = Render::addScript(Render::layer_postworld, "NuToolsRendering.as", "MenusPostWorld", 0.0f);
@@ -135,11 +141,15 @@ class NuHub
     private array<array<NuMenu::RenderDetails@>> render_details;
     u16 RenderDetailFilledOn(Render::ScriptLayer layer)
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return 0; }
+
         if(layer > render_filled_spots.size()) { Nu::Error("Layer beyond max layer"); return 0; }
         return render_filled_spots[layer];
     }
     RenderDetails@ RenderDetailAt(Render::ScriptLayer layer, u16 _pos)
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return @null; }
+
         if(layer > render_details.size()) { Nu::Error("Layer beyond max layer"); return @null; }
         if(_pos >= render_filled_spots[layer]){ Nu::Error("Tried to get past render detail count in the render_details array. Attempted to get position " + _pos); }
         return @render_details[layer][_pos];
@@ -148,6 +158,8 @@ class NuHub
 
     void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func)
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
+
         if(layer > render_details.size()) { Nu::Error("Layer beyond max layer"); return; }
 
         if(render_details[layer].size() == render_filled_spots[layer])//render_details not large enough?
@@ -163,6 +175,8 @@ class NuHub
     }
     void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false)
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
+
         if(layer > render_details.size()) { Nu::Error("Layer beyond max layer"); return; }
 
         if(render_details[layer].size() == render_filled_spots[layer])//render_details not large enough?
@@ -178,6 +192,8 @@ class NuHub
     }
     void RenderClear()
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
+
         for(u16 i = 0; i < render_details.size(); i++)
         {
             render_filled_spots[i] = 0;
@@ -216,6 +232,8 @@ class NuHub
     
     void addFont(NuFont@ _font)
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
+        
         if(_font == @null){ error("addFont(NuFont@): attempted to add null font."); return;}
         
         if(getFont(_font.basefont.name) != @null) { warning("addFont(NuFont@): Font attempted to add already existed."); return; }
@@ -224,6 +242,8 @@ class NuHub
     }
     void addFont(string font_name, string font_file, bool has_alpha = true)
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
+        
         if(getFont(font_name) != @null) { warning("addFont(string): Font attempted to add already existed."); return; }
 
         NuFont@ font = NuFont(font_name, font_file, has_alpha);
@@ -238,6 +258,8 @@ class NuHub
     
     NuFont@ getFont(string font_name)
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return @null; }
+
         for(u16 i = 0; i < fonts.size(); i++)
         {
             if(fonts[i].basefont.name == font_name)
@@ -250,6 +272,8 @@ class NuHub
 
     bool FontExists(string font_name)
     {
+        if(!isClient()) { Nu::Error("This should not be run serverside"); return false; }
+
         if(getFont(font_name) != @null)
         {
             return true;

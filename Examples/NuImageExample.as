@@ -5,6 +5,8 @@ Nu::NuImage@ image;
 
 void onInit(CRules@ rules)
 {
+    if(!isClient()) { return; }
+
     @image = @Nu::NuImage();
 
     image.CreateImage("RenderExample.png");//Image that is rendered
@@ -29,6 +31,8 @@ void onInit(CRules@ rules)
 
 void onTick(CRules@ rules)
 {
+    if(!isClient()) { return; }
+
     RenderImage(
         Render::layer_posthud,//Layer drawn on
         image,//Image drawn
