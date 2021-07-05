@@ -17,7 +17,7 @@ void onInit( CRules@ rules )//First time start only.
     {
         hub.SetupRendering();
     }
-    
+
     NumanLib::onInit(rules);
 }
 
@@ -33,12 +33,10 @@ NuHub@ LoadStuff( CRules@ rules)//Every reload and restart
     if(isClient())
     {
         NuRender::onInit(rules, _hub);
-        print("render stuff loaded");
+
         NuMenu::onInit(rules, _hub);
-        print("menu stuff loaded");
 
         addFonts(rules, _hub);
-        print("fonts stuff loaded");
     }
     
 
