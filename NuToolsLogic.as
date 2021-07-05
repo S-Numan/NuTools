@@ -139,7 +139,7 @@ namespace NumanLib
 
             CBlob@ carried_blob = pblob.getCarriedBlob();
 
-            if(!inv.isInInventory(getblob) && @getblob != @carried_blob) { return; }//If getblob is not in pblob's inventory
+            if(!inv.isInInventory(getblob) && @getblob != @carried_blob) { return; }//If getblob is not in pblob's inventory or being held by pblob
             
             if(carried_blob != @null)
             {
