@@ -908,6 +908,8 @@ namespace Nu
 
         CBlob@ carried_blob = pblob.getCarriedBlob();
 
+        if(!inv.isInInventory(get_blob) && @get_blob != @carried_blob) { return; }//get_blob has to either be in the inventory of pblob or be held by pblob
+
         if(inventorise_held && carried_blob != @null && !inv.canPutItem(carried_blob))//Supposed to put the currently not null held item in the inventory but it isn't possible?
         {
             return;//CEASE

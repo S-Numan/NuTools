@@ -137,9 +137,10 @@ namespace NumanLib
             CBlob@ getblob = getBlobByNetworkID(getblob_id);
             if(getblob == @null) { return; }
 
-            if(!inv.isInInventory(getblob)) { return; }//If getblob is not in pblob's inventory
-
             CBlob@ carried_blob = pblob.getCarriedBlob();
+
+            if(!inv.isInInventory(getblob) && @getblob != @carried_blob) { return; }//If getblob is not in pblob's inventory
+            
             if(carried_blob != @null)
             {
                 if(inventorise_held)//Supposed to put the currently held item in the inventory?
@@ -152,8 +153,9 @@ namespace NumanLib
                     {
                         if(!pblob.server_PutInInventory(carried_blob)) { Nu::Error("Failed to put blob in inventory."); return; }//Put it in
                     }
-
-                    if(carried_blob.getName() == getblob.getName())//If the getblob is the same type as the carried_blob.
+                    
+                    //if(carried_blob.getName() == getblob.getName())//If the getblob is the same type as the carried_blob
+                    if(carried_blob.getNetworkID() == getblob.getNetworkID())//If the getblob is the exact same blob
                     {
                         return;//Do nothing more.
                     }

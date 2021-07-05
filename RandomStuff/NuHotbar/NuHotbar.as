@@ -70,15 +70,17 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
     
     //u16 num = parseInt(button.getName().substr(0, BPOS));
 
-    string blob;
+    string blob;//Blob name in hotbar button
+    u16 blob_id;//Blob id in hotbar button
 
     //Read params for blob.
-    if(!params.saferead_string(blob)) { blob = ""; }//If no blob is found in params, make the blob string blank. Otherwise make blob be the blob
-    if(blob != ""){ params.write_string(blob); params.ResetBitIndex(); }//Rewrite this parameter that was removed
+    if(!params.saferead_string(blob)) { blob = ""; }//If no blob is found in params, make the blob string blank.
+    if(!params.saferead_u16(blob_id)) { blob_id = 0; }//If no blob_id is found in params, make the blob_id int 0.
+    if(blob != "" && blob_id != 0){ params.write_string(blob); params.write_u16(blob_id); params.ResetBitIndex(); }//Rewrite the parameters that were removed
 
 
-    CBlob@ caller_blob = caller.getBlob();
-    CBlob@ carried_blob = @null;
+    CBlob@ caller_blob = caller.getBlob();//blob that blob's and stuff are based around
+    CBlob@ carried_blob = @null;//Blob the caller_blob is holding
     if(caller_blob != @null) 
     {
         @carried_blob = @caller_blob.getCarriedBlob();
@@ -93,6 +95,7 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
         if(carried_blob != @null)
         {
             params.write_string(carried_blob.getName());
+            params.write_u16(carried_blob.getNetworkID());
 
             CSprite@ carried_sprite = carried_blob.getSprite();
             if(carried_sprite != @null)
@@ -113,9 +116,22 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
             params.ResetBitIndex();
         }
     }
-    else if(caller_blob != @null && blob != "")//Key code is probably LButton(or 0-10). Thus, get the item out of the inventory or put it in if it exists.
+    else if(caller_blob != @null && blob != "" && blob_id != 0)//Key code is probably LButton(or 0-10). Thus, get the item out of the inventory or put it in if it exists.
     {
-        Nu::SwitchFromInventory(caller_blob, blob);
+        CInventory@ inv = caller_blob.getInventory();
+        if(inv == @null) { return; }
+        
+        CBlob@ hotbar_blob = getBlobByNetworkID(blob_id);
+        if(hotbar_blob != @null && hotbar_blob.getName() == blob)//Confirm they are the same type of blobs.
+        {
+            //While this may normally seem like it could possibly grab a random same named item from across the map and jam it into caller_blob's hands, keep in mind it must be in the caller_blob's inventory.
+            //The worst that could happen is accidently getting the wrong blob of the same type from the inventory, which would both be very rare and unlikely to make any difference.
+            Nu::SwitchFromInventory(caller_blob, hotbar_blob);
+        }
+        else//It doesn't exist or isn't the same exact blob?
+        {
+            Nu::SwitchFromInventory(caller_blob, blob);//Just get any.
+        }
     }
 }
 
