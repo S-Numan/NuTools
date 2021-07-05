@@ -929,11 +929,13 @@ namespace Nu
     {
         CInventory@ inv = pblob.getInventory();
         if(inv == @null) { return; }
-        
-        CBlob@ get_blob = inv.getItem(s_get_blob);
-        if(get_blob == @null) { return; }
 
-        SwitchFromInventory(pblob, get_blob, inventorise_held);
+        CBlob@ get_blob = inv.getItem(s_get_blob);
+        if(get_blob != @null)
+        {
+            SwitchFromInventory(pblob, get_blob, inventorise_held);
+            return;
+        }
     }
 
 

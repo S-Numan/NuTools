@@ -155,7 +155,7 @@ namespace NumanLib
                     }
                     
                     //if(carried_blob.getName() == getblob.getName())//If the getblob is the same type as the carried_blob
-                    if(carried_blob.getNetworkID() == getblob.getNetworkID())//If the getblob is the exact same blob
+                    if(@carried_blob == @getblob)//If the getblob is the exact same blob
                     {
                         return;//Do nothing more.
                     }

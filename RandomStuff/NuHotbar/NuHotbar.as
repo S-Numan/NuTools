@@ -13,12 +13,12 @@ void onInit( CBlob@ blob )
     setHotbar(blob, temp_hotbarsize);
 }
 
-void setHotbar(CBlob@ blob, u8 hotbar_length)
+NuMenu::GridMenu@ setHotbar(CBlob@ blob, u8 hotbar_length)
 {
-    if(!isClient()) { return; }
+    if(!isClient()) { return @null; }
 
     NuHub@ hub;
-    if(!getHub(@hub)) { return; }
+    if(!getHub(@hub)) { return @null; }
 
     @hotbar = @NuMenu::GridMenu(//This menu is a GridMenu. The GridMenu inherits from BaseMenu, and is designed to hold other menus in an array in a grid fashion.
         "hb_" + blob.getNetworkID());//Name of the menu which you can get later.
@@ -62,13 +62,17 @@ void setHotbar(CBlob@ blob, u8 hotbar_length)
 
 
     hub.addMenuToList(hotbar);//This tells the hotbar to be ticked. It also stores it for other places to easily grab it.
+
+    return @hotbar;
 }
+
+u16 last_hotbar_pressed = 0;
 
 void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u16 key_code)
 {
     if(!isClient()) { return; }
-    
-    //u16 num = parseInt(button.getName().substr(0, BPOS));
+
+    u16 current_hotbar = parseInt(button.getName());
 
     string blob;//Blob name in hotbar button
     u16 blob_id;//Blob id in hotbar button
@@ -122,15 +126,28 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
         if(inv == @null) { return; }
         
         CBlob@ hotbar_blob = getBlobByNetworkID(blob_id);
-        if(hotbar_blob != @null && hotbar_blob.getName() == blob)//Confirm they are the same type of blobs.
+        if(hotbar_blob != @null && (inv.isInInventory(hotbar_blob) || @hotbar_blob == @carried_blob) && hotbar_blob.getName() == blob)//Confirm it is either being held by or in the inventory of caller_blob, and is the same type of blob.
         {
+            if(last_hotbar_pressed != current_hotbar && @hotbar_blob == @carried_blob) { last_hotbar_pressed = current_hotbar; return; }//Intercepts non accessible exact match hotbar blob to exact match with held hotbar blob.
             //While this may normally seem like it could possibly grab a random same named item from across the map and jam it into caller_blob's hands, keep in mind it must be in the caller_blob's inventory.
             //The worst that could happen is accidently getting the wrong blob of the same type from the inventory, which would both be very rare and unlikely to make any difference.
             Nu::SwitchFromInventory(caller_blob, hotbar_blob);
+            last_hotbar_pressed = current_hotbar;
         }
         else//It doesn't exist or isn't the same exact blob?
         {
-            Nu::SwitchFromInventory(caller_blob, blob);//Just get any.
+            if(carried_blob != @null && carried_blob.getName() == blob)//If caller_blob is holding a blob, and that blob is the hotbar blob.
+            {
+                if(last_hotbar_pressed != current_hotbar) { last_hotbar_pressed = current_hotbar; return; }//Intercepts accessible exact match hotbar blob to non accessible exact match hotbar blob.
+                
+                Nu::SwitchFromInventory(caller_blob, carried_blob);//Put it away!
+                last_hotbar_pressed = current_hotbar;
+            }
+            else
+            {
+                Nu::SwitchFromInventory(caller_blob, blob);//Just get any.
+                last_hotbar_pressed = current_hotbar;
+            }
         }
     }
 }
