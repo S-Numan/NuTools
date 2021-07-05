@@ -3,6 +3,8 @@
 #include "NuTextCommon.as";//For text and fonts.
 #include "NuHub.as";//For hauling around menus and fonts.
 
+//TODO, figure out how allow the blocks to be built to be in the hotbar. E.G stone block, wood block.
+
 u16 temp_hotbarsize = 10;
 NuMenu::GridMenu@ hotbar = @null;
 
@@ -139,7 +141,7 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
             if(carried_blob != @null && carried_blob.getName() == blob)//If caller_blob is holding a blob, and that blob is the hotbar blob.
             {
                 if(last_hotbar_pressed != current_hotbar) { last_hotbar_pressed = current_hotbar; return; }//Intercepts accessible exact match hotbar blob to non accessible exact match hotbar blob.
-                
+
                 Nu::SwitchFromInventory(caller_blob, carried_blob);//Put it away!
                 last_hotbar_pressed = current_hotbar;
             }
