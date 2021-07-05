@@ -4,6 +4,11 @@
 #include "NuHub.as";//For hauling around menus and fonts.
 
 //TODO, figure out how allow the blocks to be built to be in the hotbar. E.G stone block, wood block.
+//TODO, figure out a way to not have to remake your hotbar every death. It should save right? Either swap all CBlob stuff to CRules so it doesn't die, perhaps store the hotbar details client side, or perhaps both. or something else.
+//TODO, display the amount of blobs of the same type next to the hotbar somehow somewhere. Both inventory and held.
+//Add in some neat graphics, like fading out the sprite when there are none. Perhaps change the background if there is a perfect match too. perhaps a graphics change for the item in the hotbar being held in the hand.
+//
+
 
 u16 temp_hotbarsize = 10;
 NuMenu::GridMenu@ hotbar = @null;
@@ -130,7 +135,7 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
         CBlob@ hotbar_blob = getBlobByNetworkID(blob_id);
         if(hotbar_blob != @null && (inv.isInInventory(hotbar_blob) || @hotbar_blob == @carried_blob) && hotbar_blob.getName() == blob)//Confirm it is either being held by or in the inventory of caller_blob, and is the same type of blob.
         {
-            if(last_hotbar_pressed != current_hotbar && @hotbar_blob == @carried_blob) { last_hotbar_pressed = current_hotbar; return; }//Intercepts non accessible exact match hotbar blob to exact match with held hotbar blob.
+            if(last_hotbar_pressed != current_hotbar && @hotbar_blob == @carried_blob) { last_hotbar_pressed = current_hotbar; return; }//Intercepts non accessible perfect match hotbar blob to perfect match with held hotbar blob.
             //While this may normally seem like it could possibly grab a random same named item from across the map and jam it into caller_blob's hands, keep in mind it must be in the caller_blob's inventory.
             //The worst that could happen is accidently getting the wrong blob of the same type from the inventory, which would both be very rare and unlikely to make any difference.
             Nu::SwitchFromInventory(caller_blob, hotbar_blob);
@@ -140,7 +145,7 @@ void ButtonPressed(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ button, u
         {
             if(carried_blob != @null && carried_blob.getName() == blob)//If caller_blob is holding a blob, and that blob is the hotbar blob.
             {
-                if(last_hotbar_pressed != current_hotbar) { last_hotbar_pressed = current_hotbar; return; }//Intercepts accessible exact match hotbar blob to non accessible exact match hotbar blob.
+                if(last_hotbar_pressed != current_hotbar) { last_hotbar_pressed = current_hotbar; return; }//Intercepts accessible perfect match hotbar blob to non accessible perfect match hotbar blob.
 
                 Nu::SwitchFromInventory(caller_blob, carried_blob);//Put it away!
                 last_hotbar_pressed = current_hotbar;
