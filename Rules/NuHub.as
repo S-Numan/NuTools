@@ -2,7 +2,7 @@
 
 #include "NuMenuCommon.as";
 #include "NuTextCommon.as";
-#include "NumanLib.as";
+#include "NuLib.as";
 
 
 funcdef bool RENDER_CALLBACK();

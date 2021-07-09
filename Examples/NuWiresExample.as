@@ -1,4 +1,4 @@
-#include "NumanLib.as";
+#include "NuLib.as";
 
 void onInit(CRules@ this)
 {

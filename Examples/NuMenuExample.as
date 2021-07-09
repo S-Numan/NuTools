@@ -1,7 +1,7 @@
 //Set gamemode to "Testing" for this to activate.
 
 #include "NuMenuCommon.as";//For menus.
-#include "NumanLib.as";//For misc usefulness.
+#include "NuLib.as";//For misc usefulness.
 #include "NuTextCommon.as";//For text and fonts.
 #include "NuHub.as";//For hauling around menus and fonts.
 

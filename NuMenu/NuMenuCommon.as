@@ -1,4 +1,4 @@
-#include "NumanLib.as";
+#include "NuLib.as";
 #include "NuHub.as";
 #include "NuTextCommon.as";
 
@@ -52,7 +52,7 @@ Check mark option on right
 //Remove the titlebar and replace with with an actual menu.//X button on titlebar that closes the menu.
 //Have values for the first part of a sprite. The middle part. And the end part. Modify NuImage for this.
 //Make setting to world pos actually set the upper left and lower right to the correct positions to not look like the menu changed position.
-//Make an option to make the menu animated. Animation frames and how fast they loop through. See cfg animations. Maybe add it to NumanLib NuImage?
+//Make an option to make the menu animated. Animation frames and how fast they loop through. See cfg animations. Maybe add it to NuLib NuImage?
 //Add way to have only one button at once be hovered on/pressed. No multi button pressing/hovering.
 //With 32 by 32 buttons spaced 32 away from each other, it is possible to hover over two buttons at once. Investigate.
 

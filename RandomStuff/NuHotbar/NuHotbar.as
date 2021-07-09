@@ -1,13 +1,17 @@
 #include "NuMenuCommon.as";//For menus.
-#include "NumanLib.as";//For misc usefulness.
+#include "NuLib.as";//For misc usefulness.
 #include "NuTextCommon.as";//For text and fonts.
 #include "NuHub.as";//For hauling around menus and fonts.
 
 //TODO, figure out how allow the blocks to be built to be in the hotbar. E.G stone block, wood block.
 //TODO, figure out a way to not have to remake your hotbar every death. It should save right? Either swap all CBlob stuff to CRules so it doesn't die, perhaps store the hotbar details client side, or perhaps both. or something else.
-//TODO, display the amount of blobs of the same type next to the hotbar somehow somewhere. Both inventory and held.
+//TODO, display the amount of blobs of the same type next to the hotbar somehow somewhere. Both inventory and held. No need to explain anything if there is only 1.
 //Add in some neat graphics, like fading out the sprite when there are none. Perhaps change the background if there is a perfect match too. perhaps a graphics change for the item in the hotbar being held in the hand.
-//
+//TODO, display the hotbar number
+//TODO, place name of the selected/held item somewhere. such as above/below the hotbar.
+//TODO, hover over to show the name of the item as well. 
+//TODO, display how the hotbar is operated somewhere somehow.
+//TODO, Figure out how to mesh all this with the regular hud stuff too.
 
 
 u16 temp_hotbarsize = 10;

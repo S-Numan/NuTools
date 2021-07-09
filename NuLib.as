@@ -762,7 +762,7 @@ namespace Nu
     //1: Vec2f 1.
     //2: Vec2f 2.
     //Returns a float that is the distance between the two points.
-    shared float getDistance(Vec2f point1, Vec2f point2)//Add to NumanLib later
+    shared float getDistance(Vec2f point1, Vec2f point2)
     {
         float dis = (Maths::Pow(point1.x-point2.x,2)+Maths::Pow(point1.y-point2.y,2));
         return Maths::Sqrt(dis);
@@ -772,7 +772,7 @@ namespace Nu
     //1: float 1.
     //2: float 2.
     //Returns a float that is the distance between the two floats.
-    shared float getDistance(float value1, float value2)//Add to NumanLib later
+    shared float getDistance(float value1, float value2)
     {
         float dis = Maths::Abs(value1 - value2);
         return dis;
@@ -1297,8 +1297,8 @@ namespace Nu
             }
 
             ImageData@ _image = Texture::data(render_name);
-            if(_image == @null) { error("image was null for some reason in NumanLib::NuImage::CreateImage"); return @null; }
-            if(_image.size() == 0) { warning("Image provided in NumanLib::NuImage::CreateImage was 0 in size"); return _image; }
+            if(_image == @null) { error("image was null for some reason in NuLib::NuImage::CreateImage"); return @null; }
+            if(_image.size() == 0) { warning("Image provided in NuLib::NuImage::CreateImage was 0 in size"); return _image; }
 
             image_size = Vec2f(_image.width(), _image.height());
             frame_size = image_size;

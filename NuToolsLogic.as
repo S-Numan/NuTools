@@ -18,7 +18,7 @@ void onInit( CRules@ rules )//First time start only.
         hub.SetupRendering();
     }
 
-    NumanLib::onInit(rules);
+    NuLib::onInit(rules);
 }
 
 NuHub@ LoadStuff( CRules@ rules)//Every reload and restart
@@ -60,7 +60,7 @@ void onReload( CRules@ rules )
 
 void onRestart( CRules@ rules)
 {
-    NumanLib::onRestart(rules);
+    NuLib::onRestart(rules);
 }
 
 void onTick( CRules@ rules )
@@ -76,7 +76,7 @@ void onRender( CRules@ rules )
 
     NuRender::onRender(rules);
 
-    NumanLib::onRender(rules);
+    NuLib::onRender(rules);
 }
 
 
@@ -96,10 +96,10 @@ void addFonts( CRules@ rules, NuHub@ hub)
 
 void onCommand(CRules@ rules, u8 cmd, CBitStream@ params)
 {
-    NumanLib::onCommand(rules, cmd, params);
+    NuLib::onCommand(rules, cmd, params);
 }
 
-namespace NumanLib
+namespace NuLib
 {
     void onInit(CRules@ rules)
     {

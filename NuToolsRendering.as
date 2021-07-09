@@ -1,6 +1,6 @@
 //This file handles misc rendering.
 
-#include "NumanLib.as";
+#include "NuLib.as";
 #include "NuHub.as";
 
 NuHub@ o_hub = @null;//Outer hub

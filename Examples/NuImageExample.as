@@ -1,4 +1,4 @@
-#include "NumanLib.as";//For NuImage and other misc.
+#include "NuLib.as";//For NuImage and other misc.
 #include "NuHub.as";//For the easy rendering.
 
 Nu::NuImage@ image;
