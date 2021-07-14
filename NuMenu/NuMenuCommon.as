@@ -2977,6 +2977,7 @@ Check mark option on right
         }
         u16 arrayHeight(u16 x = 0)
         {
+            if(x >= menus.size()) { Nu::Error("Went beyond x bound in menu array. " + x); return 0; }
             return menus[x].size();
         }
 
@@ -2993,6 +2994,8 @@ Check mark option on right
                 {
                     for(u16 y = 0; y < menus[x].size(); y++)
                     {
+                        if(menus[x][y] == @null) { continue; }//If no menu exists here, don't try moving it.
+
                         MoveHeldMenu(x, y);
                     }
                 }
@@ -3030,6 +3033,8 @@ Check mark option on right
             {
                 for(u16 y = 0; y < menus[x].size(); y++)
                 {
+                    if(menus[x][y] == @null) { continue; }
+
                     MoveHeldMenu(x, y);
                 }
             }
