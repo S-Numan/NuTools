@@ -85,9 +85,9 @@ void onRender( CRules@ rules )
 
 void addFonts( CRules@ rules, NuHub@ hub)
 {
-    hub.addFont("Arial", "Arial.png");
-    hub.addFont("Calibri", "Calibri-48.png");
-    hub.addFont("Calibri-Bold", "Calibri-48-Bold.png");
+    //hub.addFont("Arial", "Arial.png");
+    hub.addFont("Calibri-48", "Calibri-48.png");
+    hub.addFont("Calibri-48-Bold", "Calibri-48-Bold.png");
 }
 
 

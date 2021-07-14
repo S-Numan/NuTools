@@ -1740,7 +1740,7 @@ Check mark option on right
         NuFont@ setFont(string font_name, u16 element = -1, bool repos = true)
         {
             NuFont@ _font = transporter.getFont(font_name);
-            if(_font == @null){ warning("Could not find font with font_name = " + font_name); return transporter.getFont("Arial"); }
+            if(_font == @null){ warning("Could not find font with font_name = " + font_name); return transporter.getFont("Calibri-48"); }
 
             setFont(@_font, element, repos);
             return @_font;
@@ -3040,7 +3040,7 @@ Check mark option on right
 
         private void MoveHeldMenu(u16 x, u16 y)
         {
-            if(menus[x][y] == @null) { Nu::Error("optional_menu was null"); return; }//Menu null?
+            if(menus[x][y] == @null) { Nu::Error("Held menu to be moved with it's owner was null.  x = " + x + " y = " + y); return; }//Menu null?
 
             if(!menus[x][y].getMoveToOwner()) { return; }//Menu not supposed to move towards its owner?
             

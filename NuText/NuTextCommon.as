@@ -212,7 +212,7 @@ class NuText
     NuText()
     {
         Setup();
-        setFont("Arial");
+        setFont("Calibri-48");
         setString("");
     }
     NuText(string font_name, string text = ""

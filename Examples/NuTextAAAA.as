@@ -15,7 +15,7 @@ void onInit( CRules@ this )
     NuHub@ hub;
     if(!getHub(@hub)) { return; }
 
-    //hub.addFont("Arial.png");
+    //hub.addFont("Calibri-48.png");
 
     print("Text AAAA Creation");
 
@@ -47,19 +47,19 @@ void onTick( CRules@ this )
                     NuText@ txt;
                     if(rnd < 45)
                     {
-                        @txt = @NuText("Calibri-Bold", "A");
+                        @txt = @NuText("Calibri-48-Bold", "A");
                     }
                     else if(rnd < 49)
                     {
-                        @txt = @NuText("Calibri-Bold", "AA\nAA");
+                        @txt = @NuText("Calibri-48-Bold", "AA\nAA");
                     }
                     else if(rnd == 48)
                     {
-                        @txt = @NuText("Calibri-Bold", "Applesauce!");
+                        @txt = @NuText("Calibri-48-Bold", "Applesauce!");
                     }
                     else
                     {
-                        @txt = @NuText("Calibri-Bold", "B");
+                        @txt = @NuText("Calibri-48-Bold", "B");
                     }
                     
                     if(rnd > 0)
