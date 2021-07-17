@@ -1,3 +1,7 @@
+Load font image on demand rather than having to do it beforehand?
+Test to see if the freeze for a moment is bothersome.
+Also figure out what exactly is causing the freeze, and how to lessen it.
+
 
 
 Fake pickup blob.
