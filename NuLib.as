@@ -938,6 +938,84 @@ namespace Nu
         }
     }
 
+    //1: rules for rules things
+    //2: player that will be respawned
+    //3: optional parameter to specify what blob they will respawn as
+    //Respawns the player firstly at a spawn if avaliable, secondly at the ground from the top left.
+    void RespawnPlayer(CRules@ rules, CPlayer@ player, string blob_name = "")
+    {
+        CMap@ map = getMap();
+
+        Vec2f[] spawns;
+        
+        Vec2f spawn = Vec2f(0, 0);
+        
+        if (player.getTeamNum() == 0)//Team 0?
+        {
+            if(getMap().getMarkers("blue spawn", spawns))//If blue markers exist
+            {
+                spawn = spawns[ XORRandom(spawns.length) ];//Pick on randomly
+            }
+            else if(getMap().getMarkers("blue main spawn", spawns))//if blue main markers exist
+            {
+                spawn = spawns[ XORRandom(spawns.length) ];//Pick one randomly
+            }
+        }
+        else if (player.getTeamNum() == 1)//Team 1?
+        {
+            if(getMap().getMarkers("red spawn", spawns))
+            {
+                spawn = spawns[ XORRandom(spawns.length) ];
+            }
+            else if(getMap().getMarkers("red main spawn", spawns))
+            {
+                spawn = spawns[ XORRandom(spawns.length) ];
+            }
+        }
+        if(spawn == Vec2f(0,0))//No spawn found?
+        {
+            spawn.x = map.tilesize * 2;//Start two tiles out
+            
+            while(spawn.y == 0.0f)//While no ground is found?
+            {
+                if(spawn.x > map.tilemapwidth * map.tilesize)//If we've gone beyond the right of the map.
+                {
+                    spawn = Vec2f(0,0);//Just default to the top left
+                    break;//And stop
+                }
+                spawn.x += map.tilesize;//Go one tile right
+                spawn.y = Nu::getTileUnderPos(Vec2f(spawn.x, 0));//Find tile below x pos
+            }
+
+            spawn.y -= map.tilesize;//Up y position by one tile of space
+        }
+
+        string actor;//Name of the new blob
+        if(blob_name != "")//If a blob name is specified.
+        {
+            actor = blob_name;//Use it
+        }
+        else if(player.lastBlobName != "")//No blob name? how about the last player's blob.
+        {
+            actor = player.lastBlobName;//Use it
+        }
+        else//No last player blob?
+        {
+            actor = "knight";//Just default to knight.
+        }
+
+        CBlob@ newBlob = server_CreateBlob(actor, player.getTeamNum(), spawn);//Create the new blob with the player's team at the position spawn
+            
+        if(newBlob != @null)//If the new blob is not null
+        {
+            CBlob@ plob = @player.getBlob();//Get the current player's blob
+            if(plob != @null)//If it is not null.
+            {
+                plob.server_Die();//Maul it to death.
+            }
+            newBlob.server_SetPlayer(player);//Set the player to it's new blob
+        }
+    }
 
 
 
