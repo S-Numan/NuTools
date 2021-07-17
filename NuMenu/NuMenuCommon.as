@@ -68,8 +68,6 @@ Check mark option on right
 
 
 
-//1. Rapid button pressing does not work. Urgent for hotbar stuff
-
 //
 //TODO LIST
 //
