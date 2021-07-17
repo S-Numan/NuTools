@@ -46,7 +46,7 @@ NuHub@ LoadStuff( CRules@ rules)//Every reload and restart
         print("=====NuButton.as attempt to add=====");
         rules.AddScript("NuButton.as");//Add the NuButton script to the gamemode.
         print("=====If an error is above, ignore it.=====");
-    }
+    }//It's done like this to allow NuTools Testing gamemode with or without the NuButton mod installed 
 
     init = true;
 
