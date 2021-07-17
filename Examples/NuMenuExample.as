@@ -174,9 +174,9 @@ void onInit( CRules@ this )
 
 
 
+    NuMenu::MenuBase@ nothing_menu = NuMenu::MenuBase("Nothing");//Create a MenuBase menu with no parameters
 
-
-
+    hub.addMenuToList(nothing_menu);//Add it.
 
 
 }
