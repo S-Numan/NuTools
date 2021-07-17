@@ -173,7 +173,7 @@ Check mark option on right
                 rec_color = SColor(255, 30, 50, 255);
                 break;
             case AfterRelease:
-                rec_color = SColor(255, 50, 50, 50);
+                rec_color = SColor(255, 0, 0, 0);
                 break;
             case Pressed:
                 rec_color = SColor(255, 127,25,25);
@@ -182,7 +182,7 @@ Check mark option on right
                 rec_color = SColor(255, 25,127,25);
                 break;
             case Disabled:
-                rec_color = SColor(255, 5, 5, 5);
+                rec_color = SColor(255, 50, 5, 50);
                 break;
             default:
                 rec_color = SColor(255, 255, 255, 255);
@@ -1408,10 +1408,21 @@ Check mark option on right
         //No point required
         u8 getPressingState(u8 _button_state, bool left_button, bool left_button_release, bool left_button_just)
         {
-            if(_button_state == Released//If the button is Released.
-            || (_button_state == AfterRelease && left_button))//Or if the button is AfterRelease and left_button is still true.
+            if(_button_state == Released)//If the button is Released.
             {
-                _button_state = AfterRelease;//The button is AfterRelease.
+                if(left_button_release)//If the button was just released again.
+                {
+                    //Button state is already Released, do nothing and it will return Released again.
+                }
+                else if(left_button_just)//If the button was just pressed right after releasing
+                {
+                    initial_press = true;//Button was pressed again
+                    _button_state = JustPressed;//Button was just pressed.
+                }
+                else//No pressing?
+                {
+                    _button_state = AfterRelease;//The button was just released
+                }
             }
             else if(initial_press)//If the button was initially pressed.
             {
@@ -1438,7 +1449,6 @@ Check mark option on right
                     _button_state = JustPressed;//It was also just pressed.
                 }
             }//Only buttons with "initial_press" equal to true will have their button logic working.
-            
             else if(!left_button)//If the button was not initially pressed and left mouse button is not being held
             {
                 if(_button_state == Hover)//If we are currently hovering.
@@ -1454,6 +1464,7 @@ Check mark option on right
                     _button_state = JustHover;//Button is being hovered over.
                 }
             }
+
 
             return _button_state;
         }
@@ -2431,6 +2442,7 @@ Check mark option on right
             {
                 _button_state = getPressingState(_button_state, (key_button != -1), (key_button_release != -1), (key_button_just != -1));
             }
+            //print("button_state = " + _button_state + " button = " + key_button + "  release = " + key_button_release + " just = " + key_button_just);
 
             //Anti swinging.
             if(_button_state == JustPressed || _button_state == Pressed || _button_state == Released || _button_state == AfterRelease)
