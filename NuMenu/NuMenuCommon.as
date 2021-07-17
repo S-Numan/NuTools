@@ -55,6 +55,9 @@ Check mark option on right
 //Make an option to make the menu animated. Animation frames and how fast they loop through. See cfg animations. Maybe add it to NuLib NuImage?
 //Add way to have only one button at once be hovered on/pressed. No multi button pressing/hovering.
 //With 32 by 32 buttons spaced 32 away from each other, it is possible to hover over two buttons at once. Investigate.
+//Remake text. All text. Add shaky text. And different color text for each induvidual letter.
+//Fix button rendering to render like it should. Not just via a method, but a render script. FUTURE NUMAN HERE. what did I mean by this exactly????
+
 
 
 //Option list for debugging blobs.
@@ -64,10 +67,8 @@ Check mark option on right
 
 
 
-//1. Before the first tick, the checkbox in menuholder runs away from it's owner. Fix plz.
-//2. Remake text. All text. Add shaky text. And different color text for each induvidual letter.
-//3. Fix button rendering to render like it should. Not just via a method, but a render script.
-//4. Rapid button pressing does not work. Urgent for hotbar stuff
+
+//1. Rapid button pressing does not work. Urgent for hotbar stuff
 
 //
 //TODO LIST
@@ -380,12 +381,15 @@ Check mark option on right
             addBackground(_background);
     
 
-            setUpperLeft(_upper_left, false);
-            setLowerRight(_lower_right, false);
+            if(_upper_left != Vec2f(0,0) && _lower_right != Vec2f(0,0))//If the menu was given a position
+            {
+                setUpperLeft(_upper_left, false);//Assign it, but don't inform the menu of the move yet
+                setLowerRight(_lower_right, false);//Assign it, but don't inform the menu of the move yet
+            
+                setMenuJustMoved(true);//Inform the menu it just moved
+            }
 
             setInterpolated(true);
-
-            setMenuJustMoved(true);
 
             setName(_name);
 
@@ -700,6 +704,10 @@ Check mark option on right
             {
                 upper_left[3] = Vec2f_zero;//Reset collisinos
             }
+            if(getTicksSinceCreated() == Nu::u32_max())//Has this menu not been ticked once?
+            {
+                upper_left[1] = upper_left[0];//Set old position to the current position
+            }
 
             setMenuJustMoved(menu_just_move);
         }
@@ -709,6 +717,12 @@ Check mark option on right
         {
             upper_left[0] = value;
             lower_right[0] = upper_left[0] + menu_size;
+
+            if(getTicksSinceCreated() == Nu::u32_max())//Has this menu not been ticked once?
+            {   //Set old positions to the newer positions
+                upper_left[1] = upper_left[0];
+                lower_right[1] = lower_right[0];
+            }
 
             setMenuJustMoved(menu_just_move);
         }
@@ -748,6 +762,10 @@ Check mark option on right
             if(getCollisionSetter())//If the collision setter is not disabled.
             {
                 lower_right[3] = menu_size;//Reset collisinos
+            }
+            if(getTicksSinceCreated() == Nu::u32_max())//Has this menu not been ticked once?
+            {
+                lower_right[1] = lower_right[0];//Set old position to the current position
             }
 
             setMenuJustMoved(menu_just_move);
