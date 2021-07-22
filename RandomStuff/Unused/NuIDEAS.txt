@@ -8,6 +8,9 @@ Fake pickup blob.
 One blob that teleports around. based on positions it is assigned to. These positions are for example, fake blobs; things that aren't blobs that can be picked up.
 Upon being picked up, it tells the fake blob that it was picked up. And it drops itself.
 
+Lite CBlob class. CBlob but with very few things. CSprite and CShape are avaliable for use but give an option to use something custom to render such as NuImage too.
+Single CBlob spawned in that handles every single Lite CBlob. such as OnCommand, ticking and rendering. Using CRules to do it could get it filled up with too many commands. something something performance.
+
 
 (joke idea)
 Play Minesweeper to destroy enemy doors in front of you. Failing to play minesweeper causes a massive explosion after a short fuse.
