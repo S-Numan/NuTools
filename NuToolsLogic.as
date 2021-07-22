@@ -44,9 +44,9 @@ NuHub@ LoadStuff( CRules@ rules)//Every reload and restart
     if(!init &&//First time init.
         sv_gamemode == "Testing")//Provided the gamemode name is Testing.
     {
-        print("=====NuButton.as attempt to add=====");
+        print("=====NuButton.as attempt to add. This will only work if the NuButton mod is installed=====");
         rules.AddScript("NuButton.as");//Add the NuButton script to the gamemode.
-        print("=====If an error is above, ignore it.=====");
+        print("=====If an error is above, it is safe to ignore. It simply means the NuButton mod was not installed and is of no concern. Blame kag for not allowing the checking of the modlist=====");
     }//It's done like this to allow NuTools Testing gamemode with or without the NuButton mod installed 
 
     init = true;

@@ -1834,6 +1834,8 @@ Numan_library. Including
 #24. Angle difference.
 #25. Apply force in direction. this.AddForce(Vec2f(this.isFacingLeft() ? -velocity * Maths::Sin(angle) : velocity * Maths::Cos(angle), this.isFacingLeft() ? -velocity * Maths::Cos(angle) : velocity * Maths::Sin(angle))); Would this work?
 #27. How much of this blob does the inventory have.
+#28. PatchAllBlobs("ScriptName", remove_script = false);//Adds a script to all blobs currently existing, and all future blobs on their creation. if remove_script is true the script with the specified name is instead removed. If it's there.
+#29. PatchBlobs("BlobName", "ScriptName", remove_script = false);//Same as above but only for blobs with the specified name
 
 DrawTextWithWidth(string text, Vec2f pos, SColor color, float width) - Caps width, note this will require an array to save draw text stuff as the calculations should not be done every render call.
 
