@@ -1,4 +1,4 @@
-//This file handles misc logic and rendering related things in this mod. This file should go before all other files that use NuHub in gamemode.cfg.
+//This file handles misc logic and rendering related things in this mod. This file should go before all other files that interact with functions in this mod
 //TODO, swap the sending command system from CRules to a single NuTools blob. The command will only send to the blob and cause less max commands issues and be more performant hopfully. Use a method to send a command.
 
 #include "NuMenuCommon.as";
