@@ -757,6 +757,12 @@ namespace Nu
     {
         StackAndMessage(input, SColor(255, 255, 0, 0), SColor(200, 255, 255, 255), SColor(255, 255, 0, 200), 3);
     }
+    //1: Text to throw out as the message.
+    //Calls StackAndMessage with warning colors.
+    shared void Warning(string input)
+    {
+        StackAndMessage(input, SColor(255, 255, 255, 0), SColor(200, 255, 255, 255), SColor(255, 255, 0, 200), 3);
+    }
 
 
     //1: Vec2f 1.
@@ -944,6 +950,9 @@ namespace Nu
     //Respawns the player firstly at a spawn if avaliable, secondly at the ground from the top left.
     void RespawnPlayer(CRules@ rules, CPlayer@ player, string blob_name = "")
     {
+        if(!isServer()) { Nu::Warning("Tried respawning player on client"); return; }
+        if(player == @null) { Nu::Error("player was null"); return; }
+
         CMap@ map = getMap();
 
         Vec2f[] spawns;

@@ -20,9 +20,11 @@ void onInit( CRules@ rules )//First time start only.
     }
 
     NuLib::onInit(rules);
+
+    onRestart(rules);
 }
 
-NuHub@ LoadStuff( CRules@ rules)//Every reload and restart
+NuHub@ LoadStuff( CRules@ rules )//Every reload and restart
 {
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
     NuHub@ _hub = NuHub();
@@ -41,13 +43,15 @@ NuHub@ LoadStuff( CRules@ rules)//Every reload and restart
     }
     
 
-    if(!init &&//First time init.
-        sv_gamemode == "Testing")//Provided the gamemode name is Testing.
+    if(sv_gamemode == "Testing")//Is the gamemode name Testing?
     {
-        print("=====NuButton.as attempt to add. This will only work if the NuButton mod is installed=====");
-        rules.AddScript("NuButton.as");//Add the NuButton script to the gamemode.
-        print("=====If an error is above, it is safe to ignore. It simply means the NuButton mod was not installed and is of no concern. Blame kag for not allowing the checking of the modlist=====");
-    }//It's done like this to allow NuTools Testing gamemode with or without the NuButton mod installed 
+        if(init)//If first time init
+        {
+            print("=====NuButton.as attempt to add. This will only work if the NuButton mod is installed=====");
+            rules.AddScript("NuButton.as");//Add the NuButton script to the gamemode.
+            print("=====If an error is above, it is safe to ignore. It simply means the NuButton mod was not installed and is of no concern. Blame kag for not allowing the checking of the modlist=====");
+        }//It's done like this to allow NuTools Testing gamemode with or without the NuButton mod installed
+    } 
 
     init = true;
 
@@ -66,6 +70,10 @@ void onRestart( CRules@ rules)
 
 void onTick( CRules@ rules )
 {
+    if(getGameTime() == 30 && sv_gamemode == "Testing")//If thirty ticks have passed since restarting and the gamemode is testing
+    {
+        Nu::RespawnPlayer(rules, getLocalPlayer());//Respawn the player
+    }
     NuRender::onTick(rules);
 
     NuMenu::MenuTick();//Run logic for the menus.
