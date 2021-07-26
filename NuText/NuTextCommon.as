@@ -90,6 +90,11 @@ class NuFont
             character_count++;//Extra character found.
         }
 
+        if(character_count == 0)
+        {
+            Nu::Error("No characters found in the font_positions_path file. Is it setup wrong?"); return;
+        }
+
         array<array<Vec2f>> uv_per_frame(character_count + CHARACTER_SPACE);//Create the array that points to where every frame is. The amount of characters(character_count) + the starting character.
         for(i = 0; i < CHARACTER_SPACE; i++)//Set each value from 0 to CHARACTER_SPACE to Vec2f 0,0 to prevent issues.
         {
@@ -325,14 +330,17 @@ class NuText
     }
 
     private string render_string;
-    void setString(string value, Vec2f _scale = Vec2f(0,0))
+    void setString(string value)
     {
-        render_string = value;
-
-        if(_scale != Vec2f(0,0))//Default parameter set?
+        for(u16 i = 0; i < value.size(); i++)//For each character
         {
-            scale = _scale;//Set the scale
+            if(value[i] >= font.character_sizes.size())//If the character desired goes beyond the max character of the font.
+            {
+                Nu::Error("Tried to access character beyond the scope of the font. character " + value[i] + " font max character " + font.character_sizes.size()); return;
+            }
         }
+
+        render_string = value;
 
         refreshSizesAndPositions();
     }
@@ -492,7 +500,6 @@ class NuText
             {
                 to_add.y = max_distance.y;//Set to_add.y to max_distance.y.
             }
-            
 
             char_pos += to_add;//Add to_add to this character
         }
