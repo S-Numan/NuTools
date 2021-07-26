@@ -82,7 +82,7 @@ void onInit( CRules@ this )
 
     button1.setSize(Vec2f(32, 32));//Here we tell the button to be 32 by 32.
     
-    button1.setPos(Vec2f(800.0f, 200.0f));//Then we put it at this position.
+    button1.setPos(Vec2f(25.0f, 25.0f));//Then we put it at this position.
 
 
 
@@ -123,8 +123,8 @@ void onInit( CRules@ this )
 
     NuMenu::MenuBaseExEx@ text_menu1 = NuMenu::MenuBaseExEx("Render_Test");
     
-    text_menu1.setSize(Vec2f(400, 400));
-    text_menu1.setPos(Vec2f(500.0f, 500.0f));
+    text_menu1.setSize(Vec2f(200, 200));
+    text_menu1.setPos(Vec2f(20.0f, 350.0f));
 
     text_menu1.default_buffer = 50.0f;//Buffer. For example how far text/icons are from the sides of the menu. Other buffery things too.
 
