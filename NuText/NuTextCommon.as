@@ -138,9 +138,29 @@ class NuFont
         }
 
 
-        for(i = 0; i < _image_size; i++)//Setup the image.
+        SColor bgColor = SColor(0, 255, 255, 255);
+        SColor fgColor = SColor(255, 255, 255, 255);
+        //Setup the image
+        for(i = 0; i < _image_size; i++)//For every character in this image.
         {
+            SColor msd = basefontdata[i];
+            float sd = Nu::Median(msd.getRed(), msd.getGreen(), msd.getBlue());
+
+            float sd_one = sd / 255.0f;
+
+            float opacity = Maths::Clamp(sd_one, 0.0, 1.0);
             
+            msd = Nu::Mix(bgColor, fgColor, opacity);
+            //msd.setAlpha(sd);
+            basefontdata[i] = msd;
+
+            /*SColor msd = basefontdata[i];
+            float sd = Nu::Median(msd.getRed(), msd.getGreen(), msd.getBlue());
+            if(sd <= 255.0f / 2.0f)
+            {
+                basefontdata[i].setAlpha(0);
+            }*/
+        
         }
 
         if(!Texture::update(font_name, basefontdata)){ error("WAT?"); return;}//Update the texture without that.
@@ -425,6 +445,9 @@ class NuText
 
     array<Vec2f> char_positions;//What position each character should be in to not overlap.
 
+    u16 next_lines;
+    float next_line_distance;
+
     //Optional cap parameter puts a cap on how far the string can go right. It will halve where a space is, and if not possible it will cut a word in half.//TODO, cap the max x position. 
     
     //Refreshs the size each character is, and where the characters should be positioned.
@@ -439,7 +462,8 @@ class NuText
         string_size_total = Vec2f(0,0);
         char_positions = array<Vec2f>(render_string.size());
 
-        float next_line_distance = font.default_character_size.y * scale.y;
+        next_line_distance = font.default_character_size.y * scale.y;
+        next_lines = 0;
 
         for(u16 i = 0; i < render_string.size(); i++)//For every character
         {
@@ -448,13 +472,15 @@ class NuText
             string_sizes[i] = Nu::MultVec(font.character_sizes[char_num], scale);//Set the size of this character in the string, multiplied by the scale.
 
 
-            Vec2f char_pos;//Position this character adds.
+            Vec2f char_pos = Vec2f_zero;//Position this character adds.
+
+            char_pos.y = next_line_distance - string_sizes[i].y;//Make the character on lowest point possible rather than being on the highest point possible.
 
             char_pos = Align(char_pos, i);
 
-            char_pos = NextLine(char_pos, i, next_line_distance);
+            char_pos = NextLine(char_pos, i);
 
-            char_pos = CapWidth(char_pos, i, i, next_line_distance);
+            char_pos = CapWidth(char_pos, i, i);
 
             char_positions[i] = char_pos;//Add it to this character.
 
@@ -475,7 +501,9 @@ class NuText
     {
         if(i > 0)//Past the first character
         {
-            char_pos = char_positions[i - 1];//Take the previous position.
+            char_pos.x = char_positions[i - 1].x;//Take the previous x position, and set it
+
+            char_pos += Vec2f(0.0f, next_line_distance * next_lines);//Next line to text to get where it needs to go (not controlled by min/max values)
 
             Vec2f to_add = Vec2f(0.0f, 0.0f);//Create a Vec2f that will add to char_pos later
 
@@ -505,20 +533,21 @@ class NuText
         }
         else//First character.
         {
-            char_pos = Vec2f(0,0);
+            //char_pos = Vec2f(0.0f, next_line_distance - string_sizes[i].y);
         }
 
         return char_pos;
     }
 
     //Tells text to render on the next line after a \n is found.
-    private Vec2f NextLine(Vec2f char_pos, u16 i, float next_line_distance)
+    private Vec2f NextLine(Vec2f char_pos, u16 i)
     {
         if(i < render_string.size() - 1//Provided there is one space forward.
             && render_string[i] == "\n"[0])//And this a next line character.
         {
             char_pos.y += next_line_distance;//Next line.
             char_pos.x = 0.0f;//Next line.
+            next_lines++;//Next lined
         }
 
         return char_pos;
@@ -536,7 +565,7 @@ class NuText
     }
 
     //Will next line text if the character passes the specified width.
-    private Vec2f CapWidth(Vec2f char_pos, u16 i, u16 &out out_i, float next_line_distance)
+    private Vec2f CapWidth(Vec2f char_pos, u16 i, u16 &out out_i)
     {
         if(char_pos.x > width_cap//If the character position has gone past the width cap.
         && i < render_string.size() - 1)//And there is a next character.
@@ -564,6 +593,7 @@ class NuText
             
             char_pos.y += next_line_distance;//Next line.
             char_pos.x = 0.0f;//Next line.
+            next_lines++;//Next lined.
         }
         
         out_i = i;

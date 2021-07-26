@@ -1024,6 +1024,28 @@ namespace Nu
         return Vec2f(value, value);
     }
 
+    //1: float 1
+    //2: float 2
+    //3: float
+    //Gets the median between 3 floats
+    float Median(float r, float g, float b) 
+    {
+        return Maths::Max(Maths::Min(r, g), Maths::Min(Maths::Max(r, g), b));
+    }
+
+    //1: Color 1
+    //2: Color 2
+    //3: weight between 0 and 1
+    //This is effectively a lerp statement for two SColors. It interpolates between the two with their every value and returns the result.
+    SColor Mix(SColor color1, SColor color2, float value)
+    {
+        u8 alpha = Maths::Lerp(color1.getAlpha(), color2.getAlpha(), value);
+        u8 red = Maths::Lerp(color1.getRed(), color2.getRed(), value);
+        u8 green = Maths::Lerp(color1.getGreen(), color2.getGreen(), value);
+        u8 blue = Maths::Lerp(color1.getBlue(), color2.getBlue(), value);
+
+        return SColor(alpha, red, green, blue);
+    }
 
 
 
@@ -1809,7 +1831,7 @@ namespace NuLib
 //TODO
 /*
 
-Allow NuImage to be rotated. See frame_points. Take each vector and apply a rotation on them. GL
+Only render things from NuImage if the NuImage is on screen? Look into this.
 
 
 

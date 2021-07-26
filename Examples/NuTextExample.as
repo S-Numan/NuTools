@@ -31,7 +31,7 @@ void onInit( CRules@ this )
     
     text_test.setColor(SColor(255, 255, 0, 0));//What color is this text.
     
-    text_test.setWidthCap(300.0f);//When will the text forcefuly next line to not go past this width.
+    text_test.setWidthCap(200.0f);//When will the text forcefuly next line to not go past this width.
 
     text_test.setAngle(0.0f);//What angle is the text at.
 }
