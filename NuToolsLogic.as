@@ -72,7 +72,8 @@ void onTick( CRules@ rules )
 {
     if(getGameTime() == 30 && sv_gamemode == "Testing")//If thirty ticks have passed since restarting and the gamemode is testing
     {
-        Nu::RespawnPlayer(rules, getLocalPlayer());//Respawn the player
+        CBlob@ plob = Nu::RespawnPlayer(rules, getLocalPlayer());//Respawn the player
+        server_CreateBlob("saw", -1, plob.getPosition() + Vec2f(20.0f, 0)); 
     }
     NuRender::onTick(rules);
 

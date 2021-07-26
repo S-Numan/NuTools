@@ -948,10 +948,10 @@ namespace Nu
     //2: player that will be respawned
     //3: optional parameter to specify what blob they will respawn as
     //Respawns the player firstly at a spawn if avaliable, secondly at the ground from the top left.
-    void RespawnPlayer(CRules@ rules, CPlayer@ player, string blob_name = "")
+    CBlob@ RespawnPlayer(CRules@ rules, CPlayer@ player, string blob_name = "")
     {
-        if(!isServer()) { Nu::Warning("Tried respawning player on client"); return; }
-        if(player == @null) { Nu::Error("player was null"); return; }
+        if(!isServer()) { Nu::Warning("Tried respawning player on client"); return @null; }
+        if(player == @null) { Nu::Error("player was null"); return @null; }
 
         CMap@ map = getMap();
 
@@ -1024,6 +1024,8 @@ namespace Nu
             }
             newBlob.server_SetPlayer(player);//Set the player to it's new blob
         }
+
+        return @newBlob;
     }
 
     //1: Float for the Vec2f
