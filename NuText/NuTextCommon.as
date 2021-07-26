@@ -104,7 +104,10 @@ class NuFont
 
         character_sizes = array<Vec2f>(uv_per_frame.size(), Vec2f(0,0));
 
-        for(i = CHARACTER_SPACE; i < uv_per_frame.size(); i++)//Per character, starting from space.
+        uv_per_frame[CHARACTER_SPACE] = array<Vec2f>(4, Vec2f(0,0));
+        character_sizes[CHARACTER_SPACE] = default_character_size * 0.25f;
+
+        for(i = CHARACTER_SPACE + 1; i < uv_per_frame.size(); i++)//Per character, starting one after space.
         {
             Vec2f _TopLeft;//Temp character on image top left,
             Vec2f _BottomRight;//Temp character on image bottom right.
