@@ -139,7 +139,7 @@ void onInit( CRules@ this )
     text_menu1.reposition_images = true;//While this is true, all images will automatically reposition if the menu changes it's size.
 
 
-    text_menu1.setText("ZCenter textZ");//By default the text will be set to font Calibri-48, and be put in element POSCenter which is at the center of the button.
+    text_menu1.setText("ZCenter textZ");//By default the text will be set to font Lato-Regular, and be put in element POSCenter which is at the center of the button.
 
     text_menu1.setText("ZTop textZ"   , Nu::POSTop);
     text_menu1.setText("ZAbove textZ" , Nu::POSAbove);
@@ -151,11 +151,11 @@ void onInit( CRules@ this )
     text_menu1.setText("ZRighter textZ" , Nu::POSRighter);
 
     text_menu1.setText("ZBottom textZ", Nu::POSBottom);
-    text_menu1.setText("ZUnder textZ" , "Calibri-48", Nu::POSUnder);//You can specify the font on creation.
+    text_menu1.setText("ZUnder textZ" , "Lato-Regular", Nu::POSUnder);//You can specify the font on creation.
 
     
 
-    text_menu1.setFont("Calibri-48-Bold");//Everything that changes the text should be set after text is created. The values are stored in the text afterall.
+    text_menu1.setFont("Lato-Regular");//Everything that changes the text should be set after text is created. The values are stored in the text afterall.
     
     text_menu1.setTextColor(SColor(255, 255, 0, 0));//By default these text setting changes affect all currently existing fonts.
     

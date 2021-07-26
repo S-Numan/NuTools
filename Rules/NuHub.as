@@ -240,13 +240,13 @@ class NuHub
         
         fonts.push_back(@_font);
     }
-    void addFont(string font_name, string font_file, bool has_alpha = true)
+    void addFont(string font_name, string font_file, string font_positions_file)
     {
         if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
         
         if(getFont(font_name) != @null) { warning("addFont(string): Font attempted to add already existed."); return; }
 
-        NuFont@ font = NuFont(font_name, font_file, has_alpha);
+        NuFont@ font = NuFont(font_name, font_file, font_positions_file);
 
         if(font == @null)
         {

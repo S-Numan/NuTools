@@ -24,7 +24,7 @@ void onInit( CRules@ this )
 
     is_world_pos = true;//Do note that when rendering text alone (without a menu), you must manually set if it should be on the world position or the screen position.
     
-    @text_test = @NuText("Calibri-48-Bold",//What is the text's font
+    @text_test = @NuText("Lato-Regular",//What is the text's font
         "Hello World!\n! @ # $ % ^ & * ( ) _ + } { ");//What does the text draw.
 
     text_test.setString(text_test.getString() + "\nNext Line!");//Get and add something to NuText's string.

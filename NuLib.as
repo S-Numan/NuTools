@@ -1017,6 +1017,13 @@ namespace Nu
         }
     }
 
+    //1: Float for the Vec2f
+    //Takes a float, and puts it in both sides of a Vec2f, then returns the Vec2f. Generally only useful if you don't want to call something twice like a config read, and also don't want to put a variable on another line.
+    Vec2f f32ToVec2f(float value)
+    {
+        return Vec2f(value, value);
+    }
+
 
 
 
@@ -1443,10 +1450,10 @@ namespace Nu
                 MultVec(frame_size, scale)//Frame size
             );
 
-            Vec2f center =  (frame_points[2] - frame_points[0]) / 2; 
-
             if(angle != 0.0f)
             {
+                Vec2f center = (frame_points[2] - frame_points[0]) / 2;
+
                 for(u8 i = 0; i < frame_points.size(); i++){
                     frame_points[i] = frame_points[i].RotateByDegrees(angle, center);
                 }

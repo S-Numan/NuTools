@@ -1767,7 +1767,7 @@ Check mark option on right
         NuFont@ setFont(string font_name, u16 element = -1, bool repos = true)
         {
             NuFont@ _font = transporter.getFont(font_name);
-            if(_font == @null){ warning("Could not find font with font_name = " + font_name); return transporter.getFont("Calibri-48"); }
+            if(_font == @null){ warning("Could not find font with font_name = " + font_name); return transporter.getFont("Lato-Regular"); }
 
             setFont(@_font, element, repos);
             return @_font;

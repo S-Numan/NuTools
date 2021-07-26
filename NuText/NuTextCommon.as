@@ -14,6 +14,8 @@
 //TODO
 //Color per character.
 //Better angles.
+//Remove first 32 values of each array and handle it manually for performace and stuff,
+//Get everything to work via NuStateImage
 
 
 #include "NuLib.as";
@@ -22,26 +24,23 @@
 
 class NuFont
 {
-    NuFont(string font_name, string font_path, bool _alpha = true)
+    NuFont(string font_name, string font_path, string font_positions_path)
     {
         print("");//KAG will instantly crash if I don't print this.
         
         CHARACTER_SPACE = 32;
 
-        has_alpha = _alpha;
-
-        Setup(font_name, font_path);
+        Setup(font_name, font_path, font_positions_path);
     }
 
     u32 CHARACTER_SPACE;
 
-    private bool has_alpha;
-    bool hasAlpha()
-    {
-        return has_alpha;
-    }
-    
-    void Setup(string font_name, string font_path)
+    //What each parameter means
+    //1: Name for when you call the font. Interact with it, set it, remove it, etc.
+    //2: File path for the font png
+    //3: File path for the details of where each letter are and extra stuff.
+
+    void Setup(string font_name, string font_path, string font_positions_path)
     {
         print("");//KAG will instantly crash if I don't print this.
 
@@ -62,122 +61,83 @@ class NuFont
         Vec2f _image_size_vec = Vec2f(basefontdata.width(), basefontdata.height());
         
 
-        if(_image_size < 3)//To prevent problems when setting start/end/null colors.
+        if(_image_size < 3)
         {
-            error("Image provided to NuFont was too small.");
-            return;
+            Nu::Error("Image provided to NuFont was too small."); return;
         }
-
-        SColor start_color = basefontdata[0];//Get the start color.
-        SColor end_color = basefontdata[1];//Get the end color.
-        SColor null_color = basefontdata[2];//Get null color. (usually black)
-
-        basefontdata[1] = null_color;//Remove this one.
 
 
         u32 i;
-
-        //Check if the file has an equal amount of starts and ends.
-        u32 start_count = 0;
-        u32 end_count = 0;
-        for(i = 0; i < _image_size; i++)
+        
+        ConfigFile@ cfg = ConfigFile();
+        if (!cfg.loadFile(font_positions_path))//Load the file, and if it doesn't exist.
         {
-            if(basefontdata[i] == start_color)
-            {
-                start_count++;
-            }   
-            if(basefontdata[i] == end_color)
-            {
-                end_count++;
-            }
-        }
-        if(start_count != end_count)
-        {
-            error("start count is not equal to end count, is this font file corrupted?");
-        }
-        if(start_count == 0)
-        {
-            error("no characters in this font file?");
+            Nu::Error("Failed to load parameter font_positions_path"); return;
         }
 
-        array<array<Vec2f>> uv_per_frame(start_count + CHARACTER_SPACE + 1);//Create the array that points to where every frame is. The amount of characters(start_count) + the starting character, + 1.
-        for(i = 0; i < 32; i++)//Set each value from 0 through 31 to Vec2f 0,0 to prevent issues.
+        if(!cfg.exists("size")) { Nu::Error("size in cfg was not found. Was the cfg properly made?"); return; }
+        default_character_size = Nu::f32ToVec2f(cfg.read_f32("size"));
+
+        u32 character_count = 0;
+
+        while(true)//Keep going until told to stop
+        {
+            string key_name = "kc" + (character_count + CHARACTER_SPACE) + "_advance";//Name of the key we are looking for
+            if(!cfg.exists(key_name)){ break; }//Stop if the advance does not exist
+
+            f32 _advance = cfg.read_f32(key_name);//It exists, so get it.
+
+            character_count++;//Extra character found.
+        }
+
+        array<array<Vec2f>> uv_per_frame(character_count + CHARACTER_SPACE);//Create the array that points to where every frame is. The amount of characters(character_count) + the starting character.
+        for(i = 0; i < CHARACTER_SPACE; i++)//Set each value from 0 to CHARACTER_SPACE to Vec2f 0,0 to prevent issues.
         {
             uv_per_frame[i] = array<Vec2f>(4, Vec2f(0,0));
         }
 
 
-        character_sizes = array<Vec2f>(start_count + CHARACTER_SPACE + 1, Vec2f(0,0));
+        character_sizes = array<Vec2f>(uv_per_frame.size(), Vec2f(0,0));
 
-
-        //
-        u32 character_count = CHARACTER_SPACE;
-
-        u32 q;
-
-        u32 last_end_pos = 0;
-        for(i = 0; i < _image_size; i++)//Find start point
+        for(i = CHARACTER_SPACE; i < uv_per_frame.size(); i++)//Per character, starting from space.
         {
-            //Look for start positions.
-            if(basefontdata[i] == start_color)//Is this the start position.
+            Vec2f _TopLeft;//Temp character on image top left,
+            Vec2f _BottomRight;//Temp character on image bottom right.
+
+            string key_name = "kc" + i + "_";//First part of the name of the key we're looking for
+
+            //Get the bounds
+            if(!cfg.exists(key_name + "bound_top") || !cfg.exists(key_name + "bound_left") || !cfg.exists(key_name + "bound_bottom") || !cfg.exists(key_name + "bound_right"))//If a bound does not exist
             {
-                //This is the start position.
-                for(q = last_end_pos; q < _image_size; q++)//Look for start positions AFTER the last end position.
-                {
-                    if(basefontdata[q] == end_color)//Found the end point
-                    {
-                        Vec2f _frame_start = Vec2f(i % _image_size_vec.x, i / int(_image_size_vec.x));
+                Nu::Error("A bound did not exist on key_name " + key_name); return;//Caesars cheesecake factory is pretty good.
+            }
+                
+            _TopLeft = Vec2f(Maths::Floor(cfg.read_f32(key_name + "bound_left")), Maths::Floor(cfg.read_f32(key_name + "bound_top")));//Get the topleft
+            _BottomRight = Vec2f(Maths::Floor(cfg.read_f32(key_name + "bound_right")), Maths::Floor(cfg.read_f32(key_name + "bound_bottom")));//Get the bottomright
 
-                        Vec2f _frame_end = Vec2f(q % _image_size_vec.x, q / int(_image_size_vec.x));
 
-                        character_sizes[character_count] = _frame_end - _frame_start;
+            //Set uv for each frame
+            uv_per_frame[i] = Nu::getUVFrame(basefont.getImageSize(), _TopLeft, _BottomRight);
 
-                        uv_per_frame[character_count] = Nu::getUVFrame(basefont.getImageSize(), _frame_start, _frame_end);
-                        
-                        character_count++;
-                        
-                        last_end_pos = q + 1;
-                        
-                        break;
-                    }
-                    
-                }
+            //Set character size for each frame
+            character_sizes[i] = _BottomRight - _TopLeft;
+
+            if(character_sizes[i].x > max_character_size.x)//If the size of this character's x size is larger than the max character's x size
+            {
+                max_character_size.x = character_sizes[i].x;//Set this as the max character size x size
+            }
+            if(character_sizes[i].y > max_character_size.y)//If the size of this character's y size is larger than the max character's y size
+            {
+                max_character_size.y = character_sizes[i].y;//Set this as the max character's y size
             }
         }
 
-        if(character_count - CHARACTER_SPACE != start_count)//If the character count and the start count are different.
+
+        for(i = 0; i < _image_size; i++)//Setup the image.
         {
-            Nu::Error("Something went wrong.\ncharacter_count = " + character_count + "\nstart_count = " + start_count + "\nend_count = " + end_count + "\nimage_size = " + _image_size + "\nlast_end_pos = " + last_end_pos);
+            
         }
 
-
-        for(i = 0; i < _image_size; i++)
-        {
-            if(basefontdata[i] == null_color || basefontdata[i] == start_color || basefontdata[i] == end_color)//If the color is one of 3 main colors.
-            {
-                basefontdata[i] = SColor(0, 0, 0, 0);//Wipe it.
-            }
-            else if(basefontdata[i].getRed() != 255 || basefontdata[i].getGreen() != 255 || basefontdata[i].getBlue() != 255)//If the color of a pixel is not completely white
-            {
-                u8 red = basefontdata[i].getRed();
-                u8 green = basefontdata[i].getGreen();
-                u8 blue = basefontdata[i].getBlue();
-
-                u16 total_color = red + green + blue;
-
-                float total = total_color / 3.0f;
-
-                if(has_alpha)
-                {
-                    basefontdata[i] = SColor(total, 255, 255, 255);                    
-                }
-                else
-                {
-                    total = Maths::Lerp(total, 255, 0.75);
-                    basefontdata[i] = SColor(255, total, total, total);
-                }
-            }
-        }
         if(!Texture::update(font_name, basefontdata)){ error("WAT?"); return;}//Update the texture without that.
 
         basefont.uv_per_frame = uv_per_frame;
@@ -202,6 +162,9 @@ class NuFont
     Nu::NuImage@ basefont;
 
     array<Vec2f> character_sizes;//Sizes for every character in the character png.
+
+    Vec2f default_character_size;
+    Vec2f max_character_size;
 }
 
 
@@ -212,7 +175,7 @@ class NuText
     NuText()
     {
         Setup();
-        setFont("Calibri-48");
+        setFont("Lato-Regular");
         setString("");
     }
     NuText(string font_name, string text = ""
@@ -234,6 +197,12 @@ class NuText
         angle = 0.0f;
 
         text_color = SColor(255, 255, 255, 255);
+
+        min_distance = Vec2f(0.0f, 0.0f);
+
+        max_distance = Vec2f(99999.0f, 99999.0f);
+
+        default_char_offset = Vec2f(0.0f, 0.0f);
     }
 
     //
@@ -345,7 +314,7 @@ class NuText
 
         for(u16 i = 0; i < render_string.size(); i++)//For every character in this string.
         {
-            font.basefont.setFrameSize(font.character_sizes[render_string[i]], false);//Set the frame size of the character in the texture.
+            font.basefont.setFrameSize(font.character_sizes[render_string[i]], false);//Set the frame size of the character in the texture, and DO NOT recalculate the uv that was so hard worked for.
 
             font.basefont.setDefaultPoints();//Set the points for how large this character is rendered.
 
@@ -396,6 +365,52 @@ class NuText
         setScale(Vec2f(value, value));
     }
 
+    private Vec2f min_distance;//Min distance text can be from each other
+    Vec2f getMinDistance()
+    {
+        return min_distance;
+    }
+    void setMinDistance(Vec2f value)
+    {
+        min_distance = value;
+        refreshSizesAndPositions();
+    }
+    void setMinDistance(float value)//Only the x value
+    {
+        setMinDistance(Vec2f(value, 0.0f));
+    }
+    
+    private Vec2f max_distance;//Max distance text can be from each other
+    Vec2f getMaxDistance()
+    {
+        return max_distance;
+    }
+    void setMaxDistance(Vec2f value)
+    {
+        max_distance = value;
+        refreshSizesAndPositions();
+    }
+    void setMaxDistance(float value)//Only the x value
+    {
+        setMaxDistance(Vec2f(value, 99999.0f));
+    }
+
+    private Vec2f default_char_offset;//Adds to how far each character is away from each other. Min and Max distance will still apply.
+    Vec2f getCharOffset()
+    {
+        return default_char_offset;
+    }
+    void setCharOffset(Vec2f value)
+    {
+        default_char_offset = value;
+        refreshSizesAndPositions();
+    }
+    void setCharOffset(float value)//Only the x value
+    {
+        setCharOffset(Vec2f(value, 0.0f));
+    }
+
+
     array<Vec2f> string_sizes;//Sizes for each character in the drawn string.
     
     Vec2f string_size_total;//Size for the entire drawn string.
@@ -416,7 +431,7 @@ class NuText
         string_size_total = Vec2f(0,0);
         char_positions = array<Vec2f>(render_string.size());
 
-        float next_line_distance = font.character_sizes[font.CHARACTER_SPACE].y * scale.y;
+        float next_line_distance = font.default_character_size.y * scale.y;
 
         for(u16 i = 0; i < render_string.size(); i++)//For every character
         {
@@ -447,12 +462,39 @@ class NuText
         }
     }
 
+    //Aligns text next to each other. Without this text would be all in the same place.
     private Vec2f Align(Vec2f char_pos, u16 i)
     {
         if(i > 0)//Past the first character
         {
             char_pos = char_positions[i - 1];//Take the previous position.
-            char_pos.x += string_sizes[i - 1].x;//Add the new position to it
+
+            Vec2f to_add = Vec2f(0.0f, 0.0f);//Create a Vec2f that will add to char_pos later
+
+            to_add.x = string_sizes[i - 1].x;//Add the size of the previous character to it
+
+            to_add += default_char_offset;//Add the offset.
+
+            if(to_add.x < min_distance.x)//If what's being added is less than min_distance.x
+            {
+                to_add.x = min_distance.x;//Set to_add.x to min_distance.x.
+            }
+            else if(to_add.x > max_distance.x)//If what's being added is more than max_distance.x
+            {
+                to_add.x = max_distance.x;//Set to_add.x to max_distance.x.
+            }
+            
+            if(to_add.y < min_distance.y)//If what's being added is less than min_distance.y
+            {
+                to_add.y = min_distance.y;//Set to_add.y to min_distance.y.
+            }
+            else if(to_add.y > max_distance.y)//If what's being added is more than max_distance.y
+            {
+                to_add.y = max_distance.y;//Set to_add.y to max_distance.y.
+            }
+            
+
+            char_pos += to_add;//Add to_add to this character
         }
         else//First character.
         {
@@ -462,6 +504,7 @@ class NuText
         return char_pos;
     }
 
+    //Tells text to render on the next line after a \n is found.
     private Vec2f NextLine(Vec2f char_pos, u16 i, float next_line_distance)
     {
         if(i < render_string.size() - 1//Provided there is one space forward.
@@ -485,6 +528,7 @@ class NuText
         refreshSizesAndPositions();
     }
 
+    //Will next line text if the character passes the specified width.
     private Vec2f CapWidth(Vec2f char_pos, u16 i, u16 &out out_i, float next_line_distance)
     {
         if(char_pos.x > width_cap//If the character position has gone past the width cap.
