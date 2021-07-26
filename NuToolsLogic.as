@@ -45,7 +45,7 @@ NuHub@ LoadStuff( CRules@ rules )//Every reload and restart
 
     if(sv_gamemode == "Testing")//Is the gamemode name Testing?
     {
-        if(init)//If first time init
+        if(!init)//If first time init
         {
             print("=====NuButton.as attempt to add. This will only work if the NuButton mod is installed=====");
             rules.AddScript("NuButton.as");//Add the NuButton script to the gamemode.
