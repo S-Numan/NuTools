@@ -21,19 +21,41 @@
 #include "NuLib.as";
 #include "NuHub.as";
 
+enum FontType//Defines what type of font we're reading
+{
+    IrrFontTool,
+    MSDF
+}
 
 class NuFont
 {
-    NuFont(string font_name, string font_path, string font_positions_path)
+    NuFont(FontType _type, string font_name, string font_path, string font_positions_path = "")
     {
-        print("");//KAG will instantly crash if I don't print this.
         
+        if(_type == MSDF && font_positions_path == "")
+        {
+            Nu::Error("MSDF FontType requires a font_positions_path"); return;
+        }
+
+        font_type = _type;
+        Init(font_name, font_path, font_positions_path);
+    }
+    
+
+    FontType font_type; 
+
+    bool has_alpha;
+
+    u32 CHARACTER_SPACE;
+
+    void Init(string font_name, string font_path, string font_positions_path)
+    {
         CHARACTER_SPACE = 32;
+        
+        has_alpha = true;
 
         Setup(font_name, font_path, font_positions_path);
     }
-
-    u32 CHARACTER_SPACE;
 
     //What each parameter means
     //1: Name for when you call the font. Interact with it, set it, remove it, etc.
@@ -42,7 +64,7 @@ class NuFont
 
     void Setup(string font_name, string font_path, string font_positions_path)
     {
-        print("");//KAG will instantly crash if I don't print this.
+        print("Loading font");//KAG may instantly crash if I don't print "something". I dunno what
 
         if(Texture::exists(font_name))
         {
@@ -57,28 +79,48 @@ class NuFont
 
         basefont.setZ(2.0f);
 
-        u32 _image_size = basefontdata.width() * basefontdata.height();
-        Vec2f _image_size_vec = Vec2f(basefontdata.width(), basefontdata.height());
+        u32 basefontsize = basefontdata.width() * basefontdata.height();
+        Vec2f basefontsizevec = Vec2f(basefontdata.width(), basefontdata.height());
         
 
-        if(_image_size < 3)
+        if(basefontsize < 3)
         {
             Nu::Error("Image provided to NuFont was too small."); return;
         }
-
-
-        u32 i;
         
+        array<array<Vec2f>> uv_per_frame;
+        
+        switch (font_type)
+        {
+            case MSDF:
+                if(!MSDFSetup(basefontdata, uv_per_frame, font_positions_path, basefontsize)) { return; }//Call MSDFSetup, and if it returns false, return.
+                break;
+            case IrrFontTool:
+                if(!IrrFontToolSetup(basefontdata, uv_per_frame, basefontsize, basefontsizevec)) { return; }//Call IrrFontToolSetup, and if it returns false, return.
+                break;
+            default:
+                Nu::Error("font_type unknown"); return;
+        }
+
+        if(!Texture::update(font_name, basefontdata)){ Nu::Error("WAT?"); return;}//Update the texture with the things changed.
+
+        basefont.uv_per_frame = uv_per_frame;//Set the uv
+    }
+
+
+    bool MSDFSetup(ImageData@ basefontdata, array<array<Vec2f>> &out uv_per_frame, string font_positions_path, u32 basefontsize)
+    {
+        u32 character_count = 0;
+        u32 i;
+
         ConfigFile@ cfg = ConfigFile();
         if (!cfg.loadFile(font_positions_path))//Load the file, and if it doesn't exist.
         {
-            Nu::Error("Failed to load parameter font_positions_path"); return;
+            Nu::Error("Failed to load parameter font_positions_path"); return false;
         }
 
-        if(!cfg.exists("size")) { Nu::Error("size in cfg was not found. Was the cfg properly made?"); return; }
+        if(!cfg.exists("size")) { Nu::Error("size in cfg was not found. Was the cfg properly made?"); return false; }
         default_character_size = Nu::f32ToVec2f(cfg.read_f32("size"));
-
-        u32 character_count = 0;
 
         while(true)//Keep going until told to stop
         {
@@ -92,10 +134,10 @@ class NuFont
 
         if(character_count == 0)
         {
-            Nu::Error("No characters found in the font_positions_path file. Is it setup wrong?"); return;
+            Nu::Error("No characters found in the font_positions_path file. Is it setup wrong?"); return false;
         }
 
-        array<array<Vec2f>> uv_per_frame(character_count + CHARACTER_SPACE);//Create the array that points to where every frame is. The amount of characters(character_count) + the starting character.
+        uv_per_frame = array<array<Vec2f>>(character_count + CHARACTER_SPACE);//Create the array that points to where every frame is. The amount of characters(character_count) + the starting character.
         for(i = 0; i < CHARACTER_SPACE; i++)//Set each value from 0 to CHARACTER_SPACE to Vec2f 0,0 to prevent issues.
         {
             uv_per_frame[i] = array<Vec2f>(4, Vec2f(0,0));
@@ -117,7 +159,7 @@ class NuFont
             //Get the bounds
             if(!cfg.exists(key_name + "bound_top") || !cfg.exists(key_name + "bound_left") || !cfg.exists(key_name + "bound_bottom") || !cfg.exists(key_name + "bound_right"))//If a bound does not exist
             {
-                Nu::Error("A bound did not exist on key_name " + key_name); return;//Caesars cheesecake factory is pretty good.
+                Nu::Error("A bound did not exist on key_name " + key_name); return false;//Caesars cheesecake factory is pretty good.
             }
                 
             _TopLeft = Vec2f(Maths::Floor(cfg.read_f32(key_name + "bound_left")), Maths::Floor(cfg.read_f32(key_name + "bound_top")));//Get the topleft
@@ -130,12 +172,10 @@ class NuFont
             //Set character size for each frame
             character_sizes[i] = _BottomRight - _TopLeft;
 
-            if(character_sizes[i].x > max_character_size.x)//If the size of this character's x size is larger than the max character's x size
-            {
+            if(character_sizes[i].x > max_character_size.x){//If the size of this character's x size is larger than the max character's x size
                 max_character_size.x = character_sizes[i].x;//Set this as the max character size x size
             }
-            if(character_sizes[i].y > max_character_size.y)//If the size of this character's y size is larger than the max character's y size
-            {
+            if(character_sizes[i].y > max_character_size.y){//If the size of this character's y size is larger than the max character's y size
                 max_character_size.y = character_sizes[i].y;//Set this as the max character's y size
             }
         }
@@ -144,7 +184,7 @@ class NuFont
         SColor bgColor = SColor(0, 255, 255, 255);
         SColor fgColor = SColor(255, 255, 255, 255);
         //Setup the image
-        for(i = 0; i < _image_size; i++)//For every character in this image.
+        for(i = 0; i < basefontsize; i++)//For every character in this image.
         {
             SColor msd = basefontdata[i];
             float sd = Nu::Median(msd.getRed(), msd.getGreen(), msd.getBlue());
@@ -166,10 +206,132 @@ class NuFont
         
         }
 
-        if(!Texture::update(font_name, basefontdata)){ error("WAT?"); return;}//Update the texture without that.
-
-        basefont.uv_per_frame = uv_per_frame;
+        return true;
     }
+
+    bool IrrFontToolSetup(ImageData@ basefontdata, array<array<Vec2f>> &out uv_per_frame, u32 basefontsize, Vec2f basefontsizevec)
+    {
+        SColor start_color = basefontdata[0];//Get the start color.
+        SColor end_color = basefontdata[1];//Get the end color.
+        SColor null_color = basefontdata[2];//Get null color. (usually black)
+
+        basefontdata[1] = null_color;//Remove this one.
+
+
+        u32 i;
+
+        //Check if the file has an equal amount of starts and ends.
+        u32 start_count = 0;
+        u32 end_count = 0;
+        for(i = 0; i < basefontsize; i++)
+        {
+            if(basefontdata[i] == start_color)
+            {
+                start_count++;
+            }   
+            if(basefontdata[i] == end_color)
+            {
+                end_count++;
+            }
+        }
+        if(start_count != end_count)
+        {
+            error("start count is not equal to end count, is this font file corrupted?");
+        }
+        if(start_count == 0)
+        {
+            error("no characters in this font file?");
+        }
+
+        uv_per_frame = array<array<Vec2f>>(start_count + CHARACTER_SPACE + 1);//Create the array that points to where every frame is. The amount of characters(start_count) + the starting character, + 1.
+        for(i = 0; i < 32; i++)//Set each value from 0 through 31 to Vec2f 0,0 to prevent issues.
+        {
+            uv_per_frame[i] = array<Vec2f>(4, Vec2f(0,0));
+        }
+
+
+        character_sizes = array<Vec2f>(start_count + CHARACTER_SPACE + 1, Vec2f(0,0));
+
+
+        //
+        u32 character_count = CHARACTER_SPACE;
+
+        u32 q;
+
+        u32 last_end_pos = 0;
+        for(i = 0; i < basefontsize; i++)//Find start point
+        {
+            //Look for start positions.
+            if(basefontdata[i] == start_color)//Is this the start position.
+            {
+                //This is the start position.
+                for(q = last_end_pos; q < basefontsize; q++)//Look for start positions AFTER the last end position.
+                {
+                    if(basefontdata[q] == end_color)//Found the end point
+                    {
+                        Vec2f _frame_start = Vec2f(i % basefontsizevec.x, i / int(basefontsizevec.x));
+
+                        Vec2f _frame_end = Vec2f(q % basefontsizevec.x, q / int(basefontsizevec.x));
+
+                        uv_per_frame[character_count] = Nu::getUVFrame(basefont.getImageSize(), _frame_start, _frame_end);
+
+                        character_sizes[character_count] = _frame_end - _frame_start;
+
+                        if(character_sizes[character_count].x > max_character_size.x){//If the size of this character's x size is larger than the max character's x size
+                            max_character_size.x = character_sizes[character_count].x;//Set this as the max character size x size
+                        }
+                        if(character_sizes[character_count].y > max_character_size.y){//If the size of this character's y size is larger than the max character's y size
+                            max_character_size.y = character_sizes[character_count].y;//Set this as the max character's y size
+                        }
+
+                        character_count++;
+
+                        last_end_pos = q + 1;
+                        
+                        break;
+                    }
+                    
+                }
+            }
+        }
+
+        if(character_count - CHARACTER_SPACE != start_count)//If the character count and the start count are different.
+        {
+            Nu::Error("Something went wrong.\ncharacter_count = " + character_count + "\nstart_count = " + start_count + "\nend_count = " + end_count + "\basefontsize = " + basefontsize + "\ni = " + i);
+        }
+
+
+        for(i = 0; i < basefontsize; i++)
+        {
+            if(basefontdata[i] == null_color || basefontdata[i] == start_color || basefontdata[i] == end_color)//If the color is one of 3 main colors.
+            {
+                basefontdata[i] = SColor(0, 0, 0, 0);//Wipe it.
+            }
+            else if(basefontdata[i].getRed() != 255 || basefontdata[i].getGreen() != 255 || basefontdata[i].getBlue() != 255)//If the color of a pixel is not completely white
+            {
+                u8 red = basefontdata[i].getRed();
+                u8 green = basefontdata[i].getGreen();
+                u8 blue = basefontdata[i].getBlue();
+
+                u16 total_color = red + green + blue;
+
+                float total = total_color / 3.0f;
+
+                if(has_alpha)
+                {
+                    basefontdata[i] = SColor(total, 255, 255, 255);                    
+                }
+                else
+                {
+                    total = Maths::Lerp(total, 255, 0.75);
+                    basefontdata[i] = SColor(255, total, total, total);
+                }
+            }
+        }
+
+        return true;
+    }
+
 
 
     array<Vec2f> get_opIndex(int idx)
@@ -487,13 +649,13 @@ class NuText
 
             char_positions[i] = char_pos;//Add it to this character.
 
-            if(string_size_total.x < char_pos.x)//Set as string_size_total.x if larger
+            if(string_size_total.x < char_pos.x + string_sizes[i].x)//Set as string_size_total.x if larger
             {
-                string_size_total.x = char_pos.x;
+                string_size_total.x = char_pos.x + string_sizes[i].x;
             }
-            if(string_size_total.y < char_pos.y)//Set as string_size_total.y if larger
+            if(string_size_total.y < char_pos.y + string_sizes[i].y)//Set as string_size_total.y if larger
             {
-                string_size_total.y = char_pos.y;
+                string_size_total.y = char_pos.y + string_sizes[i].y;
             }
                 
         }

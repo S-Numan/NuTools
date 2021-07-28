@@ -95,7 +95,8 @@ void onRender( CRules@ rules )
 
 void addFonts( CRules@ rules, NuHub@ hub)
 {
-    hub.addFont("Lato-Regular", "Lato-Regular.png", "Lato-Regular.cfg");
+    hub.addFont(MSDF, "Lato-Regular", "Lato-Regular.png", "Lato-Regular.cfg");//MSDF font
+    hub.addFont(IrrFontTool, "Calibri-48-Bold", "Calibri-48-Bold.png");//Irr Font
 }
 
 
