@@ -948,7 +948,7 @@ namespace Nu
     //2: player that will be respawned
     //3: optional parameter to specify what blob they will respawn as
     //Respawns the player firstly at a spawn if avaliable, secondly at the ground from the top left.
-    CBlob@ RespawnPlayer(CRules@ rules, CPlayer@ player, string blob_name = "")
+    shared CBlob@ RespawnPlayer(CRules@ rules, CPlayer@ player, string blob_name = "")
     {
         if(!isServer()) { Nu::Warning("Tried respawning player on client"); return @null; }
         if(player == @null) { Nu::Error("player was null"); return @null; }
@@ -1030,7 +1030,7 @@ namespace Nu
 
     //1: Float for the Vec2f
     //Takes a float, and puts it in both sides of a Vec2f, then returns the Vec2f. Generally only useful if you don't want to call something twice like a config read, and also don't want to put a variable on another line.
-    Vec2f f32ToVec2f(float value)
+    shared Vec2f f32ToVec2f(float value)
     {
         return Vec2f(value, value);
     }
@@ -1039,7 +1039,7 @@ namespace Nu
     //2: float 2
     //3: float
     //Gets the median between 3 floats
-    float Median(float r, float g, float b) 
+    shared float Median(float r, float g, float b) 
     {
         return Maths::Max(Maths::Min(r, g), Maths::Min(Maths::Max(r, g), b));
     }
@@ -1048,7 +1048,7 @@ namespace Nu
     //2: Color 2
     //3: weight between 0 and 1
     //This is effectively a lerp statement for two SColors. It interpolates between the two with their every value and returns the result.
-    SColor Mix(SColor color1, SColor color2, float value)
+    shared SColor Mix(SColor color1, SColor color2, float value)
     {
         u8 alpha = Maths::Lerp(color1.getAlpha(), color2.getAlpha(), value);
         u8 red = Maths::Lerp(color1.getRed(), color2.getRed(), value);
