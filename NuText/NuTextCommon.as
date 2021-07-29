@@ -300,6 +300,7 @@ class NuFont
             Nu::Error("Something went wrong.\ncharacter_count = " + character_count + "\nstart_count = " + start_count + "\nend_count = " + end_count + "\basefontsize = " + basefontsize + "\ni = " + i);
         }
 
+        default_character_size = character_sizes[CHARACTER_SPACE];//Default character size is the size of the space character.
 
         for(i = 0; i < basefontsize; i++)
         {
@@ -627,7 +628,8 @@ class NuText
         string_size_total = Vec2f(0,0);
         char_positions = array<Vec2f>(render_string.size());
 
-        next_line_distance = font.default_character_size.y * scale.y;
+        next_line_distance = font.default_character_size.y * scale.y;//Next line distance is the default character_size multiplied by scale.
+
         next_lines = 0;
 
         for(u16 i = 0; i < render_string.size(); i++)//For every character
