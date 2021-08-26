@@ -15,6 +15,7 @@ void onInit(CRules@ rules)
     //image.CreateImage("render-name",//Assign a texture name
         //"RenderExample.png");//Image that is rendered
     //image.CreateImage("render-name", sprite);//Feel free to copy a sprite instead
+    //image.CreateImage("render-name", "");//Provided the texture render-name already exists, you can do this to give it to the NuImage class. Remember to make sure render-name actually exists.
 
     image.setFrameSize(Vec2f(32, 32));//Frame size in the image
 
