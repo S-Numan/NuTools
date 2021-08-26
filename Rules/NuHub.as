@@ -16,7 +16,7 @@ class RenderDetails
         @image = @null;
     }
 
-    RenderDetails(Nu::NuImage@ _image, Vec2f _pos, bool _world_pos = false, Vec2f _old_pos = Vec2f(-1.0f, -1.0f))
+    RenderDetails(Nu::NuImage@ _image, Vec2f _pos, bool _world_pos = false, bool _interpolate = true, Vec2f _old_pos = Vec2f(-1.0f, -1.0f))
     {
         func = @null;
 
@@ -33,6 +33,7 @@ class RenderDetails
         }
         
         world_pos = _world_pos;
+        interpolate = _interpolate;
     }
     private RENDER_CALLBACK@ func;
     RENDER_CALLBACK@ getFunc()
@@ -53,6 +54,7 @@ class RenderDetails
     Vec2f old_pos;
     Vec2f pos;
     bool world_pos;
+    bool interpolate;
 }
 
 bool getHub(NuHub@ &out _hub)
@@ -69,13 +71,13 @@ void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func)
     if(!getHub(@hub)) { return; }
     hub.RenderImage(layer, _func);
 }
-void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false)
+void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = true)
 {
     if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
 
     NuHub@ hub;
     if(!getHub(@hub)) { return; }
-    hub.RenderImage(layer, _image, _pos, is_world_pos);
+    hub.RenderImage(layer, _image, _pos, is_world_pos, _interpolate);
 }
 
 class NuHub
@@ -173,7 +175,7 @@ class NuHub
     
         render_filled_spots[layer]++;
     }
-    void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false)
+    void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = true)
     {
         if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
 
@@ -181,11 +183,11 @@ class NuHub
 
         if(render_details[layer].size() == render_filled_spots[layer])//render_details not large enough?
         {
-            render_details[layer].push_back(@RenderDetails(_image, _pos, is_world_pos));//Make more space and put it in
+            render_details[layer].push_back(@RenderDetails(_image, _pos, is_world_pos, _interpolate));//Make more space and put it in
         }
         else//Render details is large enough?
         {
-            @render_details[layer][render_filled_spots[layer]] = @RenderDetails(_image, _pos, is_world_pos);//Put it in at the next open space
+            @render_details[layer][render_filled_spots[layer]] = @RenderDetails(_image, _pos, is_world_pos, _interpolate);//Put it in at the next open space
         }        
     
         render_filled_spots[layer]++;
