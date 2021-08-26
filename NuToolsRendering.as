@@ -127,7 +127,7 @@ namespace NuRender
         }
 
 
-        //Render::SetTransformWorldspace();//Have to do this or kag gets cranky as it doesn't do it itself.
+        Render::SetTransformWorldspace();//Have to do this or kag gets cranky as it doesn't do it itself.
     }
 }
 

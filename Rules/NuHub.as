@@ -9,11 +9,18 @@ funcdef bool RENDER_CALLBACK();
 
 class RenderDetails
 {
-    RenderDetails(RENDER_CALLBACK@ _func)
+    RenderDetails(RENDER_CALLBACK@ _func, bool _world_pos)
     {
         @func = @_func;   
 
         @image = @null;
+
+        pos = Vec2f(0,0);
+        old_pos = pos;
+        
+        world_pos = _world_pos;
+        
+        interpolate = true;
     }
 
     RenderDetails(Nu::NuImage@ _image, Vec2f _pos, bool _world_pos = false, bool _interpolate = true, Vec2f _old_pos = Vec2f(-1.0f, -1.0f))
@@ -63,13 +70,13 @@ bool getHub(NuHub@ &out _hub)
     return true;
 }
 
-void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func)
+void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func, bool is_world_pos)
 {
     if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
 
     NuHub@ hub;
     if(!getHub(@hub)) { return; }
-    hub.RenderImage(layer, _func);
+    hub.RenderImage(layer, _func, is_world_pos);
 }
 void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = true)
 {
@@ -158,7 +165,7 @@ class NuHub
     }
 
 
-    void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func)
+    void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func, bool is_world_pos)
     {
         if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
 
@@ -166,13 +173,13 @@ class NuHub
 
         if(render_details[layer].size() == render_filled_spots[layer])//render_details not large enough?
         {
-            render_details[layer].push_back(@RenderDetails(_func));//Make more space and put it in
+            render_details[layer].push_back(@RenderDetails(_func, is_world_pos));//Make more space and put it in
         }
         else//Render details is large enough?
         {
-            @render_details[layer][render_filled_spots[layer]] = @RenderDetails(_func);//Put it in at the next open space
+            @render_details[layer][render_filled_spots[layer]] = @RenderDetails(_func, is_world_pos);//Put it in at the next open space
         }
-    
+
         render_filled_spots[layer]++;
     }
     void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = true)

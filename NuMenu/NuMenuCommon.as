@@ -1222,14 +1222,14 @@ Check mark option on right
 
             Driver@ driver = getDriver();
 
-            if(!isWorldPos())
+            /*if(!isWorldPos())
             {
                 Render::SetTransformScreenspace();
             }
             else//World pos
             {
                 Render::SetTransformWorldspace();
-            }
+            }*/ //Do this manually
 
             //If this cannot be seen. This is out of range. 
             /*if(getUpperLeft().x  - transporter.MARGIN > driver.getScreenWidth()
@@ -3217,7 +3217,7 @@ Check mark option on right
         for(u16 i = 0; i < transporter.menus.size(); i++)
         {
             transporter.RenderImage(transporter.menus[i].getRenderLayer(),
-                transporter.menus[i].getRenderFunction());//TODO, increase performance of this.
+                transporter.menus[i].getRenderFunction(), transporter.menus[i].isWorldPos());//TODO, increase performance of this.
         }
         //Render
     }
