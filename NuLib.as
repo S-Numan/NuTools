@@ -1454,6 +1454,7 @@ namespace Nu
         ImageData@ CreateImage(string file_path)//Takes just a file path.
         {
             string file_name = Nu::CutOutFileName(file_path);//Cuts out the file name.
+            file_name = "a_" + file_name;//a for auto is placed in the render name, in an attempt to avoid accidently using the render name somebody else is using by accident. 
             return @CreateImage(file_name, file_path);//Uses the file_name as the render_name, and the file path as is.
         }
 

@@ -9,7 +9,7 @@ void onInit(CRules@ rules)
 
     @image = @Nu::NuImage();//Give the "image" variable a NuImage class.
 
-    image.CreateImage("render_texture_name", "RenderExample.png");//Image that is rendered
+    image.CreateImage("RenderExample.png");//Image that is rendered
     
     //Other examples
     //image.CreateImage("render-name",//Assign a texture name
