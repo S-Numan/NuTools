@@ -7,7 +7,7 @@ void onInit(CRules@ rules)
 {
     if(!isClient()) { return; }
 
-    @image = @Nu::NuImage();
+    @image = @Nu::NuImage();//Give the "image" variable a NuImage class.
 
     image.CreateImage("render_texture_name", "RenderExample.png");//Image that is rendered
     
