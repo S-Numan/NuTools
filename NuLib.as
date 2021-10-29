@@ -1449,6 +1449,8 @@ namespace Nu
 
             setFrameSize(Vec2f(s.getFrameWidth(), s.getFrameHeight()));
 
+            setFrame(s.getFrame());
+
             return @tex;
         }
         ImageData@ CreateImage(string file_path)//Takes just a file path.
