@@ -1876,6 +1876,8 @@ Numan_library. Including
 #27. How much of this blob does the inventory have.
 #28. PatchAllBlobs("ScriptName", remove_script = false);//Adds a script to all blobs currently existing, and all future blobs on their creation. if remove_script is true the script with the specified name is instead removed. If it's there.
 #29. PatchBlobs("BlobName", "ScriptName", remove_script = false);//Same as above but only for blobs with the specified name
+#30. Function to get pi 3.14. Because pie is yummy.
+
 
 DrawTextWithWidth(string text, Vec2f pos, SColor color, float width) - Caps width, note this will require an array to save draw text stuff as the calculations should not be done every render call.
 
