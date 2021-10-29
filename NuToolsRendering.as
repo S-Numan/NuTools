@@ -82,14 +82,7 @@ namespace NuRender
             }
             else//No function?
             {
-                if(details.getFunc() == @null)
-                {
-                    Nu::Error("No function found when rendering.");
-                }
-                else
-                {
-                    Nu::Error("No image found when rendering.");
-                }
+                Nu::Error("No function or image found when rendering.");
             }
         }
         
