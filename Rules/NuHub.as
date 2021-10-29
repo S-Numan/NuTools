@@ -66,7 +66,7 @@ class RenderDetails
 
 bool getHub(NuHub@ &out _hub)
 {
-    if(!getRules().get("NuHub", @_hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic is before anything else that tries to use it."); return false; }
+    if(!getRules().get("NuHub", @_hub)) { Nu::Error("Failed to get NuHub. Make sure NuToolsLogic.as is before anything in gamemode.cfg else that tries to use it. If it isn't in gamemode.cfg, add it there."); return false; }
     return true;
 }
 
