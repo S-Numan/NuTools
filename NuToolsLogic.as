@@ -70,10 +70,14 @@ void onRestart( CRules@ rules)
 
 void onTick( CRules@ rules )
 {
-    if(getGameTime() == 30 && sv_gamemode == "Testing")//If thirty ticks have passed since restarting and the gamemode is testing
+    if(getGameTime() == 30 && sv_gamemode == "Testing" && isServer())//If thirty ticks have passed since restarting and the gamemode is testing, and this is serverside.
     {
-        CBlob@ plob = Nu::RespawnPlayer(rules, getLocalPlayer());//Respawn the player
-        server_CreateBlob("saw", -1, plob.getPosition() + Vec2f(20.0f, 0)); 
+        CPlayer@ player = getPlayer(0);
+        if(player != @null)
+        {
+            CBlob@ plob = Nu::RespawnPlayer(rules, player);//Respawn the player
+            server_CreateBlob("saw", -1, plob.getPosition() + Vec2f(20.0f, 0));
+        } 
     }
     NuRender::onTick(rules);
 
