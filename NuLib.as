@@ -1020,7 +1020,8 @@ namespace Nu
             CBlob@ plob = @player.getBlob();//Get the current player's blob
             if(plob != @null)//If it is not null.
             {
-                plob.server_Die();//Maul it to death.
+                plob.server_SetPlayer(null);//No idea if this is needed
+                plob.server_Die();//Deadify it.
             }
             newBlob.server_SetPlayer(player);//Set the player to it's new blob
         }
