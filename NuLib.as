@@ -1,3 +1,5 @@
+#include "NuHub.as";
+
 //This file is a library of functions, it contains many convenient functions to make modding kag easier.
 
 namespace Nu
@@ -788,7 +790,7 @@ namespace Nu
     //2: Optional u32 seed.
     //Returns the chance selected.
     //You give a bar of values to this, and this randomly picks a part of that bar. Bigger values have a larger chance for this to randomly land on it and pick it.
-    shared u32 RandomWeightedPicker(array<float> chances, u32 seed = 0)
+    u32 RandomWeightedPicker(array<float> chances, u32 seed = 0)
     {
         if(chances.size() == 0)
         {
@@ -813,7 +815,7 @@ namespace Nu
 
         Random@ rnd = Random(seed);//Random with seed
 
-        float random_number = (rnd.Next() + rnd.NextFloat()) % sum;//Get our random number between 0 and the sum
+        float random_number = Nu::getRandomF32(0, sum);//Get our random number between 0 and the sum
 
         float current_pos = 0.0f;//Current pos in the bar
 
@@ -1059,10 +1061,36 @@ namespace Nu
         return SColor(alpha, red, green, blue);
     }
 
+    //1: Min value for random number
+    //2: Max value for random number
+    //This gives you a random integer between the min and max specified values
+    s32 getRandomInt(s32 min, s32 max)
+    {
+        NuHub@ hub;
+        if(!getHub(@hub)) { return 0; }
 
+        if (min == max) { return 0; }
+        
+        return hub.rnd.NextRanged(max - min) + min;
+    }
 
+    //1: Min value for random number
+    //2: Max value for random number
+    //This gives you a random float between the min and max specified values
+    f32 getRandomF32(s32 min, s32 max)
+    {
+        NuHub@ hub;
+        if(!getHub(@hub)) { return 0; }
 
+        if (min == max) { return 0; }
 
+        max -= 1;//Make space for the float value
+        
+        if (min == max) { return hub.rnd.NextFloat(); }
+
+        return (hub.rnd.NextRanged(max - min) + min) + hub.rnd.NextFloat();
+    }
+    
 
 
 

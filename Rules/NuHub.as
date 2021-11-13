@@ -139,10 +139,13 @@ class NuHub
 
     f32 FRAME_TIME; // last frame time
     float MARGIN;//How many pixels away will things stop drawing from outside the screen.
+    Random@ rnd;
     void SetupGlobalVars()
     {
         FRAME_TIME = 0.0f;
         MARGIN = 255.0f;
+
+        @rnd = @Random(getGameTime() * 404 + 1337 - Time_Local());
     }
 
 
