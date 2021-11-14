@@ -1062,7 +1062,7 @@ namespace Nu
     }
 
     //1: Min value for random number
-    //2: Max value for random number
+    //2: Max value for random number (- 1)
     //This gives you a random integer between the min and max specified values
     s32 getRandomInt(s32 min, s32 max)
     {
@@ -1070,25 +1070,22 @@ namespace Nu
         if(!getHub(@hub)) { return 0; }
 
         if (min == max) { return 0; }
-        
+
         return hub.rnd.NextRanged(max - min) + min;
     }
 
     //1: Min value for random number
     //2: Max value for random number
     //This gives you a random float between the min and max specified values
-    f32 getRandomF32(s32 min, s32 max)
+    f32 getRandomF32(f32 min, f32 max)
     {
         NuHub@ hub;
         if(!getHub(@hub)) { return 0; }
 
         if (min == max) { return 0; }
 
-        max -= 1;//Make space for the float value
-        
-        if (min == max) { return hub.rnd.NextFloat(); }
-
-        return (hub.rnd.NextRanged(max - min) + min) + hub.rnd.NextFloat();
+        //return (hub.rnd.NextRanged(max - min) + min) + hub.rnd.NextFloat();
+        return min + hub.rnd.NextFloat() * (max - min);
     }
     
 
