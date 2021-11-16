@@ -1087,6 +1087,17 @@ namespace Nu
         //return (hub.rnd.NextRanged(max - min) + min) + hub.rnd.NextFloat();
         return min + hub.rnd.NextFloat() * (max - min);
     }
+
+    //TODO, not tested
+    CBlob@ getHolder(CBlob@ held)
+    {
+        if(!held.isAttached()) { return @null; }
+        
+        AttachmentPoint@ point = held.getAttachments().getAttachmentPointByName("PICKUP");
+        if(point == @null) { return @null; }
+        
+        return point.getOccupied();
+    }
     
 
 
