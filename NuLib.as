@@ -1073,6 +1073,10 @@ namespace Nu
 
         return hub.rnd.NextRanged(max - min) + min;
     }
+    s32 getRandomInt(s32 max)
+    {
+        return getRandomInt(0, max);
+    }
 
     //1: Min value for random number
     //2: Max value for random number
@@ -1086,6 +1090,10 @@ namespace Nu
 
         //return (hub.rnd.NextRanged(max - min) + min) + hub.rnd.NextFloat();
         return min + hub.rnd.NextFloat() * (max - min);
+    }
+    f32 getRandomF32(f32 max)
+    {
+        return getRandomF32(0.0f, max);
     }
 
     //TODO, not tested
