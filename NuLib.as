@@ -1109,8 +1109,13 @@ namespace Nu
     
 
 
-
-
+    
+    //Sends a command via CBlob to all but the sender
+    //void SendCommand(CBlob@ blob, CBitStream@ bs)
+    //{
+    //    
+    //}
+    //Sends a command via CRules to all but the sender
 
 
 
