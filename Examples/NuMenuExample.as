@@ -170,7 +170,19 @@ void onInit( CRules@ this )
 
 
 
+    NuMenu::MenuSlider@ slider_menu = NuMenu::MenuSlider("Slider");
 
+    slider_menu.setSize(Vec2f(200, 30));
+
+    slider_menu.setPos(Vec2f(300, 200));
+
+    slider_menu.setIncrementValue(20.0f);
+
+    slider_menu.setMaxValue(10.0f);
+
+    slider_menu.setMinValue(-10.0f);
+
+    hub.addMenuToList(@slider_menu);
 
 
 

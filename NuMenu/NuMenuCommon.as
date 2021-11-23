@@ -3137,6 +3137,211 @@ Check mark option on right
         }
     }
 
+
+
+    //This is a hack job. Be warned.
+    class MenuSlider : MenuBase
+    {
+        MenuSlider(string _name, u8 _menu_config = NuMenu::Custom)
+        {
+            if(!isClient())
+            {
+                return;
+            }
+            
+            initVars();
+            afterInitVars(_name, _menu_config);
+        
+            setMenuClass(SliderClass);
+        }
+
+        MenuSlider(Vec2f _upper_left, Vec2f _lower_right, string _name, u8 _menu_config = NuMenu::Custom)
+        {
+            if(!isClient())
+            {
+                return;
+            }
+            
+            initVars();
+            afterInitVars(_name, _menu_config, _upper_left, _lower_right);
+
+            setMenuClass(SliderClass);
+        }
+
+        void initVars() override
+        {
+            MenuBase::initVars();
+            
+            @slider_button = @MenuButton("slider_button");
+            slider_button.setSize(Vec2f(32, 32));
+
+            min_value = 0;
+            max_value = 1;
+            current_value = 0;
+            increment_value = 0;
+        }
+
+        //
+        //Overrides
+        //
+        void setMenuJustMoved(bool value) override
+        {
+            MenuBase::setMenuJustMoved(value);
+            if(value)
+            {
+                MoveHeldMenu();
+            }
+        }
+        
+        void setInterpolated(bool value) override
+        {
+            MenuBase::setInterpolated(value);
+            
+            if(slider_button == @null) { Nu::Error("slider_button was null"); return; }
+
+            slider_button.setInterpolated(value);
+        }
+
+        void setIsWorldPos(bool value) override
+        {
+            MenuBase::setIsWorldPos(value);
+
+            if(slider_button == @null) { Nu::Error("slider_button was null"); return; }
+
+            slider_button.setIsWorldPos(value);
+
+            MoveHeldMenu();
+        }
+        //
+        //Overries
+        //
+
+
+        MenuButton@ slider_button;
+
+        private f32 max_value;
+        f32 getMaxValue()
+        {
+            return max_value;
+        }
+        void setMaxValue(f32 value)
+        {
+            max_value = value;
+            
+            MoveHeldMenu();
+        }
+        private f32 min_value;
+        f32 getMinValue()
+        {
+            return min_value;
+        }
+        void setMinValue(f32 value)
+        {
+            min_value = value;
+            
+            MoveHeldMenu();
+        }
+        private f32 current_value;
+        f32 getCurrentValue()
+        {
+            return current_value;
+        }
+        void setCurrentValue(f32 value)
+        {
+            current_value = value;
+
+            MoveHeldMenu();
+        }
+        private f32 increment_value;
+        f32 getIncrementValue()
+        {
+            return increment_value;
+        }
+        void setIncrementValue(f32 value)
+        {
+            increment_value = value;
+        }
+
+        f32 getCurrentPercent()
+        {
+            f32 pos_percent = current_value / getSize().x;
+            
+            return Maths::Lerp(min_value, max_value, pos_percent);
+        }
+
+
+        private void MoveHeldMenu()
+        {
+            if(slider_button == @null) { Nu::Error("slider_button was null"); return; }
+
+            if(slider_button.getMoveToOwner())
+            {
+                slider_button.setPos(getPos() + slider_button.getOffset() + Vec2f(current_value, 0) - Vec2f(slider_button.getSize().x / 2, 0));
+            }
+        }
+
+        bool Tick() override
+        {
+            if(!MenuBase::Tick()){ return false; }
+
+
+            if(slider_button == @null) { Nu::Error("slider_button was null"); return false; }
+
+            slider_button.Tick();
+
+            slider_button.PostTick();
+
+            u8 button_state = slider_button.getButtonState();
+
+            if(button_state == JustPressed || button_state == Pressed || button_state == Selected)
+            {
+                CControls@ controls = getControls();
+                if(controls == @null) { Nu::Warning("controls was null"); return false; }
+                
+                Vec2f mouse_pos;
+
+                if(isWorldPos())
+                {
+                    mouse_pos = controls.getMouseWorldPos();
+                }
+                else//Screen
+                {
+                    mouse_pos = controls.getMouseScreenPos();
+                }
+
+                if(mouse_pos.x < getPos().x) { mouse_pos.x = getPos().x; }
+                if(mouse_pos.x > getPos().x + getSize().x) { mouse_pos.x = getPos().x + getSize().x; }
+
+                f32 offset = Nu::RoundByMultiple(mouse_pos.x - getPos().x, getIncrementValue());
+
+                current_value = offset;
+
+                print("percent = " + getCurrentPercent());
+
+                MoveHeldMenu();
+            }
+
+            return true;
+        }
+
+        bool Render() override
+        {
+            if(!MenuBase::Render()){ return false; }
+
+
+            if(slider_button == @null) { Nu::Error("slider_button was null"); return false; }
+
+            RENDER_CALLBACK@ func = @slider_button.getRenderFunction();
+            if(func == @null)
+            {
+                Nu::Error("rendercallback function was null."); return false;
+            }
+            func();
+
+            
+            return true;
+        }
+    }
     /*class ListMenu
     {
         bool is_horizontal = false;
