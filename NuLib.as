@@ -364,16 +364,26 @@ namespace Nu
     //Rounds by the given multiple. If the multiple is 5 and the value is 277, this will return 275. If the multiple is 10 and the value is 277, this would return 280. 
     shared float RoundByMultiple(float value, float multiple = 10.0f)
     {
-        return Maths::Roundf(value / multiple * multiple);
+        return Maths::Roundf(value / multiple) * multiple;
+        /*f32 rem = Maths::FMod(value, multiple);
+        f32 result = value - rem;
+        if (rem > (multiple / 2))
+            result += multiple;
+        return result;*/
     }
     shared int RoundByMultiple(int value, int multiple = 10)//Same as above but for ints.
     {
-        return Maths::Round(value / multiple * multiple);
+        return Maths::Round(value / multiple) * multiple;
+        /*int rem = value % multiple;
+        int result = value - rem;
+        if (rem > (multiple / 2))
+            result += multiple;
+        return result;*/
     }
     //Same as above except instead of rounding up, it always rounds down.
     shared float RoundDown(float value, float multiple = 10.0f)
     {
-        return value - value % multiple;
+        return value - Maths::FMod(value, multiple);
     }
     shared int RoundDown(int value, int multiple = 10)//For ints
     {
@@ -381,11 +391,11 @@ namespace Nu
     }
     shared float Floor(float value, float multiple = 10.0f)//Alias
     {
-        return value - value % multiple;
+        return RoundDown(value, multiple);
     }
     shared int Floor(int value, int multiple = 10)//Alias for ints
     {
-        return value - value % multiple;    
+        return RoundDown(value, multiple);
     }
     
     //1: Point to get the tile under.
@@ -787,22 +797,16 @@ namespace Nu
     }
 
     //1: Array of floats to pick between.
-    //2: Optional u32 seed.
     //Returns the chance selected.
     //You give a bar of values to this, and this randomly picks a part of that bar. Bigger values have a larger chance for this to randomly land on it and pick it.
-    u32 RandomWeightedPicker(array<float> chances, u32 seed = 0)
+    u32 RandomWeightedPicker(array<float> chances)
     {
         if(chances.size() == 0)
         {
             warning("No chances to pick from");
             return 0;
         }
-
-        if(seed == 0)
-        {
-            seed = (getGameTime() * 404 + 1337 - Time_Local());
-        }
-
+        
         u32 i;//Init i
 
         float sum = 0.0f;//Sum of all chances
@@ -812,8 +816,6 @@ namespace Nu
         {
             sum += chances[i];
         }
-
-        Random@ rnd = Random(seed);//Random with seed
 
         float random_number = Nu::getRandomF32(0, sum);//Get our random number between 0 and the sum
 
