@@ -182,6 +182,8 @@ void onInit( CRules@ this )
 
     slider_menu.setMinValue(-10.0f);
 
+    slider_menu.addSliderMovedListener(@SliderTestFunction);
+
     hub.addMenuToList(@slider_menu);
 
 
@@ -206,6 +208,11 @@ void onReload( CRules@ this )
 void ButtonTestFunction(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ menu, u16 key_code)
 {
     print("function: button was pressed. Button had name " + menu.getName());
+}
+
+void SliderTestFunction(NuMenu::IMenu@ menu, f32 current_value)
+{
+    print("current_value = " + current_value);
 }
 
 void onTick( CRules@ this )

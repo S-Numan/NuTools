@@ -922,7 +922,7 @@ Check mark option on right
 
         bool isPointInMenu(Vec2f value)//Is the vec2f value within the menu?
         {
-            if((getCollisionUpperLeft() != Vec2f_zero || getCollisionLowerRight() != Vec2f_zero)//If there is a collision box.
+            if((getCollisionUpperLeft() != getCollisionLowerRight())//If there is a collision box.
             && value.x <= getCollisionLowerRight().x
             && value.x >= getCollisionUpperLeft().x 
             && value.y <= getCollisionLowerRight().y
@@ -3138,9 +3138,10 @@ Check mark option on right
     }
 
 
+    funcdef void SLIDER_MOVED_CALLBACK(IMenu@, f32);
 
     //This is a hack job. Be warned.
-    class MenuSlider : MenuBase
+    class MenuSlider : MenuBaseExEx
     {
         MenuSlider(string _name, u8 _menu_config = NuMenu::Custom)
         {
@@ -3170,14 +3171,14 @@ Check mark option on right
 
         void initVars() override
         {
-            MenuBase::initVars();
+            MenuBaseExEx::initVars();
             
             @slider_button = @MenuButton("slider_button");
-            slider_button.setSize(Vec2f(32, 32));
+            slider_button.setSize(Vec2f(16, 32));
 
             min_value = 0;
             max_value = 1;
-            current_value = 0;
+            pos_value = 0;
             increment_value = 0;
         }
 
@@ -3186,7 +3187,7 @@ Check mark option on right
         //
         void setMenuJustMoved(bool value) override
         {
-            MenuBase::setMenuJustMoved(value);
+            MenuBaseExEx::setMenuJustMoved(value);
             if(value)
             {
                 MoveHeldMenu();
@@ -3195,7 +3196,7 @@ Check mark option on right
         
         void setInterpolated(bool value) override
         {
-            MenuBase::setInterpolated(value);
+            MenuBaseExEx::setInterpolated(value);
             
             if(slider_button == @null) { Nu::Error("slider_button was null"); return; }
 
@@ -3204,7 +3205,7 @@ Check mark option on right
 
         void setIsWorldPos(bool value) override
         {
-            MenuBase::setIsWorldPos(value);
+            MenuBaseExEx::setIsWorldPos(value);
 
             if(slider_button == @null) { Nu::Error("slider_button was null"); return; }
 
@@ -3241,14 +3242,14 @@ Check mark option on right
             
             MoveHeldMenu();
         }
-        private f32 current_value;
-        f32 getCurrentValue()
+        private f32 pos_value;
+        f32 getPosValue()
         {
-            return current_value;
+            return pos_value;
         }
-        void setCurrentValue(f32 value)
+        void setPosValue(f32 value)
         {
-            current_value = value;
+            pos_value = value;
 
             MoveHeldMenu();
         }
@@ -3262,11 +3263,17 @@ Check mark option on right
             increment_value = value;
         }
 
-        f32 getCurrentPercent()
+        f32 getCurrentValue()
         {
-            f32 pos_percent = current_value / getSize().x;
+            f32 pos_percent = pos_value / getSize().x;
             
             return Maths::Lerp(min_value, max_value, pos_percent);
+        }
+        void setCurrentValue(f32 value)
+        {
+            f32 val_percent = value / max_value;
+
+            setPosValue(Nu::RoundByMultiple(Maths::Lerp(0, getSize().x, val_percent), getIncrementValue()));
         }
 
 
@@ -3276,13 +3283,21 @@ Check mark option on right
 
             if(slider_button.getMoveToOwner())
             {
-                slider_button.setPos(getPos() + slider_button.getOffset() + Vec2f(current_value, 0) - Vec2f(slider_button.getSize().x / 2, 0));
+                slider_button.setPos(getPos() + slider_button.getOffset() + Vec2f(pos_value, 0) - Vec2f(slider_button.getSize().x / 2, 0));
             }
+        }
+
+        private SLIDER_MOVED_CALLBACK@ slider_moved_func;
+
+
+        void addSliderMovedListener(SLIDER_MOVED_CALLBACK@ value)
+        {
+            @slider_moved_func = @value;
         }
 
         bool Tick() override
         {
-            if(!MenuBase::Tick()){ return false; }
+            if(!MenuBaseExEx::Tick()){ return false; }
 
 
             if(slider_button == @null) { Nu::Error("slider_button was null"); return false; }
@@ -3314,9 +3329,12 @@ Check mark option on right
 
                 f32 offset = Nu::RoundByMultiple(mouse_pos.x - getPos().x, getIncrementValue());
 
-                current_value = offset;
+                pos_value = offset;
 
-                print("percent = " + getCurrentPercent());
+                if(slider_moved_func != @null)
+                {
+                    slider_moved_func(@this, getCurrentValue());
+                }
 
                 MoveHeldMenu();
             }
@@ -3326,7 +3344,7 @@ Check mark option on right
 
         bool Render() override
         {
-            if(!MenuBase::Render()){ return false; }
+            if(!MenuBaseExEx::Render()){ return false; }
 
 
             if(slider_button == @null) { Nu::Error("slider_button was null"); return false; }
