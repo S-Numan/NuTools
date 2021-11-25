@@ -3138,7 +3138,7 @@ Check mark option on right
     }
 
 
-    funcdef void SLIDER_MOVED_CALLBACK(IMenu@, f32);
+    funcdef void SLIDER_MOVED_CALLBACK(MenuSlider@, f32);
 
     //This is a hack job. Be warned.
     class MenuSlider : MenuBaseExEx

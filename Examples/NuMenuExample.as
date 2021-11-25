@@ -210,7 +210,7 @@ void ButtonTestFunction(CPlayer@ caller, CBitStream@ params, NuMenu::IMenu@ menu
     print("function: button was pressed. Button had name " + menu.getName());
 }
 
-void SliderTestFunction(NuMenu::IMenu@ menu, f32 current_value)
+void SliderTestFunction(NuMenu::MenuSlider@ menu, f32 current_value)
 {
     print("current_value = " + current_value);
 }
