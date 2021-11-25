@@ -364,6 +364,7 @@ namespace Nu
     //Rounds by the given multiple. If the multiple is 5 and the value is 277, this will return 275. If the multiple is 10 and the value is 277, this would return 280. 
     shared float RoundByMultiple(float value, float multiple = 10.0f)
     {
+        if(multiple == 0) { return value; }
         return Maths::Roundf(value / multiple) * multiple;
         /*f32 rem = Maths::FMod(value, multiple);
         f32 result = value - rem;
@@ -373,6 +374,7 @@ namespace Nu
     }
     shared int RoundByMultiple(int value, int multiple = 10)//Same as above but for ints.
     {
+        if(multiple == 0) { return value; }
         return Maths::Round(value / multiple) * multiple;
         /*int rem = value % multiple;
         int result = value - rem;
@@ -383,10 +385,12 @@ namespace Nu
     //Same as above except instead of rounding up, it always rounds down.
     shared float RoundDown(float value, float multiple = 10.0f)
     {
+        if(multiple == 0) { return value; }
         return value - Maths::FMod(value, multiple);
     }
     shared int RoundDown(int value, int multiple = 10)//For ints
     {
+        if(multiple == 0) { return value; }
         return value - value % multiple;
     }
     shared float Floor(float value, float multiple = 10.0f)//Alias
