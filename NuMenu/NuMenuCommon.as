@@ -3295,6 +3295,8 @@ Check mark option on right
             @slider_moved_func = @value;
         }
 
+        Vec2f initial_mouse_pos = Vec2f(0,0);
+
         bool Tick() override
         {
             if(!MenuBaseExEx::Tick()){ return false; }
@@ -3313,21 +3315,33 @@ Check mark option on right
                 CControls@ controls = getControls();
                 if(controls == @null) { Nu::Warning("controls was null"); return false; }
                 
-                Vec2f mouse_pos;
+                if(button_state == JustPressed)
+                {
+                    if(isWorldPos())
+                    {
+                        initial_mouse_pos = controls.getMouseWorldPos();
+                    }
+                    else//Screen
+                    {
+                        initial_mouse_pos = controls.getMouseScreenPos();
+                    }
+                }
+
+                Vec2f mouse_offset;
 
                 if(isWorldPos())
                 {
-                    mouse_pos = controls.getMouseWorldPos();
+                    mouse_offset = controls.getMouseWorldPos() - initial_mouse_pos;
                 }
                 else//Screen
                 {
-                    mouse_pos = controls.getMouseScreenPos();
+                    mouse_offset = controls.getMouseScreenPos() - initial_mouse_pos;
                 }
 
-                if(mouse_pos.x < getPos().x) { mouse_pos.x = getPos().x; }
-                if(mouse_pos.x > getPos().x + getSize().x) { mouse_pos.x = getPos().x + getSize().x; }
+                if(initial_mouse_pos.x + mouse_offset.x < getPos().x) { mouse_offset.x = -(initial_mouse_pos.x - getPos().x); }
+                if(initial_mouse_pos.x + mouse_offset.x > getPos().x + getSize().x) { mouse_offset.x = -(initial_mouse_pos.x - (getPos().x + getSize().x)); }
 
-                f32 offset = Nu::RoundByMultiple(mouse_pos.x - getPos().x, getIncrementValue());
+                f32 offset = Nu::RoundByMultiple(initial_mouse_pos.x + mouse_offset.x - getPos().x, getIncrementValue());
 
                 pos_value = offset;
 
