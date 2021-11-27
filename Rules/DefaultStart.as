@@ -8,32 +8,31 @@ void RunServer()
     //Numan - Need to check through every gamemode.cfg file. As it was not possible at the time of this message, certain things were commented out.
 	if (getNet().CreateServer())
 	{
-        string gamemode_path = "Rules/" + sv_gamemode + "/gamemode.cfg";
 
-        /*ConfigFile cfg = ConfigFile();
-        if (!cfg.loadFile(gamemode_path))
-        {
-            error("failure to load gamemode.cfg");
-        }
-        else
+        //Fancy new gamemode code.
+        string gamemode_path = sv_gamemode + ".cfg";
+
+        ConfigFile cfg = ConfigFile();
+        if (cfg.loadFile(gamemode_path))
         {
             string cfg_gamemode = cfg.read_string("gamemode_name");
-
-            if(cfg_gamemode == sv_gamemode)//Is this the gamemode that is set.
+            if(cfg_gamemode.size() != 0)
             {
                 LoadRules(gamemode_path);//Load the gamemode.
             }
-        }*/
-        
-        //Temp
-        if(sv_gamemode == "Testing")
-        {
-            LoadRules("example_gamemode.cfg");
+            else
+            {
+                error("read gamemode file but it did not contain the string gamemode_name");
+                LoadRules("Rules/" + sv_gamemode + "/gamemode.cfg");//Got to try and load something at least.
+            }
         }
         else
         {
-            LoadRules(gamemode_path);
+            //error("failure to load cfg containing gamemode");
+            LoadRules("Rules/" + sv_gamemode + "/gamemode.cfg");//Old gamemode loading
         }
+        
+        
         if (sv_mapcycle.size() > 0)
 		{
 			LoadMapCycle(sv_mapcycle);
