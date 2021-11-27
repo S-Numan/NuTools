@@ -370,7 +370,7 @@ class NuText
         setString("");
     }
     NuText(string font_name, string text = ""
-    , string texty = "")//This default parameter must be included or kag instantly crashes. Just ignore it.
+    , string texty = "")//This default parameter must be included or kag might crash instantly. Just ignore it.
     {
         Setup();
         setFont(font_name);
