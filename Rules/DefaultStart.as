@@ -15,8 +15,7 @@ void RunServer()
         ConfigFile cfg = ConfigFile();
         if (cfg.loadFile(gamemode_path))
         {
-            string cfg_gamemode = cfg.read_string("gamemode_name");
-            if(cfg_gamemode.size() != 0)
+            if(cfg.exists("gamemode_name"))
             {
                 LoadRules(gamemode_path);//Load the gamemode.
             }
