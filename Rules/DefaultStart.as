@@ -13,7 +13,7 @@ void RunServer()
             error("Dummy Rules failed to load"); return;
         }
 
-        SetGamemode(rules);
+        AddGamemode(rules);
         
         if (sv_mapcycle.size() > 0)
 		{
@@ -28,7 +28,7 @@ void RunServer()
 	}
 }
 
-void SetGamemode(CRules@ rules)
+void AddGamemode(CRules@ rules)
 {
     string gamemode_path = "";
 

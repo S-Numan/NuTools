@@ -1121,8 +1121,7 @@ namespace Nu
             CRules@ rules = getRules();
 
             array<string> script_array;
-            rules.get("script_array", script_array);
-            if(script_array.size() == 0) { Nu::Error("Script array size was 0"); return; }
+            if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return; }
 
             for(u16 i = 0; i < script_array.size(); i++)
             {
@@ -1141,8 +1140,7 @@ namespace Nu
 
             if(!hasScript(script_name)) { return false; }//Script doesn't exist? Can't remove what isn't there.
             array<string> script_array;
-            rules.get("script_array", script_array);
-            if(script_array.size() == 0) { Nu::Error("Script array size was 0"); return false; }
+            if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return false; }
 
             for(u16 i = 0; i < script_array.size(); i++)//For every script
             {
@@ -1169,8 +1167,7 @@ namespace Nu
 
             if(hasScript(script_name)) { return false; }//Script already exists? Don't add it
             array<string> script_array;
-            rules.get("script_array", script_array);
-            if(script_array.size() == 0) { Nu::Error("Script array size was 0"); return false; }
+            if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return false; }
             
             if(!rules.AddScript(script_name))//Attempt to add a script to rules
             {//Failure?
@@ -1189,8 +1186,7 @@ namespace Nu
             CRules@ rules = getRules();
 
             array<string> script_array;
-            rules.get("script_array", script_array);
-            if(script_array.size() == 0) { Nu::Error("Script array size was 0"); return false; }
+            if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return false; }
 
             for(u16 i = 0; i < script_array.size(); i++)
             {
@@ -1203,9 +1199,21 @@ namespace Nu
             return false;
         }
 
-        void SetGamemode()
+        void AddGamemode(string _gamemode)
         {
-            ::SetGamemode(@getRules());
+            ::AddGamemode(@getRules());
+        }
+
+        void SetGamemode(string _gamemode = "")
+        {
+            if(_gamemode != "")
+            {
+                sv_gamemode = _gamemode;
+            }
+
+            ClearScripts();
+
+            AddGamemode(sv_gamemode);
         }
     }
 
