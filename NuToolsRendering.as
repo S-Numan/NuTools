@@ -1,23 +1,23 @@
 //This file handles misc rendering.
 
 #include "NuLib.as";
-#include "NuHub.as";
+#include "NuRend.as";
 
-NuHub@ o_hub = @null;//Outer hub
+NuRend@ o_rend = @null;//Outer rend
 
 namespace NuRender
 {
     bool init = false;//Has initialized yet?
-    NuHub@ i_hub = @null;//Inner hub
+    NuRend@ i_rend = @null;//Inner rend
 
-    void onInit(CRules@ rules, NuHub@ _hub)
+    void onInit(CRules@ rules, NuRend@ _rend)
     {
         if(!isClient())
         {
             return;
         }
         
-        @i_hub = @_hub;
+        @i_rend = @_rend;
 
         init = true;//Initialized
     }
@@ -29,28 +29,28 @@ namespace NuRender
             return;
         }
 
-        if(i_hub == @null)
+        if(i_rend == @null)
         {
-            error("hub was null"); return;
+            error("rend was null"); return;
         }
 
-        i_hub.FRAME_TIME = 0.0f;
+        i_rend.FRAME_TIME = 0.0f;
 
-        i_hub.RenderClear();
+        i_rend.RenderClear();
     }
 
     void onRender(CRules@ rules)
     {
-        i_hub.FRAME_TIME += getRenderDeltaTime() * getTicksASecond();
+        i_rend.FRAME_TIME += getRenderDeltaTime() * getTicksASecond();
     }
 
-    void ImageRender(NuHub@ hub, Render::ScriptLayer layer)
+    void ImageRender(NuRend@ rend, Render::ScriptLayer layer)
     {
         u16 i;
 
         Render::SetAlphaBlend(true);
         
-        u16 image_count = hub.RenderDetailFilledOn(layer);
+        u16 image_count = rend.RenderDetailFilledOn(layer);
 
         array<RenderDetails@> detail_screen = array<RenderDetails@>(image_count);
         array<RenderDetails@> detail_world = array<RenderDetails@>(image_count);
@@ -59,7 +59,7 @@ namespace NuRender
 
         for(i = 0; i < image_count; i++)
         {
-            RenderDetails@ details = @hub.RenderDetailAt(layer, i);
+            RenderDetails@ details = @rend.RenderDetailAt(layer, i);
             if(details == @null)
             {
                 error("Image was somehow null in rendering. This should not happen."); continue;
@@ -100,7 +100,7 @@ namespace NuRender
 
                 if(detail_screen[i].interpolate && pos != detail_screen[i].old_pos)//If we can interpolate
                 {
-                    pos = Vec2f_lerp(detail_screen[i].old_pos, pos, i_hub.FRAME_TIME);//Interpolate
+                    pos = Vec2f_lerp(detail_screen[i].old_pos, pos, i_rend.FRAME_TIME);//Interpolate
                 }
                 detail_screen[i].image.Render(pos);//Render it.
             }
@@ -120,7 +120,7 @@ namespace NuRender
 
                 if(detail_world[i].interpolate && pos != detail_world[i].old_pos)//If we can interpolate
                 {
-                    pos = Vec2f_lerp(detail_world[i].old_pos, pos, i_hub.FRAME_TIME);//Interpolate
+                    pos = Vec2f_lerp(detail_world[i].old_pos, pos, i_rend.FRAME_TIME);//Interpolate
                 }
                 detail_world[i].image.Render(pos);//Render it.
             }
@@ -133,53 +133,53 @@ namespace NuRender
 
 
 
-bool HubInit()
+bool RendInit()
 {
-    if(o_hub == @null)//If we don't have o_hub
+    if(o_rend == @null)//If we don't have o_rend
     {
-        if(!getHub(@o_hub)) { return false; }//Try and get it
+        if(!getRend(@o_rend)) { return false; }//Try and get it
     }
     return true;//We got it if it got here
 }
 
 void MenusPostHud(int id)
 {
-    if(!HubInit()) { return; }
+    if(!RendInit()) { return; }
 
-    NuRender::ImageRender(o_hub, Render::layer_posthud);
+    NuRender::ImageRender(o_rend, Render::layer_posthud);
 }
 
 void MenusPreHud(int id)
 {
-    if(!HubInit()) { return; }
+    if(!RendInit()) { return; }
     
-    NuRender::ImageRender(o_hub, Render::layer_prehud);
+    NuRender::ImageRender(o_rend, Render::layer_prehud);
 }
 
 void MenusPostWorld(int id)
 {
-    if(!HubInit()) { return; }
+    if(!RendInit()) { return; }
     
-    NuRender::ImageRender(o_hub, Render::layer_postworld);
+    NuRender::ImageRender(o_rend, Render::layer_postworld);
 }
 
 void MenusObjects(int id)
 {
-    if(!HubInit()) { return; }
+    if(!RendInit()) { return; }
     
-    NuRender::ImageRender(o_hub, Render::layer_objects);
+    NuRender::ImageRender(o_rend, Render::layer_objects);
 }
 
 void MenusTiles(int id)
 {
-    if(!HubInit()) { return; }
+    if(!RendInit()) { return; }
     
-    NuRender::ImageRender(o_hub, Render::layer_tiles);
+    NuRender::ImageRender(o_rend, Render::layer_tiles);
 }
 
 void MenusBackground(int id)
 {
-    if(!HubInit()) { return; }
+    if(!RendInit()) { return; }
     
-    NuRender::ImageRender(o_hub, Render::layer_background);
+    NuRender::ImageRender(o_rend, Render::layer_background);
 }

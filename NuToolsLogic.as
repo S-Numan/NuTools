@@ -2,21 +2,19 @@
 //TODO, swap the sending command system from CRules to a single NuTools blob. The command will only send to the blob and cause less max commands issues and be more performant hopfully. Use a method to send a command.
 //TODO, figure out what I meant by this ^
 
-#include "NuMenuCommon.as";
-#include "NuTextCommon.as";
-#include "NuHub.as";
+#include "NuRend.as";
 #include "NuToolsRendering.as";
 
 bool init;
-NuHub@ hub;
+NuRend@ rend;
 
 void onInit( CRules@ rules )//First time start only.
 {
-    @hub = @LoadStuff(rules);
+    @rend = @LoadStuff(rules);
     
     if(isClient())
     {
-        hub.SetupRendering();
+        rend.SetupRendering();
     }
 
     NuLib::onInit(rules);
@@ -24,38 +22,41 @@ void onInit( CRules@ rules )//First time start only.
     onRestart(rules);
 }
 
-NuHub@ LoadStuff( CRules@ rules )//Every reload and restart
+NuRend@ LoadStuff( CRules@ rules )//Every reload and restart
 {
     //NuMenu::addMenuToList(buttonhere);//Add buttons like this
-    NuHub@ _hub = NuHub();
+    NuRend@ _rend = NuRend();
 
-    rules.set("NuHub", @_hub);
+    rules.set("NuRend", @_rend);
     
-    print("NuHub Loaded");
+    print("NuRend Loaded");
 
     if(isClient())
     {
-        NuRender::onInit(rules, _hub);
-
-        NuMenu::onInit(rules, _hub);
-
-        addFonts(rules, _hub);
+        NuRender::onInit(rules, _rend);
     }
-    
 
-    if(sv_gamemode == "Testing")//Is the gamemode name Testing?
+    if(!init)//If first time init
     {
-        if(!init)//If first time init
+        print("=====Safe to ignore the below=====");
+        
+        //Todo, find out if you can file match check to see if x script can be added. 
+
+        if(sv_gamemode == "NuTesting")//Is the gamemode name NuTesting?
         {
-            print("=====NuButton.as attempt to add. This will only work if the NuButton mod is installed=====");
+            
+            //print("=====NuButton.as attempt to add. This will only work if the NuButton mod is installed=====");
             rules.AddScript("NuButton.as");//Add the NuButton script to the gamemode.
-            print("=====If an error is above, it is safe to ignore. It simply means the NuButton mod was not installed and is of no concern. Blame kag for not allowing the checking of the modlist=====");
-        }//It's done like this to allow NuTools Testing gamemode with or without the NuButton mod installed
-    } 
+            //print("=====If an error is above, it is safe to ignore. It simply means the NuButton mod was not installed and is of no concern. Blame kag for not allowing the checking of the modlist=====");
+            //It's done like this to allow NuTools Testing gamemode with or without the NuButton mod installed
+        }
+
+        print("=====Safe to ignore the above=====");
+    }
 
     init = true;
 
-    return @_hub;
+    return @_rend;
 }
 
 void onReload( CRules@ rules )
@@ -70,18 +71,17 @@ void onRestart( CRules@ rules)
 
 void onTick( CRules@ rules )
 {
-    if(getGameTime() == 30 && sv_gamemode == "Testing" && isServer())//If thirty ticks have passed since restarting and the gamemode is testing, and this is serverside.
+    if(getGameTime() == 30 && isServer() && sv_gamemode == "NuTesting")//If thirty ticks have passed since restarting, this is serverside, and the gamemode is testing.
     {
         CPlayer@ player = getPlayer(0);
         if(player != @null)
         {
             CBlob@ plob = Nu::RespawnPlayer(rules, player);//Respawn the player
             server_CreateBlob("saw", -1, plob.getPosition() + Vec2f(20.0f, 0));
-        } 
+        }
     }
-    NuRender::onTick(rules);
 
-    NuMenu::MenuTick();//Run logic for the menus.
+    NuRender::onTick(rules);
 }
 
 void onRender( CRules@ rules )
@@ -92,17 +92,6 @@ void onRender( CRules@ rules )
 
     NuLib::onRender(rules);
 }
-
-
-
-
-
-void addFonts( CRules@ rules, NuHub@ hub)
-{
-    hub.addFont(MSDF, "Lato-Regular", "Lato-Regular.png", "Lato-Regular.cfg");//MSDF font
-    hub.addFont(IrrFontTool, "Calibri-48-Bold", "Calibri-48-Bold.png");//Irr Font
-}
-
 
 
 

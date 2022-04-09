@@ -1,4 +1,4 @@
-#include "NuHub.as";
+#include "NuRend.as";
 
 //This file is a library of functions, it contains many convenient functions to make modding kag easier.
 
@@ -1072,12 +1072,12 @@ namespace Nu
     //This gives you a random integer between the min and max specified values
     s32 getRandomInt(s32 min, s32 max)
     {
-        NuHub@ hub;
-        if(!getHub(@hub)) { return 0; }
+        NuRend@ rend;
+        if(!getRend(@rend)) { return 0; }
 
         if (min == max) { return 0; }
 
-        return hub.rnd.NextRanged(max - min) + min;
+        return rend.rnd.NextRanged(max - min) + min;
     }
     s32 getRandomInt(s32 max)
     {
@@ -1089,13 +1089,13 @@ namespace Nu
     //This gives you a random float between the min and max specified values
     f32 getRandomF32(f32 min, f32 max)
     {
-        NuHub@ hub;
-        if(!getHub(@hub)) { return 0; }
+        NuRend@ rend;
+        if(!getRend(@rend)) { return 0; }
 
         if (min == max) { return 0; }
 
-        //return (hub.rnd.NextRanged(max - min) + min) + hub.rnd.NextFloat();
-        return min + hub.rnd.NextFloat() * (max - min);
+        //return (rend.rnd.NextRanged(max - min) + min) + rend.rnd.NextFloat();
+        return min + rend.rnd.NextFloat() * (max - min);
     }
     f32 getRandomF32(f32 max)
     {
