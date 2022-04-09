@@ -4,6 +4,7 @@
 
 #include "NuRend.as";
 #include "NuToolsRendering.as";
+#include "NuLib.as";
 
 bool init;
 NuRend@ rend;
@@ -46,7 +47,7 @@ NuRend@ LoadStuff( CRules@ rules )//Every reload and restart
         {
             
             //print("=====NuButton.as attempt to add. This will only work if the NuButton mod is installed=====");
-            rules.AddScript("NuButton.as");//Add the NuButton script to the gamemode.
+            Nu::Rules::AddScript("NuButton.as");//Add the NuButton script to the gamemode.
             //print("=====If an error is above, it is safe to ignore. It simply means the NuButton mod was not installed and is of no concern. Blame kag for not allowing the checking of the modlist=====");
             //It's done like this to allow NuTools Testing gamemode with or without the NuButton mod installed
         }

@@ -1,4 +1,5 @@
 #include "NuRend.as";
+#include "DefaultStart.as";
 
 //This file is a library of functions, it contains many convenient functions to make modding kag easier.
 
@@ -1112,10 +1113,105 @@ namespace Nu
         
         return point.getOccupied();
     }
-    
+
+    namespace Rules
+    {
+        void ClearScripts()
+        {
+            CRules@ rules = getRules();
+
+            array<string> script_array;
+            rules.get("script_array", script_array);
+            if(script_array.size() == 0) { Nu::Error("Script array size was 0"); return; }
+
+            for(u16 i = 0; i < script_array.size(); i++)
+            {
+                if(!rules.RemoveScript(script_array[i])) { Nu::Error("Failed to remove script somehow? Might've used AddScript via Rules rather than Nu::"); }
+            }
+
+            script_array = array<string>();
+            
+            rules.set("script_array", script_array);//Set new array
+        
+        }
+
+        bool RemoveScript(string script_name)
+        {
+            CRules@ rules = getRules();
+
+            if(!hasScript(script_name)) { return false; }//Script doesn't exist? Can't remove what isn't there.
+            array<string> script_array;
+            rules.get("script_array", script_array);
+            if(script_array.size() == 0) { Nu::Error("Script array size was 0"); return false; }
+
+            for(u16 i = 0; i < script_array.size(); i++)//For every script
+            {
+                if(script_array[i] == script_name)//If this script is the same as script_name
+                {
+                    script_array.removeAt(i);//Remove it
+                    break;//Exit this loop
+                }
+            }
+
+            if(!rules.RemoveScript(script_name))//Attempt to remove the script from rules
+            {//Failure?
+                Nu::Error("Script failed to remove? How?"); return false;//???
+            }
+            
+            rules.set("script_array", script_array);//Set new array
+        
+            return true;
+        }
+
+        bool AddScript(string script_name)
+        {
+            CRules@ rules = getRules();
+
+            if(hasScript(script_name)) { return false; }//Script already exists? Don't add it
+            array<string> script_array;
+            rules.get("script_array", script_array);
+            if(script_array.size() == 0) { Nu::Error("Script array size was 0"); return false; }
+            
+            if(!rules.AddScript(script_name))//Attempt to add a script to rules
+            {//Failure?
+                return false;
+            }
+            
+            script_array.push_back(script_name);//Add it to the script array.
+            
+            rules.set("script_array", script_array);//Set new array
+        
+            return true;
+        }
+
+        bool hasScript(string script_name)
+        {
+            CRules@ rules = getRules();
+
+            array<string> script_array;
+            rules.get("script_array", script_array);
+            if(script_array.size() == 0) { Nu::Error("Script array size was 0"); return false; }
+
+            for(u16 i = 0; i < script_array.size(); i++)
+            {
+                if(script_array[i] == script_name)
+                {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        void SetGamemode()
+        {
+            ::SetGamemode(@getRules());
+        }
+    }
 
 
-    
+
+
     //Sends a command via CBlob to all but the sender
     //void SendCommand(CBlob@ blob, CBitStream@ bs)
     //{
