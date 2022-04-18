@@ -102,7 +102,7 @@ void AddGamemode(CRules@ rules)
         }
         if(gamemode_path == "")//Still failed to find the gamemode?
         {
-            error("Failed to find gamemode. Defaulting to whatever");
+            error("Failed to find gamemode \"" + sv_gamemode + "\". Defaulting to vanilla gamemode finding. Note that any modded gamemode.cfg will replace all vanilla gamemode.cfg's");
             gamemode_path = CFileMatcher("Rules/" + sv_gamemode + "/gamemode.cfg").getFirst();
         }
     }

@@ -25,7 +25,6 @@ void onInit( CRules@ rules )//First time start only.
 
 NuRend@ LoadStuff( CRules@ rules )//Every reload and restart
 {
-    //NuMenu::addMenuToList(buttonhere);//Add buttons like this
     NuRend@ _rend = NuRend();
 
     rules.set("NuRend", @_rend);
@@ -35,24 +34,6 @@ NuRend@ LoadStuff( CRules@ rules )//Every reload and restart
     if(isClient())
     {
         NuRender::onInit(rules, _rend);
-    }
-
-    if(!init)//If first time init
-    {
-        print("=====Safe to ignore the below=====");
-        
-        //Todo, find out if you can file match check to see if x script can be added. 
-
-        if(sv_gamemode == "NuTesting")//Is the gamemode name NuTesting?
-        {
-            
-            //print("=====NuButton.as attempt to add. This will only work if the NuButton mod is installed=====");
-            Nu::Rules::AddScript("NuButton.as");//Add the NuButton script to the gamemode.
-            //print("=====If an error is above, it is safe to ignore. It simply means the NuButton mod was not installed and is of no concern. Blame kag for not allowing the checking of the modlist=====");
-            //It's done like this to allow NuTools Testing gamemode with or without the NuButton mod installed
-        }
-
-        print("=====Safe to ignore the above=====");
     }
 
     init = true;

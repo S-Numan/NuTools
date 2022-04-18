@@ -873,14 +873,21 @@ namespace Nu
     {
         CRules@ rules = getRules();
 
-        CBitStream params;//Assign the params
-        params.write_string(message);
-        params.write_u8(color.getAlpha());
-        params.write_u8(color.getRed());
-        params.write_u8(color.getGreen());
-        params.write_u8(color.getBlue());
+        if(rules.hasScript("NuToolsLogic.as"))//Only work if the script that catches this command is actually there.
+        {
+            CBitStream params;//Assign the params
+            params.write_string(message);
+            params.write_u8(color.getAlpha());
+            params.write_u8(color.getRed());
+            params.write_u8(color.getGreen());
+            params.write_u8(color.getBlue());
 
-        rules.SendCommand(rules.getCommandID("clientmessage"), params, player);
+            rules.SendCommand(rules.getCommandID("clientmessage"), params, player);//Send message to player via command
+        }
+        else if(player.getNetworkID() == getLocalPlayer().getNetworkID())//If Script to catch the command isn't there, and this message was supposed to be sent to the user that is sending it?
+        {
+            client_AddToChat(message, color);//Do it old fashioned style
+        }
     }
 
     //1: The message sent to all player's chat boxes.
@@ -1113,6 +1120,16 @@ namespace Nu
         
         return point.getOccupied();
     }
+    
+    void LoadAMap(string map_name = " ")
+    {
+        CRules@ rules = getRules();
+        
+        CBitStream params;
+        params.write_string(map_name);
+
+        rules.SendCommand(rules.getCommandID("nunextmap"), params, false);//Send command to only server
+    }
 
     namespace Rules
     {
@@ -1197,6 +1214,15 @@ namespace Nu
             }
             
             return false;
+        }
+
+        array<string> getScriptArray()
+        {
+            CRules@ rules = getRules();
+
+            array<string> script_array;
+            if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return array<string>(); }
+            return script_array;
         }
 
         void AddGamemode(string _gamemode)
@@ -1867,6 +1893,7 @@ namespace NuLib
         rules.addCommandID("enginemessage");
         rules.addCommandID("announcement");
         rules.addCommandID("switchfrominventory");
+        rules.addCommandID("nunextmap");
 
     }
 
@@ -1973,6 +2000,18 @@ namespace NuLib
             rules.set_string("announcement", params.read_string());
             rules.set_u32("announcementtime",30 * 15 + getGameTime());//15 seconds
         }
+        else if(cmd == rules.getCommandID("nunextmap"))
+        {
+            string map_name = params.read_string();
+            if(map_name == " ")
+            {
+                LoadNextMap();
+            }
+            else
+            {
+                LoadMap(map_name);
+            }
+        }
     }
 
 
@@ -2040,7 +2079,7 @@ Numan_library. Including
 #28. PatchAllBlobs("ScriptName", remove_script = false);//Adds a script to all blobs currently existing, and all future blobs on their creation. if remove_script is true the script with the specified name is instead removed. If it's there.
 #29. PatchBlobs("BlobName", "ScriptName", remove_script = false);//Same as above but only for blobs with the specified name
 #30. Function to get pi 3.14. Because pie is yummy.
-
+#31. Does gamemode exist? Run a check for if a gamemode exists, without changing the gamemode.
 
 DrawTextWithWidth(string text, Vec2f pos, SColor color, float width) - Caps width, note this will require an array to save draw text stuff as the calculations should not be done every render call.
 
