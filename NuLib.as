@@ -1725,10 +1725,10 @@ namespace Nu
 
         //TODO, don't run this every render call. Only recalculate if needed.
         array<Vertex> v_raw;//For rendering.
-        array<Vertex> getVertexsForFrameAndPos(u16 _frame, Vec2f _pos, SColor _color = SColor(255, 255, 255, 255))//Gets what this should render.
+        array<Vertex> getVerticesForFrameAndPos(u16 _frame, Vec2f _pos, SColor _color = SColor(255, 255, 255, 255))//Gets what this should render.
         {
             if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//Already sent the error log, this could of crashed. So just stop to not spam.
-            if(!is_texture){ Nu::Error("Tried getVertexsForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
+            if(!is_texture){ Nu::Error("Tried getVerticesForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
             would_crash = false;
             if(frame_points.size() == 0) {          Nu::Error("frame_points.size() was equal to 0");          would_crash = true; }
             if(uv_per_frame.size() == 0) {          Nu::Error("uv_per_frame.size() was equal to 0");          would_crash = true; }
@@ -1749,7 +1749,7 @@ namespace Nu
 
         void Render(Vec2f _pos = Vec2f(0,0))
         {
-            getVertexsForFrameAndPos(frame, _pos, color);
+            getVerticesForFrameAndPos(frame, _pos, color);
 
             Render::RawQuads(name, v_raw);
         }
