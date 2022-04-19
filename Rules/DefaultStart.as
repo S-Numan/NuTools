@@ -110,7 +110,7 @@ void AddGamemode(CRules@ rules)
 
 
 
-    print("gamemode_path = " + gamemode_path);
+    //print("gamemode_path = " + gamemode_path);
 
 
     @cfg = @ConfigFile();
