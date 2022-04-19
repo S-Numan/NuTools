@@ -1198,14 +1198,14 @@ namespace Nu
         
             if(sync)
             {
-                if(!isClient())//Is server, is not localhost
+                if(isServer())//Is server
                 {
                     CBitStream params;
                     params.write_u8(FClearScripts);
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return;//Return, because the server will get this command later anyway.
                 }
-                else { Nu::Warning("Sync on client not allowed."); }
+                else if(!isClient()) { Nu::Warning("Sync on client not allowed."); }//Is not localhost
             }
         }
 
@@ -1235,7 +1235,7 @@ namespace Nu
         
             if(sync)
             {
-                if(!isClient())//Is server, is not localhost
+                if(isServer())//Is server
                 {
                     CBitStream params;
                     params.write_u8(FRemoveScript);
@@ -1243,7 +1243,7 @@ namespace Nu
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return true;//Return, because the server will get this command later anyway.
                 }
-                else { Nu::Warning("Sync on client not allowed."); }
+                else if(!isClient()) { Nu::Warning("Sync on client not allowed."); }//Is not localhost
             }
 
             return true;
@@ -1257,7 +1257,7 @@ namespace Nu
             array<string> script_array;
             if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return false; }
             
-            if(!CFileMatcher(script_name).hasMatch()) { Nu::Error("Failed to AddScript " + script_name); return false; }
+            if(!CFileMatcher(script_name).hasMatch()) { return false; }
             rules.AddScript(script_name);
             //if(!rules.hasScript(script_name))//Does not work without waiting a tick.
 
@@ -1267,7 +1267,7 @@ namespace Nu
 
             if(sync)
             {
-                if(!isClient())//Is server, is not localhost
+                if(isServer())//Is server
                 {
                     CBitStream params;
                     params.write_u8(FAddScript);
@@ -1275,7 +1275,7 @@ namespace Nu
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return true;//Return, because the server will get this command later anyway.
                 }
-                else { Nu::Warning("Sync on client not allowed."); }
+                else if(!isClient()) { Nu::Warning("Sync on client not allowed."); }//Is not localhost
             }
 
             return true;
@@ -1320,7 +1320,7 @@ namespace Nu
 
             if(sync)
             {
-                if(!isClient())//Is server, is not localhost
+                if(isServer())//Is server
                 {
                     CBitStream params;
                     params.write_u8(FAddGamemode);
@@ -1328,7 +1328,7 @@ namespace Nu
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return;//Return, because the server will get this command later anyway.
                 }
-                else { Nu::Warning("Sync on client not allowed."); }
+                else if(!isClient()) { Nu::Warning("Sync on client not allowed."); }//Is not localhost
             }
         }
 
