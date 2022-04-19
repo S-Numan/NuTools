@@ -868,9 +868,12 @@ namespace Nu
     //1: The player the message is sent to.
     //2: The message sent to the player's chat box.
     //3: Optional color of the text in the chat box. (default red)
+    //4: optional bool, if true will put chat message into console as well
     //Sends a message to a specific player's chat box.
-    shared void sendClientMessage(CPlayer@ player, string message, SColor color = SColor(255, 255, 0, 0))//Now with color
+    shared void sendClientMessage(CPlayer@ player, string message, SColor color = SColor(255, 255, 0, 0), bool to_console = false)//Now with color
     {
+        if(!isServer()) { Nu::Warning("Clients cannot directly send messages to other clients. Attempted to send:\n" + message); return; }
+
         CRules@ rules = getRules();
 
         if(rules.hasScript("NuToolsLogic.as"))//Only work if the script that catches this command is actually there.
@@ -881,10 +884,11 @@ namespace Nu
             params.write_u8(color.getRed());
             params.write_u8(color.getGreen());
             params.write_u8(color.getBlue());
+            params.write_bool(to_console);
 
             rules.SendCommand(rules.getCommandID("clientmessage"), params, player);//Send message to player via command
         }
-        else if(player.getNetworkID() == getLocalPlayer().getNetworkID())//If Script to catch the command isn't there, and this message was supposed to be sent to the user that is sending it?
+        else if(@player == @getLocalPlayer())//If Script to catch the command isn't there, and this message was supposed to be sent to the user that is sending it?
         {
             client_AddToChat(message, color);//Do it old fashioned style
         }
@@ -892,14 +896,15 @@ namespace Nu
 
     //1: The message sent to all player's chat boxes.
     //2: Optional color of the message. (default red)
+    //3: optional bool, if true will put chat message into console as well
     //Sends a message to EVERY player's chat box.
-    shared void sendAllMessage(string message, SColor color = SColor(255, 255, 0, 0))
+    shared void sendAllMessage(string message, SColor color = SColor(255, 255, 0, 0), bool to_console = false)
     {
         for(u16 i = 0; i < getPlayerCount(); i++)
         {
             CPlayer@ player = getPlayer(i);
             if(player == null) { continue; }
-            sendClientMessage(player, message, color);
+            sendClientMessage(player, message, color, to_console);
         }
     }
 
@@ -1133,25 +1138,78 @@ namespace Nu
 
     namespace Rules
     {
-        void ClearScripts()
+        //Sync is for the server only. Sync does nothing for clients
+
+        enum script_function
+        {
+            FClearScripts = 1,
+            FRemoveScript,
+            FAddScript,
+            FAddGamemode,
+            FSyncEntireGamemode,
+            ScriptFunctionCount
+        }
+
+        void ClearScripts(bool sync = false)
         {
             CRules@ rules = getRules();
 
             array<string> script_array;
-            if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return; }
+            if(!rules.get("script_array", script_array))
+            {
+                //Can't find script_array? Well, we're removing every single script anyway, so let's just make a new empty one.
+                //Nu::Error("Could not find script_array");
+                
+                string gamemode_path = ::FindGamemode(rules.gamemode_name);
+
+                print("Removing every script from " + gamemode_path);
+
+                ConfigFile cfg = ConfigFile();
+
+                if(!cfg.loadFile(gamemode_path)) { Nu::Error("Failed to load gamemode to clear all scripts from."); return; }
+                cfg.readIntoArray_string(script_array, "scripts");
+                if(script_array.size() == 0) { Nu::Warning("gamemode contained no scripts"); }
+                for(u16 i = 0; i < script_array.size(); i++)
+                {
+                    if(script_array[i] == "NuToolsLogic.as") { continue; }//SKip NuToolsLogic.as for saftey reasons.
+                    //print("script removed = " + script_array[i]);
+                    if(!rules.RemoveScript(script_array[i]))
+                    {
+                        //Nu::Error("Wrong gamemode file? RemoveScript failed.");
+                    }
+                    script_array.removeAt(i);
+                    i--;
+                }
+
+                script_array = array<string>();
+                rules.set("script_array", script_array);
+                return;
+            }
+
 
             for(u16 i = 0; i < script_array.size(); i++)
             {
-                if(!rules.RemoveScript(script_array[i])) { Nu::Error("Failed to remove script somehow? Might've used AddScript via Rules rather than Nu::"); }
+                if(!rules.RemoveScript(script_array[i])) { Nu::Error("Failed to remove script somehow? Might've used AddScript via CRules rather than Nu::\nFailed to remove script " + script_array[i]); }
             }
 
             script_array = array<string>();
             
             rules.set("script_array", script_array);//Set new array
         
+            if(sync)
+            {
+                if(!isClient())//Is server, is not localhost
+                {
+                    CBitStream params;
+                    params.write_u8(FClearScripts);
+                    Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
+                    return;//Return, because the server will get this command later anyway.
+                }
+                else { Nu::Warning("Sync on client not allowed."); }
+            }
         }
 
-        bool RemoveScript(string script_name)
+        bool RemoveScript(string script_name, bool sync = false)
         {
             CRules@ rules = getRules();
 
@@ -1175,10 +1233,23 @@ namespace Nu
             
             rules.set("script_array", script_array);//Set new array
         
+            if(sync)
+            {
+                if(!isClient())//Is server, is not localhost
+                {
+                    CBitStream params;
+                    params.write_u8(FRemoveScript);
+                    params.write_string(script_name);
+                    Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
+                    return true;//Return, because the server will get this command later anyway.
+                }
+                else { Nu::Warning("Sync on client not allowed."); }
+            }
+
             return true;
         }
 
-        bool AddScript(string script_name)
+        bool AddScript(string script_name, bool sync = false)
         {
             CRules@ rules = getRules();
 
@@ -1186,15 +1257,27 @@ namespace Nu
             array<string> script_array;
             if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return false; }
             
-            if(!rules.AddScript(script_name))//Attempt to add a script to rules
-            {//Failure?
-                return false;
-            }
-            
+            if(!CFileMatcher(script_name).hasMatch()) { Nu::Error("Failed to AddScript " + script_name); return false; }
+            rules.AddScript(script_name);
+            //if(!rules.hasScript(script_name))//Does not work without waiting a tick.
+
             script_array.push_back(script_name);//Add it to the script array.
             
             rules.set("script_array", script_array);//Set new array
-        
+
+            if(sync)
+            {
+                if(!isClient())//Is server, is not localhost
+                {
+                    CBitStream params;
+                    params.write_u8(FAddScript);
+                    params.write_string(script_name);
+                    Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
+                    return true;//Return, because the server will get this command later anyway.
+                }
+                else { Nu::Warning("Sync on client not allowed."); }
+            }
+
             return true;
         }
 
@@ -1203,7 +1286,11 @@ namespace Nu
             CRules@ rules = getRules();
 
             array<string> script_array;
-            if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return false; }
+            if(!rules.get("script_array", script_array))
+            { 
+                //Nu::Error("Could not find script_array");
+                return false;//The answer is no.
+            }
 
             for(u16 i = 0; i < script_array.size(); i++)
             {
@@ -1225,21 +1312,31 @@ namespace Nu
             return script_array;
         }
 
-        void AddGamemode(string _gamemode)
+        void AddGamemode(string the_gamemode, bool sync = false)
         {
-            ::AddGamemode(@getRules());
+            CRules@ rules = getRules();
+
+            ::AddGamemode(@getRules(), the_gamemode);
+
+            if(sync)
+            {
+                if(!isClient())//Is server, is not localhost
+                {
+                    CBitStream params;
+                    params.write_u8(FAddGamemode);
+                    params.write_string(the_gamemode);
+                    Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
+                    return;//Return, because the server will get this command later anyway.
+                }
+                else { Nu::Warning("Sync on client not allowed."); }
+            }
         }
 
-        void SetGamemode(string _gamemode = "")
+        void SetGamemode(string the_gamemode, bool sync = false)
         {
-            if(_gamemode != "")
-            {
-                sv_gamemode = _gamemode;
-            }
+            ClearScripts(sync);
 
-            ClearScripts();
-
-            AddGamemode(sv_gamemode);
+            AddGamemode(the_gamemode, sync);
         }
     }
 
@@ -1247,12 +1344,41 @@ namespace Nu
 
 
     //Sends a command via CBlob to all but the sender
-    //void SendCommand(CBlob@ blob, CBitStream@ bs)
+    //void SendCommand(CBlob@ blob, u8 command_id, CBitStream@ bs)
     //{
     //    
     //}
+    
+    //1: CRules, required
+    //2: Command ID
+    //3: Params for the command
+    //4: Optional parameter to specify if this is sent to the server. If this parameter is false, this command wont be sent to the server. 
     //Sends a command via CRules to all but the sender
-
+    void SendCommandSkipSelf(CRules@ rules, u8 command_id, CBitStream@ params, bool sendToServer = true)
+    {
+        if(isServer())//The server
+        {
+            for(u16 i = 0; i < getPlayerCount(); i++)//Send the command to all players
+            {
+                CPlayer@ player = getPlayer(i);
+                if(@player == @null) { continue; }//If player is null, skip
+                rules.SendCommand(command_id, params, player);//Send this command to this specific player   
+            }
+        }
+        else//A client
+        {
+            for(u16 i = 0; i < getPlayerCount(); i++)//Send the command to all players
+            {
+                CPlayer@ player = getPlayer(i);
+                if(@player == @null || @player == @getLocalPlayer()) { continue; }//If player is null, skip. Or if the player is the sender, skip.
+                rules.SendCommand(command_id, params, player);//Send this command to this specific player
+            }
+            if(sendToServer)
+            {
+                rules.SendCommand(command_id, params, false);//Send this command to the server
+            }
+        }
+    }
 
 
 
@@ -1894,7 +2020,6 @@ namespace NuLib
         rules.addCommandID("announcement");
         rules.addCommandID("switchfrominventory");
         rules.addCommandID("nunextmap");
-
     }
 
     void onRestart(CRules@ rules)
@@ -1902,10 +2027,120 @@ namespace NuLib
         rules.set_u32("announcementtime", 0);
     }
 
+    void NuRuleScripts(CRules@ rules, CBitStream@ params)
+    {
+        u8 function_to_sync;
+        if(!params.saferead_u8(function_to_sync)) { Nu::Error("Failed saferead function_to_sync"); return; }
+
+        if(function_to_sync == Nu::Rules::FClearScripts)
+        {
+            Nu::Rules::ClearScripts();
+        }
+        else if(function_to_sync == Nu::Rules::FRemoveScript)
+        {
+            string script_to_sync;
+            if(!params.saferead_string(script_to_sync)) { Nu::Error("Failed saferead script_to_sync"); return; }
+            if(!Nu::Rules::RemoveScript(script_to_sync)) { Nu::Error("RemoveScript failed to sync. script_to_sync = " + script_to_sync); return; }
+        }
+        else if(function_to_sync == Nu::Rules::FAddScript)
+        {
+            string script_to_sync;
+            if(!params.saferead_string(script_to_sync)) { Nu::Error("Failed saferead script_to_sync"); return; }
+            if(!Nu::Rules::AddScript(script_to_sync)) { Nu::Error("AddScript failed to sync. script_to_sync = " + script_to_sync); return; }
+        }
+        else if(function_to_sync == Nu::Rules::FAddGamemode)
+        {
+            string gamemode_to_sync;
+            if(!params.saferead_string(gamemode_to_sync)) { Nu::Error("Failed saferead gamemode_to_sync"); return; }
+            Nu::Rules::AddGamemode(gamemode_to_sync);
+        }
+        else if(function_to_sync == Nu::Rules::FSyncEntireGamemode)
+        {
+            string _temp;
+
+            if(!params.saferead_string(_temp)) { Nu::Error("Failed saferead gamemode_name"); return; }
+            rules.gamemode_name = _temp;
+            if(!params.saferead_string(_temp)) { Nu::Error("Failed saferead gamemode_info"); return; }
+            rules.gamemode_info = _temp;
+
+            array<string> script_array;
+
+            while(params.saferead_string(_temp))
+            {
+                script_array.push_back(_temp);
+            }
+
+            if(script_array.size() == 0)
+            {
+                Nu::Error("Attempted to sync script array of size 0");
+                return;
+            }
+
+            //Check if our script array is exactly the same as the one being given to us. If they are the same, ignore it.
+            array<string> existing_array;
+            if(rules.get("script_array", existing_array) && existing_array.size() != 0//If a script_array is already in place
+            && existing_array.size() == script_array.size())//And the existing_array and script_array are equal in size.
+            {
+                bool same_array = true;
+                for(u16 i = 0; i < existing_array.size(); i++)//If every script between the two arrays are the same
+                {
+                    if(existing_array[i] != script_array[i])
+                    {
+                        same_array = false;
+                        break;   
+                    }
+                }
+                if(same_array)//These two arrays are the same.
+                {
+                    print("Attempted to sync same script_array.");
+                    return;//Stop here
+                }
+            }
+            
+            Nu::Rules::ClearScripts();
+            
+            if(rules.hasScript("NuToolsLogic.as"))//Remove just in case.
+            {
+                rules.RemoveScript("NuToolsLogic.as");
+            }
+            if(rules.hasScript("DummyScript.as"))//Remove just in case
+            {
+                rules.RemoveScript("DummyScript.as");
+            }
+
+            for(u16 i = 0; i < script_array.size(); i++)
+            {
+                if(!CFileMatcher(script_array[i]).hasMatch())
+                {
+                    //If the script failed to add.
+                    Nu::Error("Failed to add script on server to client in FSyncEntireGamemode.");
+                    script_array.removeAt(i);
+                    i--;
+                    continue;//Do over with the next script
+                }
+                rules.AddScript(script_array[i]);//Add script to rules
+                //if(!rules.hasScript(script_array[i]))//doesn't work without waiting a tick, use CFileMatcher instead.
+                //print("added script = " + script_array[i]);
+            }
+
+            rules.set("script_array", script_array);
+
+            //print("Client got join command");
+        }
+        else
+        {
+            Nu::Error("In command NuRuleScripts function_to_sync was out of bounds. function_to_sync = " + function_to_sync);
+            return;
+        }
+    }
 
     void onCommand(CRules@ rules, u8 cmd, CBitStream@ params)
     {
-        if(cmd == rules.getCommandID("switchfrominventory"))
+        if(cmd == rules.getCommandID("NuRuleScripts"))
+        {
+            NuRuleScripts(rules, params);
+        }
+        else if(cmd == rules.getCommandID("switchfrominventory"))
         {
             if(!isServer()) { return; }
 
@@ -1974,6 +2209,12 @@ namespace NuLib
             u8 blue = params.read_u8();
 
             client_AddToChat(text, SColor(alpha, red, green, blue));//Color of the text
+        
+            bool to_console;
+            if(params.saferead_bool(to_console))
+            {
+                print(text, SColor(alpha, red, green, blue));//Put it in the console as well
+            }
         }
         else if(cmd == rules.getCommandID("teleport") )//teleports player to position
         {

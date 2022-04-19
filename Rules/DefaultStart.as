@@ -13,7 +13,9 @@ void RunServer()
             error("Dummy Rules failed to load"); return;
         }
 
-        AddGamemode(rules);
+        rules.RemoveScript("DummyScript.as");//Remove the dummyscript to confirm stuff works. If the print file in this is running, something went wrong.
+
+        AddGamemode(rules, sv_gamemode);
         
         if (sv_mapcycle.size() > 0)
 		{
@@ -28,13 +30,75 @@ void RunServer()
 	}
 }
 
-void AddGamemode(CRules@ rules)
+void AddGamemode(CRules@ rules, string the_gamemode)
 {
-    string gamemode_path = "";
+    string gamemode_path = FindGamemode(the_gamemode);
 
-    ConfigFile@ cfg;
 
-    CFileMatcher@ files = CFileMatcher(sv_gamemode + ".cfg");
+
+    print("gamemode_path = " + gamemode_path);
+
+
+    ConfigFile@ cfg = ConfigFile();
+    if(!cfg.loadFile(gamemode_path)) { error("Failed to load gamemode"); return; }
+    if(!cfg.exists("gamemode_name")) { error("gamemode_path was not a gamemode file"); return; }
+
+    array<string> script_array;
+
+    if(cfg.exists("gamemode_name"))
+    {
+        rules.gamemode_name = cfg.read_string("gamemode_name");
+    }
+    if(cfg.exists("gamemode_info"))
+    {
+        rules.gamemode_info = cfg.read_string("gamemode_info");
+    }
+
+    cfg.readIntoArray_string(script_array, "scripts");
+
+    if(script_array.size() == 0) { warning("gamemode contained no scripts"); }
+
+    bool hasNuToolsLogic = false;
+
+    for(u16 i = 0; i < script_array.size(); i++)
+    {
+        //print("script " + i + " = " + script_array[i]);
+        
+        if(!CFileMatcher(script_array[i]).hasMatch())
+        {
+            //If the script failed to add.
+            error("script " + script_array[i] + " failed to find a match");
+            script_array.removeAt(i);//Remove it from the array
+            i--;//Go back one
+            continue;//Do over with the next script
+        }
+
+        rules.AddScript(script_array[i]);//Add script to rules
+        
+        if(!hasNuToolsLogic && script_array[i] == "NuToolsLogic.as") { hasNuToolsLogic = true; }
+        
+        //if(!rules.hasScript(script_array[i]))//Doesn't work without waiting a tick. CFileMatcher is replacing it.
+
+    }
+    
+    if(!hasNuToolsLogic)//If this gamemode does not have NuToolsLogic.as, add it. For it is rather important.
+    {
+        rules.AddScript("NuToolsLogic.as");
+        script_array.push_back("NuToolsLogic.as");//Add it!
+    }
+    rules.set("script_array", script_array);
+
+    rules.set_string("gamemode_path", gamemode_path);
+}
+
+//Returns the file path to the gamemode.
+string FindGamemode(string the_gamemode)
+{
+    string gamemode_path;
+
+    ConfigFile@ cfg = ConfigFile();
+    
+    CFileMatcher@ files = CFileMatcher(the_gamemode + ".cfg");
     if(files.hasMatch())
     {
         //files.printMatches();
@@ -57,7 +121,7 @@ void AddGamemode(CRules@ rules)
                 //warning("file is not a gamemode file");
                 continue;
             }
-            
+
             gamemode_path = current_gamemode_path;//The gamemode has been successfully found.
             
             q++;
@@ -65,14 +129,14 @@ void AddGamemode(CRules@ rules)
     }
     if(gamemode_path == "")
     {
-        //Search every gamemode.cfg file for their gamemode_name, and compare it to sv_gamemode. If they are the same, the gamemode has been found. 
+        //Search every gamemode.cfg file for their gamemode_name, and compare it to the_gamemode. If they are the same, the gamemode has been found. 
 
         //warning("search file by file for correct name gamemode path finding");
 
         @files = @CFileMatcher("gamemode.cfg");
         if(!files.hasMatch())
         {
-            error("what? no gamemode.cfg files anywhere?"); return;
+            error("what? no gamemode.cfg files anywhere?");
         }
 
         //files.printMatches();
@@ -93,8 +157,8 @@ void AddGamemode(CRules@ rules)
                 continue;
             }
             //print("get current = " + current_gamemode_path);
-            //print("gamemode name = " + cfg.read_string("gamemode_name") + " compared against = " + sv_gamemode);
-            if(cfg.read_string("gamemode_name") == sv_gamemode)//If the gamemode name is the same as sv_gamemode
+            //print("gamemode name = " + cfg.read_string("gamemode_name") + " compared against = " + the_gamemode);
+            if(cfg.read_string("gamemode_name") == the_gamemode)//If the gamemode name is the same as the_gamemode
             {
                 gamemode_path = current_gamemode_path;//Match has been found
                 break;
@@ -102,56 +166,12 @@ void AddGamemode(CRules@ rules)
         }
         if(gamemode_path == "")//Still failed to find the gamemode?
         {
-            error("Failed to find gamemode \"" + sv_gamemode + "\". Defaulting to vanilla gamemode finding. Note that any modded gamemode.cfg will replace all vanilla gamemode.cfg's");
-            gamemode_path = CFileMatcher("Rules/" + sv_gamemode + "/gamemode.cfg").getFirst();
-        }
-    }
-    
-
-
-
-    //print("gamemode_path = " + gamemode_path);
-
-
-    @cfg = @ConfigFile();
-    if(!cfg.loadFile(gamemode_path)) { error("Failed to load gamemode"); return; }
-    if(!cfg.exists("gamemode_name")) { error("gamemode_path was not a gamemode file"); return; }
-
-    array<string> script_array;
-
-    if(cfg.exists("gamemode_name"))
-    {
-        rules.gamemode_name = cfg.read_string("gamemode_name");
-    }
-    if(cfg.exists("gamemode_info"))
-    {
-        rules.gamemode_info = cfg.read_string("gamemode_info");
-    }
-
-    cfg.readIntoArray_string(script_array, "scripts");
-
-    if(script_array.size() == 0) { warning("gamemode contained no scripts"); }
-
-    for(u16 i = 0; i < script_array.size(); i++)
-    {
-        //print("script " + i + " = " + script_array[i]);
-        if(!rules.AddScript(script_array[i]))//Add script to rules
-        {
-            //If the script failed to add.
-            script_array.removeAt(i);//Remove it from the array
-            i--;//Go back one
-            continue;//Do over with the next script
+            error("Failed to find gamemode \"" + the_gamemode + "\". Defaulting to vanilla gamemode finding. Note that any modded gamemode.cfg will replace all vanilla gamemode.cfg's");
+            gamemode_path = CFileMatcher("Rules/" + the_gamemode + "/gamemode.cfg").getFirst();
         }
     }
 
-    rules.set("script_array", script_array);
-    
-    
-
-
-
-
-    rules.set_string("gamemode_path", gamemode_path);
+    return gamemode_path;
 }
 
 void ConnectLocalhost()
