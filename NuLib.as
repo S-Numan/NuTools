@@ -884,8 +884,10 @@ namespace Nu
             params.write_u8(color.getRed());
             params.write_u8(color.getGreen());
             params.write_u8(color.getBlue());
-            params.write_bool(to_console);
-
+            if(to_console)
+            {
+                params.write_bool(to_console);
+            }
             rules.SendCommand(rules.getCommandID("clientmessage"), params, player);//Send message to player via command
         }
         else if(@player == @getLocalPlayer())//If Script to catch the command isn't there, and this message was supposed to be sent to the user that is sending it?
@@ -2213,7 +2215,10 @@ namespace NuLib
             bool to_console;
             if(params.saferead_bool(to_console))
             {
-                print(text, SColor(alpha, red, green, blue));//Put it in the console as well
+                if(to_console)
+                {
+                    print(text, SColor(alpha, red, green, blue));//Put it in the console as well
+                }
             }
         }
         else if(cmd == rules.getCommandID("teleport") )//teleports player to position
