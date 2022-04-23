@@ -32,6 +32,7 @@ void RunServer()
 
 void AddGamemode(CRules@ rules, string the_gamemode)
 {
+    u16 i;
     string gamemode_path = FindGamemode(the_gamemode);
 
 
@@ -43,8 +44,6 @@ void AddGamemode(CRules@ rules, string the_gamemode)
     if(!cfg.loadFile(gamemode_path)) { error("Failed to load gamemode"); return; }
     if(!cfg.exists("gamemode_name")) { error("gamemode_path was not a gamemode file"); return; }
 
-    array<string> script_array;
-
     if(cfg.exists("gamemode_name"))
     {
         rules.gamemode_name = cfg.read_string("gamemode_name");
@@ -54,13 +53,47 @@ void AddGamemode(CRules@ rules, string the_gamemode)
         rules.gamemode_info = cfg.read_string("gamemode_info");
     }
 
-    cfg.readIntoArray_string(script_array, "scripts");
+    array<string> existing_script_array;
+    if(!rules.get("script_array", existing_script_array))//Try to get an existing script array.
+    {//Existing script array doesn't exist?
+        existing_script_array = array<string>();//Init this array with nothing
+    }
 
-    if(script_array.size() == 0) { warning("gamemode contained no scripts"); }
+    array<string> gamemode_script_array;//gamemode script array.
+    cfg.readIntoArray_string(gamemode_script_array, "scripts");
+    if(gamemode_script_array.size() == 0) { warning("gamemode contained no scripts"); }
 
-    bool hasNuToolsLogic = false;
+    for(i = 0; i < existing_script_array.size(); i++)//For every script in the existing script array
+    {
+        int script_hash = existing_script_array[i].getHash();
+        for(u16 q = 0; q < gamemode_script_array.size(); q++)//For every script in the gamemode array.
+        {
+            if(script_hash == gamemode_script_array[q].getHash())//If the gamemode_script_array contains a script that the existing_script_array already has.
+            {
+                gamemode_script_array.removeAt(q);//Remove it
+                break;//No need to further check
+            }
+        }
+    }
 
-    for(u16 i = 0; i < script_array.size(); i++)
+    array<string> script_array = array<string>(existing_script_array.size() + gamemode_script_array.size());//Script array to be added to rules.
+    u16 current_pos = 0;
+
+    //Add both arrays into script_array
+
+    for(i = 0; i < existing_script_array.size(); i++)
+    {
+        script_array[current_pos] = existing_script_array[i];
+        current_pos++;
+    }
+    for(i = 0; i < gamemode_script_array.size(); i++)
+    {
+        script_array[current_pos] = gamemode_script_array[i];
+        current_pos++;
+    }
+
+
+    for(i = 0; i < script_array.size(); i++)
     {
         //print("script " + i + " = " + script_array[i]);
         
@@ -75,17 +108,9 @@ void AddGamemode(CRules@ rules, string the_gamemode)
 
         rules.AddScript(script_array[i]);//Add script to rules
         
-        if(!hasNuToolsLogic && script_array[i] == "NuToolsLogic.as") { hasNuToolsLogic = true; }
-        
         //if(!rules.hasScript(script_array[i]))//Doesn't work without waiting a tick. CFileMatcher is replacing it.
-
     }
     
-    if(!hasNuToolsLogic)//If this gamemode does not have NuToolsLogic.as, add it. For it is rather important.
-    {
-        rules.AddScript("NuToolsLogic.as");
-        script_array.push_back("NuToolsLogic.as");//Add it!
-    }
     rules.set("script_array", script_array);
 
     rules.set_string("gamemode_path", gamemode_path);

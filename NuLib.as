@@ -3,6 +3,11 @@
 
 //This file is a library of functions, it contains many convenient functions to make modding kag easier.
 
+bool isLocalHost()
+{
+    return isClient() && isServer();
+}
+
 namespace Nu
 {
     shared u64 u64_max()
@@ -1165,7 +1170,7 @@ namespace Nu
                 if(script_array.size() == 0) { Nu::Warning("gamemode contained no scripts"); }
                 for(u16 i = 0; i < script_array.size(); i++)
                 {
-                    if(script_array[i] == "NuToolsLogic.as") { continue; }//SKip NuToolsLogic.as for saftey reasons.
+                    if(script_array[i] == "NuToolsLogic.as") { continue; }//Skip NuToolsLogic.as for saftey reasons.
                     //print("script removed = " + script_array[i]);
                     if(!rules.RemoveScript(script_array[i]))
                     {
@@ -1175,7 +1180,6 @@ namespace Nu
                     i--;
                 }
 
-                script_array = array<string>();
                 rules.set("script_array", script_array);
                 return;
             }
@@ -1192,14 +1196,14 @@ namespace Nu
         
             if(sync)
             {
-                if(isServer())//Is server
+                if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
                     params.write_u8(FClearScripts);
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return;//Return, because the server will get this command later anyway.
                 }
-                else if(!isClient()) { Nu::Warning("Sync on client not allowed."); }//Is not localhost
+                else if(!isServer()) { Nu::Warning("Sync on client not allowed."); }//Is client, is not localhost
             }
         }
 
@@ -1229,7 +1233,7 @@ namespace Nu
         
             if(sync)
             {
-                if(isServer())//Is server
+                if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
                     params.write_u8(FRemoveScript);
@@ -1237,7 +1241,7 @@ namespace Nu
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return true;//Return, because the server will get this command later anyway.
                 }
-                else if(!isClient()) { Nu::Warning("Sync on client not allowed."); }//Is not localhost
+                else if(!isServer()) { Nu::Warning("Sync on client not allowed."); }//Is client, is not localhost
             }
 
             return true;
@@ -1261,7 +1265,7 @@ namespace Nu
 
             if(sync)
             {
-                if(isServer())//Is server
+                if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
                     params.write_u8(FAddScript);
@@ -1269,7 +1273,7 @@ namespace Nu
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return true;//Return, because the server will get this command later anyway.
                 }
-                else if(!isClient()) { Nu::Warning("Sync on client not allowed."); }//Is not localhost
+                else if(!isServer()) { Nu::Warning("Sync on client not allowed."); }//Is client, is not localhost
             }
 
             return true;
@@ -1314,7 +1318,7 @@ namespace Nu
 
             if(sync)
             {
-                if(isServer())//Is server
+                if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
                     params.write_u8(FAddGamemode);
@@ -1322,7 +1326,7 @@ namespace Nu
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return;//Return, because the server will get this command later anyway.
                 }
-                else if(!isClient()) { Nu::Warning("Sync on client not allowed."); }//Is not localhost
+                else if(!isServer()) { Nu::Warning("Sync on client not allowed."); }//Is client, is not localhost
             }
         }
 
