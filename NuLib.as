@@ -871,37 +871,43 @@ namespace Nu
     }
 
     //1: The player the message is sent to.
-    //2: The message sent to the player's chat box.
-    //3: Optional color of the text in the chat box. (default red)
-    //4: optional bool, if true will put chat message into console as well
-    //Sends a message to a specific player's chat box.
-    shared void sendClientMessage(CPlayer@ player, string message, SColor color = SColor(255, 255, 0, 0))//Now with color
+    //2: The message sent to the player.
+    //3: Optional color of the text. (default red)
+    //4: Optional bool. if true, instead of placing the message in the player's chat it will place the message in the players's console
+    //Sends a message to a specific player. by default, into their chat box.
+    shared void sendClientMessage(CPlayer@ player, string message, SColor color = SColor(255, 255, 0, 0), bool to_console = false)//Now with color
     {
-        if(!isServer()) { Nu::Warning("Clients cannot directly send messages to other clients. Attempted to send:\n" + message); return; }
-
         CRules@ rules = getRules();
 
 
         CBitStream params;//Assign the params
+        params.write_bool(to_console);
         params.write_string(message);
         params.write_u8(color.getAlpha());
         params.write_u8(color.getRed());
         params.write_u8(color.getGreen());
         params.write_u8(color.getBlue());
-        rules.SendCommand(rules.getCommandID("clientmessage"), params, player);//Send message to player via command
+        if(isServer())//Is server, or is localhost
+        {
+            rules.SendCommand(rules.getCommandID("clientmessage"), params, player);//Send message to player via command
+        }
+        else//Is client
+        {
+            SendClientToClientCommand(rules, rules.getCommandID("clientmessage"), params, player);
+        }
     }
 
-    //1: The message sent to all player's chat boxes.
+    //1: The message sent to all player's.
     //2: Optional color of the message. (default red)
-    //3: optional bool, if true will put chat message into console as well
-    //Sends a message to EVERY player's chat box.
-    shared void sendAllMessage(string message, SColor color = SColor(255, 255, 0, 0))
+    //3: Optional bool. if true, instead of placing the message in the player's chat it will place the message in the players's console
+    //Sends a message to every player. by default, into their chat box.
+    shared void sendAllMessage(string message, SColor color = SColor(255, 255, 0, 0), bool to_console = false)
     {
         for(u16 i = 0; i < getPlayerCount(); i++)
         {
             CPlayer@ player = getPlayer(i);
             if(player == null) { continue; }
-            sendClientMessage(player, message, color);
+            sendClientMessage(player, message, color, to_console);
         }
     }
 
@@ -1157,7 +1163,7 @@ namespace Nu
                 
                 string gamemode_path = ::FindGamemode(rules.gamemode_name);
 
-                print("Removing every script from " + gamemode_path);
+                //print("Removing every script from " + gamemode_path);
 
                 ConfigFile cfg = ConfigFile();
 
@@ -1176,7 +1182,7 @@ namespace Nu
                     //print("script removed = " + script_array[i]);
                     if(!rules.RemoveScript(script_array[i]))
                     {
-                        //Nu::Error("Wrong gamemode file? RemoveScript failed.");
+                        Nu::Error("Wrong gamemode file? RemoveScript failed.");
                     }
                     script_array.removeAt(i);
                     i--;
@@ -1366,7 +1372,7 @@ namespace Nu
     //3: Params for the command
     //4: Optional parameter to specify if this is sent to the server. If this parameter is false, this command wont be sent to the server. 
     //Sends a command via CRules to all but the sender
-    void SendCommandSkipSelf(CRules@ rules, u8 command_id, CBitStream@ params, bool sendToServer = true)
+    shared void SendCommandSkipSelf(CRules@ rules, u8 command_id, CBitStream@ params, bool sendToServer = true)
     {
         if(isServer())//The server
         {
@@ -1390,6 +1396,19 @@ namespace Nu
                 rules.SendCommand(command_id, params, false);//Send this command to the server
             }
         }
+    }
+    
+    //DON'T DO ANYTHING IMPORTANT USING THIS FUNCTION! it is a jank work around
+    shared void SendClientToClientCommand(CRules@ rules, u8 command_id, CBitStream@ sendparams, CPlayer@ player)
+    {
+        if(!isClient()) { Nu::Error("Tried to send ClientToClient command from server. Cease."); return; }
+        if(player == @null) { Nu::Error("Player was null"); return; }
+
+        CBitStream params;
+        params.write_u8(command_id);
+        params.write_u16(player.getNetworkID());
+        params.write_CBitStream(sendparams);
+        rules.SendCommand(rules.getCommandID("clienttoclient"), params, false);//Send command to server
     }
 
 
@@ -2027,6 +2046,7 @@ namespace NuLib
     void onInit(CRules@ rules)
     {
         rules.addCommandID("clientmessage");
+        rules.addCommandID("clienttoclient");
         rules.addCommandID("teleport");
         rules.addCommandID("enginemessage");
         rules.addCommandID("announcement");
@@ -2162,6 +2182,22 @@ namespace NuLib
         {
             NuRuleScripts(rules, params);
         }
+        else if(cmd == rules.getCommandID("clienttoclient"))
+        {
+            if(!isServer()) { return; }
+            u8 command_id;
+            if(!params.saferead_u8(command_id)) { Nu::Error("clienttoclient failed to saferead command_id"); return; }
+            u16 player_id;
+            if(!params.saferead_u16(player_id)) { Nu::Error("clienttoclient failed to saferead player_id"); return; }
+            CBitStream _params;
+            if(!params.saferead_CBitStream(_params)) { Nu::Error("clienttoclient failed to read CBitStream"); return; }
+
+            CPlayer@ player = getPlayerByNetworkId(player_id);
+            if(player != @null)
+            {
+                rules.SendCommand(command_id, _params, player);
+            }
+        }
         else if(cmd == rules.getCommandID("switchfrominventory"))
         {
             if(!isServer()) { return; }
@@ -2224,13 +2260,21 @@ namespace NuLib
         {
             if(!isClient()) { return; }
 
+            bool to_console = params.read_bool();
             string text = params.read_string();
             u8 alpha = params.read_u8();
             u8 red = params.read_u8();
             u8 green = params.read_u8();
             u8 blue = params.read_u8();
 
-            client_AddToChat(text, SColor(alpha, red, green, blue));//Color of the text
+            if(to_console)
+            {
+                print(text, SColor(alpha, red, green, blue));
+            }
+            else
+            {
+                client_AddToChat(text, SColor(alpha, red, green, blue));//Color of the text
+            }
         }
         else if(cmd == rules.getCommandID("teleport") )//teleports player to position
         {
