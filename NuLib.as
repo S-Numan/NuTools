@@ -876,24 +876,18 @@ namespace Nu
 
         CRules@ rules = getRules();
 
-        if(rules.hasScript("NuToolsLogic.as"))//Only work if the script that catches this command is actually there.
+
+        CBitStream params;//Assign the params
+        params.write_string(message);
+        params.write_u8(color.getAlpha());
+        params.write_u8(color.getRed());
+        params.write_u8(color.getGreen());
+        params.write_u8(color.getBlue());
+        if(to_console)
         {
-            CBitStream params;//Assign the params
-            params.write_string(message);
-            params.write_u8(color.getAlpha());
-            params.write_u8(color.getRed());
-            params.write_u8(color.getGreen());
-            params.write_u8(color.getBlue());
-            if(to_console)
-            {
-                params.write_bool(to_console);
-            }
-            rules.SendCommand(rules.getCommandID("clientmessage"), params, player);//Send message to player via command
+            params.write_bool(to_console);
         }
-        else if(@player == @getLocalPlayer())//If Script to catch the command isn't there, and this message was supposed to be sent to the user that is sending it?
-        {
-            client_AddToChat(message, color);//Do it old fashioned style
-        }
+        rules.SendCommand(rules.getCommandID("clientmessage"), params, player);//Send message to player via command
     }
 
     //1: The message sent to all player's chat boxes.
@@ -960,11 +954,9 @@ namespace Nu
         if(inv == @null) { return; }
 
         CBlob@ get_blob = inv.getItem(s_get_blob);
-        if(get_blob != @null)
-        {
-            SwitchFromInventory(pblob, get_blob, inventorise_held);
-            return;
-        }
+        if(get_blob == @null) { return; }
+
+        SwitchFromInventory(pblob, get_blob, inventorise_held);
     }
 
     //1: rules for rules things
@@ -1043,7 +1035,7 @@ namespace Nu
             CBlob@ plob = @player.getBlob();//Get the current player's blob
             if(plob != @null)//If it is not null.
             {
-                plob.server_SetPlayer(null);//No idea if this is needed
+                plob.server_SetPlayer(@null);//No idea if this is needed
                 plob.server_Die();//Deadify it.
             }
             newBlob.server_SetPlayer(player);//Set the player to it's new blob
