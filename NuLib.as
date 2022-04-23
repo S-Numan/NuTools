@@ -216,7 +216,7 @@ namespace Nu
 
     //1: A string. The shortened/first half version of a player's username. Case sensitive.
     //See getPlayersByShortUsername. This is more of an example of how to use than something you should use. Returns a single player if there was only one player, otherwise returns null.
-    shared CPlayer@ getPlayerByShortUsername(string shortname)
+    /*shared CPlayer@ getPlayerByShortUsername(string shortname)
     {
         array<CPlayer@> target_players = getPlayersByShortUsername(shortname);//Get a list of players that have this as the start of their username
         if(target_players.size() > 1)//If there is more than 1 player in the list
@@ -235,7 +235,7 @@ namespace Nu
             return @null;
         }
         return target_players[0];
-    }
+    }*/ //Use the one that returns an array
 
 
     //Parameters
@@ -434,14 +434,14 @@ namespace Nu
         POSBottomLeft,//bottom left
         POSBottomRight,//bottom right
         POSCenter,//in the center of the menu
-        POSTop,//positioned on the top of the menu
-        POSAbove,//above the top of the menu
-        POSBottom,//on the bottom of the menu
-        POSUnder,//under the bottom of the menu
-        POSLeft,//on the left of the menu
-        POSLefter,//left of the left side of the menu
-        POSRight,//to the right of the menu
-        POSRighter,//right of the right side of the menu
+        POSTop,//positioned on the top of the menu      //TopInside
+        POSAbove,//above the top of the menu            //TopOutside
+        POSBottom,//on the bottom of the menu           //BottomInside
+        POSUnder,//under the bottom of the menu         //BottomOutside
+        POSLeft,//on the left of the menu               //LeftInside
+        POSLefter,//left of the left side of the menu   //LeftOutside
+        POSRight,//to the right of the menu             //RightInside
+        POSRighter,//right of the right side of the menu//RightOutside
 
         POSPositionsCount,//Always last, this specifies the amount of positions.
     }
