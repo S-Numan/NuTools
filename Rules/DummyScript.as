@@ -10,7 +10,9 @@ void onInit(CRules@ rules)
         print("Dummy rules loaded. Waiting for server to pass rules.");
         //The client just joined (most likely)
         //print("==CLIENT GAMEMODE WIPE==");
-        Nu::Rules::ClearScripts();//Remove all scripts in the whatever gamemode kag initially loads to the client. (avoids removing this script.)
+        
+        //Remove all scripts in the whatever gamemode kag initially loads to the client. Don't skip NuToolsLogic.as (avoids removing this script.)
+        Nu::Rules::ClearScripts(false, array<string>());//False means doesn't sync
     }
 }
 

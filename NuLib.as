@@ -875,7 +875,7 @@ namespace Nu
     //3: Optional color of the text in the chat box. (default red)
     //4: optional bool, if true will put chat message into console as well
     //Sends a message to a specific player's chat box.
-    shared void sendClientMessage(CPlayer@ player, string message, SColor color = SColor(255, 255, 0, 0), bool to_console = false)//Now with color
+    shared void sendClientMessage(CPlayer@ player, string message, SColor color = SColor(255, 255, 0, 0))//Now with color
     {
         if(!isServer()) { Nu::Warning("Clients cannot directly send messages to other clients. Attempted to send:\n" + message); return; }
 
@@ -888,10 +888,6 @@ namespace Nu
         params.write_u8(color.getRed());
         params.write_u8(color.getGreen());
         params.write_u8(color.getBlue());
-        if(to_console)
-        {
-            params.write_bool(to_console);
-        }
         rules.SendCommand(rules.getCommandID("clientmessage"), params, player);//Send message to player via command
     }
 
@@ -899,13 +895,13 @@ namespace Nu
     //2: Optional color of the message. (default red)
     //3: optional bool, if true will put chat message into console as well
     //Sends a message to EVERY player's chat box.
-    shared void sendAllMessage(string message, SColor color = SColor(255, 255, 0, 0), bool to_console = false)
+    shared void sendAllMessage(string message, SColor color = SColor(255, 255, 0, 0))
     {
         for(u16 i = 0; i < getPlayerCount(); i++)
         {
             CPlayer@ player = getPlayer(i);
             if(player == null) { continue; }
-            sendClientMessage(player, message, color, to_console);
+            sendClientMessage(player, message, color);
         }
     }
 
@@ -1149,7 +1145,7 @@ namespace Nu
             ScriptFunctionCount
         }
 
-        void ClearScripts(bool sync = false)
+        void ClearScripts(bool sync = false, array<string> skip_these = array<string>(1, "NuToolsLogic.as"))//Skip NuToolsLogic.as as it's the thing that syncs rules changes between client/server.
         {
             CRules@ rules = getRules();
 
@@ -1170,7 +1166,13 @@ namespace Nu
                 if(script_array.size() == 0) { Nu::Warning("gamemode contained no scripts"); }
                 for(u16 i = 0; i < script_array.size(); i++)
                 {
-                    if(script_array[i] == "NuToolsLogic.as") { continue; }//Skip NuToolsLogic.as for saftey reasons.
+                    bool skip_this = false;
+                    for(u16 q = 0; q < skip_these.size(); q++)
+                    {
+                        if(script_array[i] == skip_these[q]) { skip_this = true; break; }//Skip   
+                    }
+                    if(skip_this) { continue; }//Skip
+
                     //print("script removed = " + script_array[i]);
                     if(!rules.RemoveScript(script_array[i]))
                     {
@@ -1187,10 +1189,18 @@ namespace Nu
 
             for(u16 i = 0; i < script_array.size(); i++)
             {
-                if(!rules.RemoveScript(script_array[i])) { Nu::Error("Failed to remove script somehow? Might've used AddScript via CRules rather than Nu::\nFailed to remove script " + script_array[i]); }
-            }
+                bool skip_this = false;
+                for(u16 q = 0; q < skip_these.size(); q++)
+                {
+                    if(script_array[i] == skip_these[q]) { skip_this = true; break; }//Skip   
+                }
+                if(skip_this) { continue; }//Skip
 
-            script_array = array<string>();
+                if(!rules.RemoveScript(script_array[i])) { Nu::Error("Failed to remove script somehow? Might've used AddScript via CRules rather than Nu::\nFailed to remove script " + script_array[i]); }
+            
+                script_array.removeAt(i);
+                i--;
+            }
             
             rules.set("script_array", script_array);//Set new array
         
@@ -1200,6 +1210,10 @@ namespace Nu
                 {
                     CBitStream params;
                     params.write_u8(FClearScripts);
+                    for(u16 q = 0; q < skip_these.size(); q++)
+                    {
+                        params.write_string(skip_these[q]);
+                    }
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return;//Return, because the server will get this command later anyway.
                 }
@@ -2032,7 +2046,15 @@ namespace NuLib
 
         if(function_to_sync == Nu::Rules::FClearScripts)
         {
-            Nu::Rules::ClearScripts();
+            array<string> skip_these = array<string>();
+
+            string _temp;
+
+            while(params.saferead_string(_temp))
+            {
+                skip_these.push_back(_temp);
+            }
+            Nu::Rules::ClearScripts(false, skip_these);
         }
         else if(function_to_sync == Nu::Rules::FRemoveScript)
         {
@@ -2095,13 +2117,13 @@ namespace NuLib
                 }
             }
             
-            Nu::Rules::ClearScripts();
-            
-            if(rules.hasScript("NuToolsLogic.as"))//Remove just in case.
+            Nu::Rules::ClearScripts(false, array<string>());//Don't sync, don't skip removing anything. Remove it all!
+
+            if(rules.hasScript("NuToolsLogic.as"))//Remove just in case, you never know.
             {
                 rules.RemoveScript("NuToolsLogic.as");
             }
-            if(rules.hasScript("DummyScript.as"))//Remove just in case
+            if(rules.hasScript("DummyScript.as"))//Remove justin's case, it isn't mine. why do I have it? Someone tell jusin to take it back.
             {
                 rules.RemoveScript("DummyScript.as");
             }
@@ -2119,6 +2141,8 @@ namespace NuLib
                 rules.AddScript(script_array[i]);//Add script to rules
                 //if(!rules.hasScript(script_array[i]))//doesn't work without waiting a tick, use CFileMatcher instead.
                 //print("added script = " + script_array[i]);
+
+                //print("syncing gamemode script array " + i + " is " + script_array[i]);
             }
 
             rules.set("script_array", script_array);
@@ -2207,15 +2231,6 @@ namespace NuLib
             u8 blue = params.read_u8();
 
             client_AddToChat(text, SColor(alpha, red, green, blue));//Color of the text
-        
-            bool to_console;
-            if(params.saferead_bool(to_console))
-            {
-                if(to_console)
-                {
-                    print(text, SColor(alpha, red, green, blue));//Put it in the console as well
-                }
-            }
         }
         else if(cmd == rules.getCommandID("teleport") )//teleports player to position
         {

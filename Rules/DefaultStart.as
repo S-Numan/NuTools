@@ -93,7 +93,7 @@ void AddGamemode(CRules@ rules, string the_gamemode)
     }
 
 
-    for(i = 0; i < script_array.size(); i++)
+    for(i = existing_script_array.size(); i < script_array.size(); i++)//Don't need to re-add existing scripts
     {
         //print("script " + i + " = " + script_array[i]);
         
@@ -112,6 +112,10 @@ void AddGamemode(CRules@ rules, string the_gamemode)
     }
     
     rules.set("script_array", script_array);
+    //for(i = 0; i < script_array.size(); i++)
+    //{
+    //    print("script array " + i + " is " + script_array[i]);
+    //}
 
     rules.set_string("gamemode_path", gamemode_path);
 }

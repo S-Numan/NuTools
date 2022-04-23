@@ -104,5 +104,7 @@ void onNewPlayerJoin( CRules@ rules, CPlayer@ player )
         }
 
         rules.SendCommand(rules.getCommandID("NuRuleScripts"), params, player);
+        
+        //print("SyncEntireGamemode command sent to client");
     }
 }
