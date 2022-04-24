@@ -1670,7 +1670,6 @@ namespace Nu
             frame_points = array<Vec2f>(4);
             z = array<float>(4, 0.0f);
             scale = Vec2f(1.0f, 1.0f);
-            auto_frame_points = true;
             would_crash = false;
             angle = 0.0f;
         }
@@ -1726,9 +1725,7 @@ namespace Nu
                 if(calculate && is_texture)
                 {
                     RecalculateUV();
-                    if(auto_frame_points){
-                    setDefaultPoints();
-                    }
+                    frame_points = Nu::getFrameSizes(frame_size);
                 }
             }
         }
@@ -1761,14 +1758,10 @@ namespace Nu
             if(_image == @null) { error("image was null for some reason in NuLib::NuImage::CreateImage"); return @null; }
             if(_image.size() == 0) { warning("Image provided in NuLib::NuImage::CreateImage was 0 in size"); return _image; }
 
-            image_size = Vec2f(_image.width(), _image.height());
-            frame_size = image_size;
-            RecalculateUV();
-            if(auto_frame_points){
-                setDefaultPoints();
-            }
-            name = render_name;
             is_texture = true;
+            image_size = Vec2f(_image.width(), _image.height());
+            setFrameSize(image_size);
+            name = render_name;
 
             return @_image;
         }
@@ -1804,36 +1797,18 @@ namespace Nu
         }
 
 
-        bool auto_frame_points;//This, when true, automatically changes frame_points to the accurate points of the frame. This being false allows you to scale the frame however you like.
-        
         array<Vec2f> frame_points;//Top left, top right, bottom left, bottom right of the frame when drawn. Stretches or squishes the frame.
         void setPointUpperLeft(Vec2f value)
         {
             frame_points[0] = value;//Top left
             frame_points[1].y = value.y;//Top right
             frame_points[3].x = value.x;//Bottom left
-
-            auto_frame_points = false;
         }
         void setPointLowerRight(Vec2f value)
         {
             frame_points[1].x = value.x;//Top right
             frame_points[2] = value;//Bottom right
             frame_points[3].y = value.y;//Bottom left
-        
-            auto_frame_points = false;
-        }
-        void setDefaultPoints()//Sets the correct points taking into factor frame size. Keeps the size of the drawn thing non modified. (ignoring scale)
-        {
-            frame_points = Nu::getFrameSizes(
-                MultVec(frame_size, scale)//Frame size
-            );
-
-            Vec2f center = (frame_points[2] - frame_points[0]) / 2;
-
-            for(u8 i = 0; i < frame_points.size(); i++){
-                frame_points[i] = frame_points[i].RotateByDegrees(angle, center);
-            }            
         }
 
         array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
@@ -1874,9 +1849,6 @@ namespace Nu
         void setAngle(float value)
         {
             angle = value;
-            if(auto_frame_points){
-                setDefaultPoints();
-            }
         }
         float getAngle()
         {
@@ -1887,9 +1859,6 @@ namespace Nu
         void setScale(Vec2f _scale)//Sets the scale of the frame.
         {
             scale = _scale;
-            if(auto_frame_points){
-                setDefaultPoints();
-            }
         }
         void setScale(float _scale)//Sets the scale of the frame.
         {
@@ -1917,10 +1886,32 @@ namespace Nu
 
             Vec2f _offset = MultVec(offset, scale);
 
-            v_raw[0] = Vertex(_offset + _pos + frame_points[0], z[0], uv_per_frame[_frame][0], _color);
-			v_raw[1] = Vertex(_offset + _pos + frame_points[1], z[1], uv_per_frame[_frame][1], _color);//Set the colors yourself.
-			v_raw[2] = Vertex(_offset + _pos + frame_points[2], z[2], uv_per_frame[_frame][2], _color);
-			v_raw[3] = Vertex(_offset + _pos + frame_points[3], z[3], uv_per_frame[_frame][3], _color);
+            //v_pos[0] = add_to + Vec2f(0,                0                   );//Top left
+            //v_pos[1] = add_to + Vec2f(0 + frame_size.x, 0                   );//Top right
+            //v_pos[2] = add_to + Vec2f(0 + frame_size.x, 0 + frame_size.y    );//Bottom right
+            //v_pos[3] = add_to + Vec2f(0,                0 + frame_size.y    );//Bottom left
+
+            Vec2f center = (frame_points[2] - frame_points[0]) / 2;
+
+            Vec2f add_scale = MultVec(center, scale - Vec2f(1.0f, 1.0f));
+
+            v_raw[0] = Vertex(_offset + _pos + 
+                (frame_points[0] + (add_scale * -1)//XY
+                ).RotateByDegrees(angle, center), z[0], uv_per_frame[_frame][0], _color);
+			
+            v_raw[1] = Vertex(_offset + _pos +
+                Vec2f(frame_points[1].x + add_scale.x,//X
+                    frame_points[1].y + (add_scale.y * -1)//Y
+                ).RotateByDegrees(angle, center), z[1], uv_per_frame[_frame][1], _color);//Set the colors yourself.
+			
+            v_raw[2] = Vertex(_offset + _pos +
+                (frame_points[2] + add_scale//XY
+                ).RotateByDegrees(angle, center), z[2], uv_per_frame[_frame][2], _color);
+			
+            v_raw[3] = Vertex(_offset + _pos +
+                Vec2f(frame_points[3].x + (add_scale.x * -1),//X
+                    frame_points[3].y + add_scale.y//Y
+                ).RotateByDegrees(angle, center), z[3], uv_per_frame[_frame][3], _color);
             return v_raw;
         }
 
