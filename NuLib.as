@@ -1669,6 +1669,7 @@ namespace Nu
             v_raw = array<Vertex>(4);
             frame_points = array<Vec2f>(4);
             z = array<float>(4, 0.0f);
+            center_scale = true;
             scale = Vec2f(1.0f, 1.0f);
             would_crash = false;
             angle = 0.0f;
@@ -1843,8 +1844,6 @@ namespace Nu
             return z[0];
         }
 
-        Vec2f angle_offset;//The offset required to make spinning move from the middle, and not the top left.
-
         private float angle;
         void setAngle(float value)
         {
@@ -1854,6 +1853,9 @@ namespace Nu
         {
             return angle;
         }
+
+        bool center_scale;//When this is true, this image scales from the center (expands/shrinks equally from all sides).
+        //When this is false, this image scales from the top left. Thus, the top left stays to the top left. (bottom right expands/shrinks outwards)
 
         private Vec2f scale;//Scale of the frame.
         void setScale(Vec2f _scale)//Sets the scale of the frame.
@@ -1886,15 +1888,15 @@ namespace Nu
 
             Vec2f _offset = MultVec(offset, scale);
 
-            //v_pos[0] = add_to + Vec2f(0,                0                   );//Top left
-            //v_pos[1] = add_to + Vec2f(0 + frame_size.x, 0                   );//Top right
-            //v_pos[2] = add_to + Vec2f(0 + frame_size.x, 0 + frame_size.y    );//Bottom right
-            //v_pos[3] = add_to + Vec2f(0,                0 + frame_size.y    );//Bottom left
-
             Vec2f center = (frame_points[2] - frame_points[0]) / 2;
 
             Vec2f add_scale = MultVec(center, scale - Vec2f(1.0f, 1.0f));
 
+            if(!center_scale)
+            {
+                _pos += add_scale;
+            }
+            
             v_raw[0] = Vertex(_offset + _pos + 
                 (frame_points[0] + (add_scale * -1)//XY
                 ).RotateByDegrees(angle, center), z[0], uv_per_frame[_frame][0], _color);
