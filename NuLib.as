@@ -1929,6 +1929,7 @@ namespace Nu
 
     }
 
+    //TODO delete (or move) this. Could move it into NuMenu.
     shared class NuStateImage : NuImage
     {
         NuStateImage()
