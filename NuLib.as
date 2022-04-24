@@ -1829,15 +1829,11 @@ namespace Nu
                 MultVec(frame_size, scale)//Frame size
             );
 
-            if(angle != 0.0f)
-            {
-                Vec2f center = (frame_points[2] - frame_points[0]) / 2;
+            Vec2f center = (frame_points[2] - frame_points[0]) / 2;
 
-                for(u8 i = 0; i < frame_points.size(); i++){
-                    frame_points[i] = frame_points[i].RotateByDegrees(angle, center);
-                }
-            }
-            
+            for(u8 i = 0; i < frame_points.size(); i++){
+                frame_points[i] = frame_points[i].RotateByDegrees(angle, center);
+            }            
         }
 
         array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
