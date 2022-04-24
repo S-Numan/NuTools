@@ -1,21 +1,28 @@
-
+bool custom_gamemode_loading = true;//Make this false if you want nothing to do with the custom gamemode loading.
 
 void RunServer()
 {
 	if (getNet().CreateServer())
 	{
-
-        LoadRules("Rules/" + "DummyGamemode.cfg");//Load dummy gamemode before loading the rules the new way.
-
-        CRules@ rules = getRules();
-        if(@rules == @null)
+        
+        if(!custom_gamemode_loading)
         {
-            error("Dummy Rules failed to load"); return;
+            LoadRules("Rules/" + sv_gamemode + "/gamemode.cfg");
         }
+        else
+        {
+            LoadRules("Rules/" + "DummyGamemode.cfg");//Load dummy gamemode before loading the rules the new way.
 
-        rules.RemoveScript("DummyScript.as");//Remove the dummyscript to confirm stuff works. If the print file in this is running, something went wrong.
+            CRules@ rules = getRules();
+            if(@rules == @null)
+            {
+                error("Dummy Rules failed to load"); return;
+            }
 
-        AddGamemode(rules, sv_gamemode);
+            rules.RemoveScript("DummyScript.as");//Remove the dummyscript to confirm stuff works. If the print file in this is running, something went wrong.
+
+            AddGamemode(rules, sv_gamemode);
+        }
         
         if (sv_mapcycle.size() > 0)
 		{
