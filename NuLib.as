@@ -1005,6 +1005,17 @@ namespace Nu
         }
         if(spawn == Vec2f(0,0))//No spawn found?
         {
+            if(getMap().getMarkers("default spawn", spawns))
+            {
+                spawn = spawns[ XORRandom(spawns.length) ];
+            }
+            else if(getMap().getMarkers("default main spawn", spawns))
+            {
+                spawn = spawns[ XORRandom(spawns.length) ];
+            }
+        }
+        if(spawn == Vec2f(0,0))//Still no spawn found?
+        {
             spawn.x = map.tilesize * 2;//Start two tiles out
             
             while(spawn.y == 0.0f)//While no ground is found?
@@ -1026,13 +1037,13 @@ namespace Nu
         {
             actor = blob_name;//Use it
         }
-        else if(player.lastBlobName != "")//No blob name? how about the last player's blob.
+        else if(rules.get_bool("respawn_as_last_blob") && player.lastBlobName != "")//No blob name? If respawn_as_last_blob is true, check for a lastBlobName. 
         {
             actor = player.lastBlobName;//Use it
         }
         else//No last player blob?
         {
-            actor = "knight";//Just default to knight.
+            actor = rules.get_string("default class");//Just default to the default class
         }
 
         CBlob@ newBlob = server_CreateBlob(actor, player.getTeamNum(), spawn);//Create the new blob with the player's team at the position spawn
@@ -2030,9 +2041,33 @@ namespace Nu
 
 }
 
-//For functions that require constant ticking/rendering or require to be sent to client or server from client or server.
+//Generally for functions that require constant ticking/rendering or require to be sent to client or server from client or server.
 namespace NuLib
 {
+    array<u16> respawn_times;
+    array<int> respawn_times_player;//Corresponds with respawn_times. Holds player usernames hashed.
+    u16 getRespawnPlayerIndex(CPlayer@ player)
+    {
+        if(!isServer()) { Nu::Error("This function is server only"); return 0; }
+        int name_hash = player.getUsername().getHash();
+
+        u16 i;
+
+        bool exists = false;
+
+        for(i = 0; i < respawn_times_player.size(); i++)
+        {
+            if(name_hash == respawn_times_player[i]) { exists = true; break; }
+        }
+
+        if(exists){
+            return i;
+        }
+        else{
+            return Nu::u16_max();
+        }
+    }
+
     void onInit(CRules@ rules)
     {
         rules.addCommandID("clientmessage");
@@ -2047,6 +2082,83 @@ namespace NuLib
     void onRestart(CRules@ rules)
     {
         rules.set_u32("announcementtime", 0);
+
+        if(isServer())
+        {
+            if(rules.get_u16("nu_respawn_time") != 0)
+            {
+                //Reset arrays
+                respawn_times = array<u16>();
+                respawn_times_player = array<int>();
+
+                //Remake arrays with all in server players
+                for(u16 i = 0; i < getPlayerCount(); i++)
+                {
+                    CPlayer@ player = getPlayer(i);
+                    if(player == @null) { Nu::Warning("Player was null"); continue; }
+                    respawn_times.push_back(2);//Make it take a tick or two to respawn. To prevent annoying bugs.
+                    respawn_times_player.push_back(player.getUsername().getHash());
+                }
+                //This clears all the players that left out of the arrays
+            }
+
+        }
+    }
+
+    void onTick(CRules@ rules)
+    {
+        if(isServer())
+        {
+            if(rules.get_u16("nu_respawn_time") != 0)
+            {
+                for(u16 i = 0; i < respawn_times.size(); i++)//For every player's respawn time
+                {
+                    if(respawn_times[i] != 0)//If they are not already respawned
+                    {
+                        respawn_times[i]--;//Count down
+                        if(respawn_times[i] == 0)//If it is time for them to respawn
+                        {
+                            CPlayer@ player = getPlayer(i);
+                            if(player == @null) { Nu::Error("player was null when respawning in rules."); continue; }
+
+                            Nu::RespawnPlayer(rules, player);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    void onNewPlayerJoin(CRules@ rules, CPlayer@ player)
+    {
+        if(isServer() && rules.get_u16("nu_respawn_time") != 0)
+        {
+            if(player == @null) { Nu::Error("player was null"); return; }
+
+            if(getRespawnPlayerIndex(player) == Nu::u16_max())//Player doesn't exist?
+            {
+                respawn_times.push_back(2);//Tick or two to respawn to prevent annoying bugs.
+                respawn_times_player.push_back(player.getUsername().getHash());
+            }
+        }
+    }
+
+    void onPlayerLeave( CRules@ rules, CPlayer@ player )
+    {
+        if(isServer())
+        {
+            
+        }
+    }
+
+    void onPlayerDie( CRules@ rules, CPlayer@ victim, CPlayer@ attacker, u8 customData )//Calls when the player's blob dies
+    {
+        if(isServer() && rules.get_u16("nu_respawn_time") != 0)
+        {
+            if(victim == @null) { Nu::Error("victim was null"); return; }
+
+            respawn_times[getRespawnPlayerIndex(victim)] = rules.get_u16("nu_respawn_time");
+        }
     }
 
     void NuRuleScripts(CRules@ rules, CBitStream@ params)

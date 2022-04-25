@@ -52,17 +52,9 @@ void onRestart( CRules@ rules)
     NuLib::onRestart(rules);
 }
 
-void onTick( CRules@ rules )
+void onTick(CRules@ rules)
 {
-    if(getGameTime() == 30 && isServer() && sv_gamemode == "NuTesting")//If thirty ticks have passed since restarting, this is serverside, and the gamemode is testing.
-    {
-        CPlayer@ player = getPlayer(0);
-        if(player != @null)
-        {
-            CBlob@ plob = Nu::RespawnPlayer(rules, player);//Respawn the player
-            server_CreateBlob("saw", -1, plob.getPosition() + Vec2f(20.0f, 0));
-        }
-    }
+    NuLib::onTick(rules);
     
     NuRender::onTick(rules);
 }
@@ -84,8 +76,10 @@ void onCommand(CRules@ rules, u8 cmd, CBitStream@ params)
     NuLib::onCommand(rules, cmd, params);
 }
 
-void onNewPlayerJoin( CRules@ rules, CPlayer@ player )
+void onNewPlayerJoin(CRules@ rules, CPlayer@ player)
 {
+    NuLib::onNewPlayerJoin(rules, player);
+
     if(isServer() && rules.get_bool("custom_gamemode_loading"))//Is server, and custom_gamemode_loading is true,
     {
         array<string> script_array;
@@ -107,4 +101,13 @@ void onNewPlayerJoin( CRules@ rules, CPlayer@ player )
         
         //print("SyncEntireGamemode command sent to client");
     }
+}
+void onPlayerLeave(CRules@ rules, CPlayer@ player)
+{
+    NuLib::onPlayerLeave(rules, player);
+}
+
+void onPlayerDie(CRules@ rules, CPlayer@ victim, CPlayer@ attacker, u8 customData)
+{
+    NuLib::onPlayerDie(rules, victim, attacker, customData);
 }
