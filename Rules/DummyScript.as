@@ -7,7 +7,7 @@ void onInit(CRules@ rules)
 
     if(!isServer())//Server handles their rules loading themselves.
     {
-        print("Dummy rules loaded. Waiting for server to pass rules.");
+        //print("Dummy rules loaded. Waiting for server to pass rules.");
         //The client just joined (most likely)
         //print("==CLIENT GAMEMODE WIPE==");
         
