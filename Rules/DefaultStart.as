@@ -1,13 +1,17 @@
-bool custom_gamemode_loading = true;//Make this false if you want nothing to do with the custom gamemode loading.
+//In autoconfig.cfg, set sv_contact_info = 0 to disable custom gamemode loading.
 
 void RunServer()
 {
 	if (getNet().CreateServer())
 	{
-        
-        if(!custom_gamemode_loading)
+        if(sv_contact_info == "0")
         {
             LoadRules("Rules/" + sv_gamemode + "/gamemode.cfg");
+            CRules@ rules = getRules();
+            if(@rules == @null)
+            {
+                error("Rules failed to load."); return;
+            }
         }
         else
         {
@@ -22,6 +26,8 @@ void RunServer()
             rules.RemoveScript("DummyScript.as");//Remove the dummyscript to confirm stuff works. If the print file in this is running, something went wrong.
 
             AddGamemode(rules, sv_gamemode);
+        
+            rules.set_bool("custom_gamemode_loading", true);
         }
         
         if (sv_mapcycle.size() > 0)
@@ -51,14 +57,28 @@ void AddGamemode(CRules@ rules, string the_gamemode)
     if(!cfg.loadFile(gamemode_path)) { error("Failed to load gamemode"); return; }
     if(!cfg.exists("gamemode_name")) { error("gamemode_path was not a gamemode file"); return; }
 
-    if(cfg.exists("gamemode_name"))
-    {
+    if(cfg.exists("gamemode_name")){
         rules.gamemode_name = cfg.read_string("gamemode_name");
     }
-    if(cfg.exists("gamemode_info"))
-    {
+    if(cfg.exists("gamemode_info")){
         rules.gamemode_info = cfg.read_string("gamemode_info");
     }
+    if(cfg.exists("daycycle_speed")){
+        rules.daycycle_speed = cfg.read_u16("daycycle_speed");
+    }
+    if(cfg.exists("daycycle_start")){
+        rules.daycycle_start = cfg.read_f32("daycycle_start");
+    }
+    if(cfg.exists("autoassign_teams")){
+        rules.autoassign_teams = cfg.read_bool("autoassign_teams");
+    }
+    if(cfg.exists("attackdamage_modifier")){
+        rules.attackdamage_modifier = cfg.read_f32("attackdamage_modifier");
+    }
+    if(cfg.exists("friendlydamage_modifier")){
+        rules.friendlydamage_modifier = cfg.read_f32("friendlydamage_modifier");
+    }
+    
 
     array<string> existing_script_array;
     if(!rules.get("script_array", existing_script_array))//Try to get an existing script array.

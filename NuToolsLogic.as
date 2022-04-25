@@ -86,7 +86,7 @@ void onCommand(CRules@ rules, u8 cmd, CBitStream@ params)
 
 void onNewPlayerJoin( CRules@ rules, CPlayer@ player )
 {
-    if(!isClient())//Is server, is not client, is not localhost
+    if(isServer() && rules.get_bool("custom_gamemode_loading"))//Is server, and custom_gamemode_loading is true,
     {
         array<string> script_array;
         if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return; }
