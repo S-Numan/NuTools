@@ -1162,44 +1162,13 @@ namespace Nu
             ScriptFunctionCount
         }
 
-        shared void ClearScripts(bool sync = false, array<string> skip_these = array<string>(1, "NuToolsLogic.as"))//Skip NuToolsLogic.as as it's the thing that syncs rules changes between client/server.
+        shared void ClearScripts(bool sync = false, array<string> skip_these = array<string>(1, "NuToolsLogic.as"))
         {
             CRules@ rules = getRules();
 
             array<string> script_array;
             if(!rules.get("script_array", script_array))
             {
-                //Can't find script_array? Well, we're removing every single script anyway, so let's just make a new empty one.
-                //Nu::Error("Could not find script_array");
-                
-                string gamemode_path = ::FindGamemode(rules.gamemode_name);
-
-                //print("Removing every script from " + gamemode_path);
-
-                ConfigFile cfg = ConfigFile();
-
-                if(!cfg.loadFile(gamemode_path)) { Nu::Error("Failed to load gamemode to clear all scripts from."); return; }
-                cfg.readIntoArray_string(script_array, "scripts");
-                if(script_array.size() == 0) { Nu::Warning("gamemode contained no scripts"); }
-                for(u16 i = 0; i < script_array.size(); i++)
-                {
-                    bool skip_this = false;
-                    for(u16 q = 0; q < skip_these.size(); q++)
-                    {
-                        if(script_array[i] == skip_these[q]) { skip_this = true; break; }//Skip   
-                    }
-                    if(skip_this) { continue; }//Skip
-
-                    print("script removed = " + script_array[i]);
-                    if(!rules.RemoveScript(script_array[i]))
-                    {
-                        Nu::Error("Wrong gamemode file? path is \"" + gamemode_path + "\" RemoveScript failed. Failed to remove script " + script_array[i]);
-                    }
-                    script_array.removeAt(i);
-                    i--;
-                }
-
-                rules.set("script_array", script_array);
                 return;
             }
 
@@ -1214,7 +1183,7 @@ namespace Nu
                 if(skip_this) { continue; }//Skip
 
                 if(!rules.RemoveScript(script_array[i])) { Nu::Error("Failed to remove script somehow? Might've used AddScript via CRules rather than Nu::\nFailed to remove script " + script_array[i]); }
-
+            
                 script_array.removeAt(i);
                 i--;
             }
@@ -1226,7 +1195,7 @@ namespace Nu
                 if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
-                    params.write_u8(FClearScripts);
+                    params.write_u16(FClearScripts);
                     for(u16 q = 0; q < skip_these.size(); q++)
                     {
                         params.write_string(skip_these[q]);
@@ -1267,7 +1236,7 @@ namespace Nu
                 if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
-                    params.write_u8(FRemoveScript);
+                    params.write_u16(FRemoveScript);
                     params.write_string(script_name);
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return true;//Return, because the server will get this command later anyway.
@@ -1299,7 +1268,7 @@ namespace Nu
                 if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
-                    params.write_u8(FAddScript);
+                    params.write_u16(FAddScript);
                     params.write_string(script_name);
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return true;//Return, because the server will get this command later anyway.
@@ -1352,7 +1321,7 @@ namespace Nu
                 if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
-                    params.write_u8(FAddGamemode);
+                    params.write_u16(FAddGamemode);
                     params.write_string(the_gamemode);
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return;//Return, because the server will get this command later anyway.
@@ -1364,14 +1333,14 @@ namespace Nu
         shared void SetGamemode(string the_gamemode, bool sync = false)
         {
             ClearScripts(sync, array<string>());
-
+            
             AddGamemode(the_gamemode, sync);
         
-            if(!hasScript("NuToolsLogic.as"))
+            /*if(!hasScript("NuToolsLogic.as"))
             {
                 print("adding NuToolsLogic.as in SetGamemode to prevent being unable to switch back gamemodes.");
                 AddScript("NuToolsLogic.as", sync);
-            }
+            }*/
         }
     }
 
@@ -2053,11 +2022,7 @@ namespace NuLib
     array<u32> respawn_times;
     array<int> player_times;//Corresponds with respawn_times. Holds player usernames hashed.
     array<CPlayer@> player_times_player;
-    array<u16> send_rules_times;
-    const u16 SEND_RULES_TIME = 10;
-
     const u8 SAFE_TIME = 2;//Amount of time it takes to be "safe" for the player to do things like spawn. Spawning straight away makes kag unhappy.
-
     u16 getPlayerTimesIndex(CPlayer@ player)
     {
         if(!isServer()) { Nu::Error("This function is server only"); return 0; }
@@ -2082,7 +2047,7 @@ namespace NuLib
 
     void onInit(CRules@ rules)
     {
-        rules.addCommandID("clientmessage");
+        if(!rules.hasCommandID("clientmessage")){ rules.addCommandID("clientmessage"); }//Just for testing purposes
         rules.addCommandID("clienttoclient");
         rules.addCommandID("teleport");
         rules.addCommandID("enginemessage");
@@ -2095,7 +2060,6 @@ namespace NuLib
             respawn_times = array<u32>();
             player_times = array<int>();
             player_times_player = array<CPlayer@>();
-            send_rules_times = array<u16>();
         }
     }
 
@@ -2112,7 +2076,6 @@ namespace NuLib
                     //Rid of their arrays
                     respawn_times.removeAt(i);
                     player_times_player.removeAt(i);
-                    send_rules_times.removeAt(i);
                     player_times.removeAt(i);
                 }
                 else//Player didn't leave?
@@ -2133,11 +2096,6 @@ namespace NuLib
             {
                 for(i = 0; i < player_times.size(); i++)//For every player's respawn time
                 {
-                    if(send_rules_times[i] != 0)
-                    {
-                        respawn_times[i]++;
-                        continue;//Don't respawn if the player doesn't have their rules yet.
-                    }
                     if(respawn_times[i] == getGameTime())//If it is time for them to respawn
                     {
                         if(player_times_player[i] == @null) { respawn_times[i]++; continue; }
@@ -2146,45 +2104,11 @@ namespace NuLib
                     }
                 }
             }
-            for(i = 0; i < player_times.size(); i++)
-            {
-                if(send_rules_times[i] == 0) { continue; }
-
-                send_rules_times[i]--;
-                
-                if(send_rules_times[i] == 0
-                && !isClient() && rules.get_bool("custom_gamemode_loading"))//And isn't localhost, and custom_gamemode_loading is true.
-                {
-                    if(player_times_player[i] == @null) { continue; }//If the player is no longer in the server
-
-                    send_rules_times[i] = SEND_RULES_TIME;
-
-                    array<string> script_array;
-                    if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return; }
-                    if(script_array.size() == 0) { Nu::Error("script_array was empty"); }
-
-                    CBitStream params;
-                    params.write_u8(Nu::Rules::FSyncEntireGamemode);
-                    params.write_string(rules.gamemode_name);
-                    params.write_string(rules.gamemode_info);
-
-                    for(u16 q = 0; q < script_array.size(); q++)
-                    {
-                        //print("this script sent = " + script_array[q] + " as script " + q);
-                        params.write_string(script_array[q]);
-                    }
-
-                    rules.SendCommand(rules.getCommandID("NuRuleScripts"), params, player_times_player[i]);
-
-                    print("SyncEntireGamemode command sent to client");
-                }
-            }
         }
     }
     
     void onNewPlayerJoin(CRules@ rules, CPlayer@ player)
     {
-        print("NEW PLAYER JOIN!");
         if(isServer())
         {
             if(player == @null) { Nu::Error("player was null"); return; }
@@ -2195,17 +2119,17 @@ namespace NuLib
                 respawn_times.push_back(getGameTime() + SAFE_TIME);//Tick or two to respawn to prevent annoying bugs.
                 player_times.push_back(player.getUsername().getHash());
                 player_times_player.push_back(@player);
-
-                send_rules_times.push_back(SEND_RULES_TIME);
             }
             else//player_index still exists
             {
                 @player_times_player[player_index] = @player;//Reset player
-                send_rules_times[player_index] = SEND_RULES_TIME; 
+                if(respawn_times[player_index] + SAFE_TIME >= getGameTime())
+                {
+                    respawn_times[player_index] = getGameTime() + SAFE_TIME;//Make sure it's still safe.
+                }
             }
         }
     }
-
     void onPlayerLeave( CRules@ rules, CPlayer@ player )
     {
         if(isServer())
@@ -2359,26 +2283,6 @@ namespace NuLib
             else
             {
                 LoadMap(map_name);
-            }
-        }
-        else if(cmd == rules.getCommandID("ConfirmRulesSent"))
-        {
-            if(isClient()) { Nu::Error("Tried to ConfirmRulesSent on client? What?"); return; }
-            
-            u16 player_id;
-            if(!params.saferead_u16(player_id)) { Nu::Error("ConfirmRulesSent failed to saferead player_id"); return; }
-            CPlayer@ player = getPlayerByNetworkId(player_id);
-            if(player != @null)
-            {
-                u16 player_index = getPlayerTimesIndex(player);
-                if(player_index != Nu::u16_max())//Make sure the player exists just in case
-                {
-                    send_rules_times[player_index] = 0;//Done sending rules.
-                }
-                else
-                {
-                    Nu::Error("player_index didn't exist in ConfirmRulesSent. ID sent = " + player_id + " index was " + player_index);
-                }
             }
         }
     }

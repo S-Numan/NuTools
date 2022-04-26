@@ -103,9 +103,9 @@ void onPlayerDie(CRules@ rules, CPlayer@ victim, CPlayer@ attacker, u8 customDat
 
 
 
+
+
 NuRend@ o_rend = @null;//Outer rend
-
-
 bool RendInit()
 {
     if(o_rend == @null)//If we don't have o_rend
@@ -114,42 +114,35 @@ bool RendInit()
     }
     return true;//We got it if it got here
 }
-
 void MenusPostHud(int id)
 {
     if(!RendInit()) { return; }
-
     NuRender::ImageRender(o_rend, Render::layer_posthud);
 }
-
 void MenusPreHud(int id)
 {
     if(!RendInit()) { return; }
     
     NuRender::ImageRender(o_rend, Render::layer_prehud);
 }
-
 void MenusPostWorld(int id)
 {
     if(!RendInit()) { return; }
     
     NuRender::ImageRender(o_rend, Render::layer_postworld);
 }
-
 void MenusObjects(int id)
 {
     if(!RendInit()) { return; }
     
     NuRender::ImageRender(o_rend, Render::layer_objects);
 }
-
 void MenusTiles(int id)
 {
     if(!RendInit()) { return; }
     
     NuRender::ImageRender(o_rend, Render::layer_tiles);
 }
-
 void MenusBackground(int id)
 {
     if(!RendInit()) { return; }

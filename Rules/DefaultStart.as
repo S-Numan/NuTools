@@ -2,7 +2,6 @@
 
 void RunServer()
 {
-   
 	if (getNet().CreateServer())
 	{
         if(sv_contact_info == "0")
@@ -24,11 +23,13 @@ void RunServer()
                 error("Dummy Rules failed to load"); return;
             }
 
-            rules.RemoveScript("DummyScript.as");//Remove the dummyscript to confirm stuff works. If the print file in this is running, something went wrong.
+            //rules.addCommandID("NuRuleScripts");
             
-            rules.AddScript("DummyServerCommand.as");
+            rules.set_string("current_gamemode_path", "");
 
             AddGamemode(rules, sv_gamemode);
+
+            rules.set_string("first_gamemode_path", rules.get_string("current_gamemode_path"));
         
             rules.set_bool("custom_gamemode_loading", true);
         }
@@ -162,7 +163,9 @@ shared void AddGamemode(CRules@ rules, string the_gamemode)
     //    print("script array " + i + " is " + script_array[i]);
     //}
 
-    rules.set_string("gamemode_path", gamemode_path);
+    rules.set_string("last_gamemode_path", rules.get_string("current_gamemode_path"));
+
+    rules.set_string("current_gamemode_path", gamemode_path);
 }
 
 //Returns the file path to the gamemode.
