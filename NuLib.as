@@ -1191,6 +1191,9 @@ namespace Nu
             
             rules.set("script_array", script_array);//Set new array
         
+            rules.set_bool("DummyFeaturesEnabled", true);
+            rules.Sync("DummyFeaturesEnabled", true);
+
             if(sync)
             {
                 if(!isClient())//Is server, not localhost
@@ -1232,6 +1235,9 @@ namespace Nu
             
             rules.set("script_array", script_array);//Set new array
         
+            rules.set_bool("DummyFeaturesEnabled", true);
+            rules.Sync("DummyFeaturesEnabled", true);
+
             if(sync)
             {
                 if(!isClient())//Is server, not localhost
@@ -1263,6 +1269,9 @@ namespace Nu
             script_array.push_back(script_name);//Add it to the script array.
             
             rules.set("script_array", script_array);//Set new array
+
+            rules.set_bool("DummyFeaturesEnabled", true);
+            rules.Sync("DummyFeaturesEnabled", true);
 
             if(sync)
             {
@@ -1316,6 +1325,9 @@ namespace Nu
             CRules@ rules = getRules();
 
             ::AddGamemode(@getRules(), the_gamemode);
+
+            rules.set_bool("DummyFeaturesEnabled", true);
+            rules.Sync("DummyFeaturesEnabled", true);
 
             if(sync)
             {
@@ -2145,11 +2157,18 @@ namespace NuLib
 
     void onPlayerDie( CRules@ rules, CPlayer@ victim, CPlayer@ attacker, u8 customData )//Calls when the player's blob dies
     {
-        if(isServer() && rules.get_u16("nu_respawn_time") != 0)
+        if(isServer())
         {
-            if(victim == @null) { Nu::Error("victim was null"); return; }
+            u16 respawn_time = rules.get_u16("nu_respawn_time");
 
-            respawn_times[getPlayerTimesIndex(victim)] = getGameTime() + rules.get_u16("nu_respawn_time");
+            if(respawn_time != 0)
+            {
+                if(victim == @null) { Nu::Error("victim was null"); return; }
+
+                if(respawn_time < SAFE_TIME) { respawn_time = SAFE_TIME; rules.set_u16("nu_respawn_time", respawn_time); }
+
+                respawn_times[getPlayerTimesIndex(victim)] = getGameTime() + respawn_time;
+            }
         }
     }
 

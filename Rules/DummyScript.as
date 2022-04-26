@@ -1,9 +1,11 @@
 #include "DefaultStart.as";
 #include "NuLib.as";
 
-const u8 SAFE_WAIT = 30;//Ticks needed to wait before adding rules.
-
 bool player_tick_init;
+
+u32 time_since_initial_sync;//How long has it been since this has finished the initial syncing.
+
+//CBlob@ helper_blob;
 
 void onInit(CRules@ rules)
 {
@@ -22,21 +24,29 @@ void onInit(CRules@ rules)
 
     player_tick_init = false;
 
+    time_since_initial_sync = Nu::u32_max();
+
     if(!isServer())//No server, no localhost.
-    {
+    {   
         CPlayer@ local_player = getLocalPlayer();
         if(local_player != @null && local_player.hasTag("lateload_loaded"))//Second load.
         {
-
+            rules.set_bool("DummyFeaturesEnabled", true);
         }
         else//First load
         {
-            RemoveAllGamemodeScripts(rules, FindGamemode(rules.gamemode_name));
+            array<string> script_array = GetAllGamemodeScripts(rules, FindGamemode(rules.gamemode_name));
+            rules.set("script_array", script_array);
         }
     }
     else
     {
-
+        //@helper_blob = @server_CreateBlob("template");//The info about the position changes if features_enabled are true. by default, false.
+        //helper_blob.server_SetActive(false);//No need to tick or DO anything.
+        //Info sent when the client joins
+        //helper_blob.setPosition(Vec2f(-1337.1234, -404.1234));//Features disabled.
+        //helper_blob.setPosition(Vec2f(-404.1234, -1337.1234));//Features enabled
+        //If this position is any different, then features are enabled.
     }
 }
 
@@ -44,6 +54,28 @@ void onTick(CRules@ rules)
 {
     if(isServer()) { return; } 
     //Only client, no localhost.
+
+    if(time_since_initial_sync < Nu::u32_max() - 1)
+    {
+        if(time_since_initial_sync == 0)
+        {
+            //Set camera to the blob the player is controlling.
+            CCamera@ camera = getCamera();
+            CPlayer@ player = getLocalPlayer();
+            if(camera != @null && player != @null && !player.hasTag("no_dummy_camera_fix"))
+            {
+                CBlob@ plob = player.getBlob();
+                if(plob != @null)
+                {
+                    camera.setPosition(plob.getPosition());
+                    camera.setTarget(plob);
+                    camera.mousecamstyle = 1; // follow
+                }
+            }
+        }
+        
+        time_since_initial_sync++;
+    }
 
     if(!player_tick_init)
     {
@@ -64,7 +96,6 @@ void onTick(CRules@ rules)
             params.write_u16(local_player.getNetworkID());
             rules.SendCommand(rules.getCommandID("GimmeReload"), params, false);
         }
-
     }
 }
 
@@ -74,8 +105,13 @@ void onCommand(CRules@ rules, u8 cmd, CBitStream@ bs)
     {
         if(cmd == rules.getCommandID("GimmeReload"))
         {
-            getLocalPlayer().Tag("lateload_loaded");
-            LateLoadRules("Rules/" + "DummyGamemode.cfg");
+            bool features_enabled;
+            if(!bs.saferead_bool(features_enabled)) { Nu::Error("Failed to read featured_enabled in GimmeReload"); return; }
+            if(features_enabled)
+            {
+                getLocalPlayer().Tag("lateload_loaded");
+                LateLoadRules("Rules/" + "DummyGamemode.cfg");
+            }
             return;
         }
         else if(cmd == rules.getCommandID("NuRuleScripts"))
@@ -116,7 +152,7 @@ void onCommand(CRules@ rules, u8 cmd, CBitStream@ bs)
             params.write_u8(command_ids.size());
             for(i = 0; i < command_ids.size(); i++)
             {
-                print("sharing = " + command_ids[i] + " at pos " + i);
+                //print("sharing = " + command_ids[i] + " at pos " + i);
                 params.write_string(command_ids[i]);                    
             }
 
@@ -137,6 +173,7 @@ void onCommand(CRules@ rules, u8 cmd, CBitStream@ bs)
             if(player == @null) { Nu::Error("Player was null"); return; }
             
             CBitStream params;
+            params.write_bool(rules.get_bool("DummyFeaturesEnabled"));
             rules.SendCommand(rules.getCommandID("GimmeReload"), params, player);
         }
     }
@@ -214,11 +251,11 @@ void SyncEntireGamemode(CRules@ rules, CBitStream@ params)
         if(!rules.hasCommandID(_temp))
         {
             rules.addCommandID(_temp);
-            print("added id " + _temp);
+            //print("added id " + _temp);
         }
         else
         {
-            print("id already exists = " + _temp);
+            //print("id already exists = " + _temp);
         }
     }
 
@@ -281,8 +318,10 @@ void SyncEntireGamemode(CRules@ rules, CBitStream@ params)
 
         //print("syncing gamemode script array " + i + " is " + script_array[i]);
     }
-
-    //rules.gamemode_name = _temp;
+    if(time_since_initial_sync == Nu::u32_max())//Initial sync?
+    {
+        time_since_initial_sync = 0;//It is no longer.
+    }
 
     rules.set("script_array", script_array);
 
@@ -293,11 +332,10 @@ bool RemoveAllGamemodeScripts(CRules@ rules, string gamemode_path)
 {
     ConfigFile cfg = ConfigFile();
 
-    array<string> script_array = array<string>();
-            
-    if(!cfg.loadFile(gamemode_path)) { Nu::Error("Failed to load gamemode to clear all scripts from. Gamemode = " + gamemode_path); return false; }
-    cfg.readIntoArray_string(script_array, "scripts");
-    if(script_array.size() == 0) { Nu::Warning("gamemode contained no scripts. Gamemode = " + gamemode_path); }
+    array<string> script_array;
+
+    script_array = GetAllGamemodeScripts(rules, gamemode_path);
+
     for(u16 i = 0; i < script_array.size(); i++)
     {
         //print("script removed = " + script_array[i]);
@@ -305,4 +343,17 @@ bool RemoveAllGamemodeScripts(CRules@ rules, string gamemode_path)
     }
     
     return true;
+}
+
+array<string> GetAllGamemodeScripts(CRules@ rules, string gamemode_path)
+{
+    ConfigFile cfg = ConfigFile();
+
+    array<string> script_array;
+            
+    if(!cfg.loadFile(gamemode_path)) { Nu::Error("Failed to load gamemode to clear all scripts from. Gamemode = " + gamemode_path); return array<string>(); }
+    cfg.readIntoArray_string(script_array, "scripts");
+    if(script_array.size() == 0) { Nu::Warning("gamemode contained no scripts. Gamemode = " + gamemode_path); }
+
+    return script_array;
 }
