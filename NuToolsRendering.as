@@ -3,8 +3,6 @@
 #include "NuLib.as";
 #include "NuRend.as";
 
-NuRend@ o_rend = @null;//Outer rend
-
 namespace NuRender
 {
     bool init = false;//Has initialized yet?
@@ -129,57 +127,4 @@ namespace NuRender
 
         Render::SetTransformWorldspace();//Have to do this or kag gets cranky as it doesn't do it itself.
     }
-}
-
-
-
-bool RendInit()
-{
-    if(o_rend == @null)//If we don't have o_rend
-    {
-        if(!getRend(@o_rend)) { return false; }//Try and get it
-    }
-    return true;//We got it if it got here
-}
-
-void MenusPostHud(int id)
-{
-    if(!RendInit()) { return; }
-
-    NuRender::ImageRender(o_rend, Render::layer_posthud);
-}
-
-void MenusPreHud(int id)
-{
-    if(!RendInit()) { return; }
-    
-    NuRender::ImageRender(o_rend, Render::layer_prehud);
-}
-
-void MenusPostWorld(int id)
-{
-    if(!RendInit()) { return; }
-    
-    NuRender::ImageRender(o_rend, Render::layer_postworld);
-}
-
-void MenusObjects(int id)
-{
-    if(!RendInit()) { return; }
-    
-    NuRender::ImageRender(o_rend, Render::layer_objects);
-}
-
-void MenusTiles(int id)
-{
-    if(!RendInit()) { return; }
-    
-    NuRender::ImageRender(o_rend, Render::layer_tiles);
-}
-
-void MenusBackground(int id)
-{
-    if(!RendInit()) { return; }
-    
-    NuRender::ImageRender(o_rend, Render::layer_background);
 }

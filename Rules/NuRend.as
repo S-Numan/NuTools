@@ -5,7 +5,7 @@
 
 funcdef bool RENDER_CALLBACK();
 
-class RenderDetails
+shared class RenderDetails
 {
     RenderDetails(RENDER_CALLBACK@ _func, bool _world_pos)
     {
@@ -62,13 +62,17 @@ class RenderDetails
     bool interpolate;
 }
 
-bool getRend(NuRend@ &out _rend)
+shared bool getRend(NuRend@ &out _rend, bool print_error = true)
 {
-    if(!getRules().get("NuRend", @_rend)) { Nu::Error("Failed to get NuRend. Make sure NuToolsLogic.as is before anything in gamemode.cfg else that tries to use it. If it isn't in gamemode.cfg, add it there."); return false; }
+    if(!getRules().get("NuRend", @_rend))
+    {
+        if(print_error) { Nu::Error("Failed to get NuRend. Make sure NuToolsLogic.as is before anything in gamemode.cfg else that tries to use it. If it isn't in gamemode.cfg, add it there."); }
+        return false;
+    }
     return true;
 }
 
-void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func, bool is_world_pos)
+shared void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func, bool is_world_pos)
 {
     if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
 
@@ -76,7 +80,7 @@ void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func, bool is_worl
     if(!getRend(@rend)) { return; }
     rend.RenderImage(layer, _func, is_world_pos);
 }
-void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = true)
+shared void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = true)
 {
     if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
 
@@ -85,7 +89,7 @@ void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, boo
     rend.RenderImage(layer, _image, _pos, is_world_pos, _interpolate);
 }
 
-class NuRend
+shared class NuRend
 {
     NuRend()
     {
@@ -119,12 +123,12 @@ class NuRend
     {
         if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
         
-        posthudid = Render::addScript(Render::layer_posthud, "NuToolsRendering.as", "MenusPostHud", 0.0f);
-        prehudid = Render::addScript(Render::layer_prehud, "NuToolsRendering.as", "MenusPreHud", 0.0f);
-        postworldid = Render::addScript(Render::layer_postworld, "NuToolsRendering.as", "MenusPostWorld", 0.0f);
-        objectsid = Render::addScript(Render::layer_objects, "NuToolsRendering.as", "MenusObjects", 0.0f);
-        tilesid = Render::addScript(Render::layer_tiles, "NuToolsRendering.as", "MenusTiles", 0.0f);
-        backgroundid = Render::addScript(Render::layer_background, "NuToolsRendering.as", "MenusBackground", 0.0f);
+        posthudid = Render::addScript(Render::layer_posthud, "NuToolsLogic.as", "MenusPostHud", 0.0f);
+        prehudid = Render::addScript(Render::layer_prehud, "NuToolsLogic.as", "MenusPreHud", 0.0f);
+        postworldid = Render::addScript(Render::layer_postworld, "NuToolsLogic.as", "MenusPostWorld", 0.0f);
+        objectsid = Render::addScript(Render::layer_objects, "NuToolsLogic.as", "MenusObjects", 0.0f);
+        tilesid = Render::addScript(Render::layer_tiles, "NuToolsLogic.as", "MenusTiles", 0.0f);
+        backgroundid = Render::addScript(Render::layer_background, "NuToolsLogic.as", "MenusBackground", 0.0f);
     }
 
 

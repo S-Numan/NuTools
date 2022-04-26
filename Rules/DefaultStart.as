@@ -2,6 +2,7 @@
 
 void RunServer()
 {
+   
 	if (getNet().CreateServer())
 	{
         if(sv_contact_info == "0")
@@ -24,6 +25,8 @@ void RunServer()
             }
 
             rules.RemoveScript("DummyScript.as");//Remove the dummyscript to confirm stuff works. If the print file in this is running, something went wrong.
+            
+            rules.AddScript("DummyServerCommand.as");
 
             AddGamemode(rules, sv_gamemode);
         
@@ -43,7 +46,7 @@ void RunServer()
 	}
 }
 
-void AddGamemode(CRules@ rules, string the_gamemode)
+shared void AddGamemode(CRules@ rules, string the_gamemode)
 {
     u16 i;
     string gamemode_path = FindGamemode(the_gamemode);
@@ -163,7 +166,7 @@ void AddGamemode(CRules@ rules, string the_gamemode)
 }
 
 //Returns the file path to the gamemode.
-string FindGamemode(string the_gamemode)
+shared string FindGamemode(string the_gamemode)
 {
     string gamemode_path;
 

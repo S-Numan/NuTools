@@ -79,28 +79,6 @@ void onCommand(CRules@ rules, u8 cmd, CBitStream@ params)
 void onNewPlayerJoin(CRules@ rules, CPlayer@ player)
 {
     NuLib::onNewPlayerJoin(rules, player);
-
-    if(isServer() && rules.get_bool("custom_gamemode_loading"))//Is server, and custom_gamemode_loading is true,
-    {
-        array<string> script_array;
-        if(!rules.get("script_array", script_array)) { Nu::Error("Could not find script_array"); return; }
-        if(script_array.size() == 0) { Nu::Error("script_array was empty"); }
-
-        CBitStream params;
-        params.write_u8(Nu::Rules::FSyncEntireGamemode);
-        params.write_string(rules.gamemode_name);
-        params.write_string(rules.gamemode_info);
-
-        for(u16 i = 0; i < script_array.size(); i++)
-        {
-            //print("this script sent = " + script_array[i] + " as script " + i);
-            params.write_string(script_array[i]);
-        }
-
-        rules.SendCommand(rules.getCommandID("NuRuleScripts"), params, player);
-        
-        //print("SyncEntireGamemode command sent to client");
-    }
 }
 void onPlayerLeave(CRules@ rules, CPlayer@ player)
 {
@@ -110,4 +88,71 @@ void onPlayerLeave(CRules@ rules, CPlayer@ player)
 void onPlayerDie(CRules@ rules, CPlayer@ victim, CPlayer@ attacker, u8 customData)
 {
     NuLib::onPlayerDie(rules, victim, attacker, customData);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NuRend@ o_rend = @null;//Outer rend
+
+
+bool RendInit()
+{
+    if(o_rend == @null)//If we don't have o_rend
+    {
+        if(!getRend(@o_rend, false)) { return false; }//Try and get it
+    }
+    return true;//We got it if it got here
+}
+
+void MenusPostHud(int id)
+{
+    if(!RendInit()) { return; }
+
+    NuRender::ImageRender(o_rend, Render::layer_posthud);
+}
+
+void MenusPreHud(int id)
+{
+    if(!RendInit()) { return; }
+    
+    NuRender::ImageRender(o_rend, Render::layer_prehud);
+}
+
+void MenusPostWorld(int id)
+{
+    if(!RendInit()) { return; }
+    
+    NuRender::ImageRender(o_rend, Render::layer_postworld);
+}
+
+void MenusObjects(int id)
+{
+    if(!RendInit()) { return; }
+    
+    NuRender::ImageRender(o_rend, Render::layer_objects);
+}
+
+void MenusTiles(int id)
+{
+    if(!RendInit()) { return; }
+    
+    NuRender::ImageRender(o_rend, Render::layer_tiles);
+}
+
+void MenusBackground(int id)
+{
+    if(!RendInit()) { return; }
+    
+    NuRender::ImageRender(o_rend, Render::layer_background);
 }

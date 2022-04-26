@@ -1,30 +1,20 @@
-#include "DefaultStart.as";
-#include "NuLib.as";
+//TODO, wait for command from server before LateLoadRules.
 
 void onInit(CRules@ rules)
 {
-    rules.addCommandID("NuRuleScripts");
-
     if(!isServer())//Server handles their rules loading themselves.
     {
-        //print("Dummy rules loaded. Waiting for server to pass rules.");
-        //The client just joined (most likely)
-        //print("==CLIENT GAMEMODE WIPE==");
-        
         //Remove all scripts in the whatever gamemode kag initially loads to the client. Don't skip NuToolsLogic.as (avoids removing this script.)
-        Nu::Rules::ClearScripts(false, array<string>());//False means doesn't sync
+        //Nu::Rules::ClearScripts(false, array<string>(1, "DummyScript.as"));//False means doesn't sync
+        
+        LateLoadRules("Rules/" + "DummyGamemode2.cfg");
     }
 }
 
 void onTick(CRules@ rules)
 {
-    print("Waiting for server to pass gamemode. DummyScript.as onTick(CRules@)", SColor(255, 0, 177, 177));
-}
-
-void onCommand(CRules@ rules, u8 cmd, CBitStream@ params)
-{
-    if(cmd == rules.getCommandID("NuRuleScripts"))
+    if(getGameTime() % 30 == 0)
     {
-        NuLib::NuRuleScripts(rules, params);
+        print("Something broke. DummyScript.as", SColor(255, 0, 177, 177));
     }
 }
