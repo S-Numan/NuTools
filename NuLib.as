@@ -1159,6 +1159,7 @@ namespace Nu
             FAddScript,
             FAddGamemode,
             FSyncEntireGamemode,
+            FLateLoadRules,
             ScriptFunctionCount
         }
 
@@ -1195,7 +1196,7 @@ namespace Nu
                 if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
-                    params.write_u16(FClearScripts);
+                    params.write_u8(FClearScripts);
                     for(u16 q = 0; q < skip_these.size(); q++)
                     {
                         params.write_string(skip_these[q]);
@@ -1236,7 +1237,7 @@ namespace Nu
                 if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
-                    params.write_u16(FRemoveScript);
+                    params.write_u8(FRemoveScript);
                     params.write_string(script_name);
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return true;//Return, because the server will get this command later anyway.
@@ -1268,7 +1269,7 @@ namespace Nu
                 if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
-                    params.write_u16(FAddScript);
+                    params.write_u8(FAddScript);
                     params.write_string(script_name);
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return true;//Return, because the server will get this command later anyway.
@@ -1321,7 +1322,7 @@ namespace Nu
                 if(!isClient())//Is server, not localhost
                 {
                     CBitStream params;
-                    params.write_u16(FAddGamemode);
+                    params.write_u8(FAddGamemode);
                     params.write_string(the_gamemode);
                     Nu::SendCommandSkipSelf(rules, rules.getCommandID("NuRuleScripts"), params);//Sync to all clients, skip server.
                     return;//Return, because the server will get this command later anyway.
