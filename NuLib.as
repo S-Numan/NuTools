@@ -1873,8 +1873,10 @@ namespace Nu
         bool would_crash;
 
         //TODO, don't run this every render call. Only recalculate if needed.
+        //TODO, figure out if you can render more than 4 Vertices at once.
+        //If possible, make it possible to have multiple frames to be drawn at once, with their seperate positions and colors. With only one render call.
         array<Vertex> v_raw;//For rendering.
-        array<Vertex> getVerticesForFrameAndPos(u16 _frame, Vec2f _pos, SColor _color = SColor(255, 255, 255, 255))//Gets what this should render.
+        array<Vertex> getVerticesForFrameAndPos(u16 _frame, Vec2f _pos, f32 _angle, SColor _color = SColor(255, 255, 255, 255))//Gets what this should render.
         {
             if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//Already sent the error log, this could of crashed. So just stop to not spam.
             if(!is_texture){ Nu::Error("Tried getVerticesForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
@@ -1898,21 +1900,21 @@ namespace Nu
             
             v_raw[0] = Vertex(_offset + _pos + 
                 (frame_points[0] + (add_scale * -1)//XY
-                ).RotateByDegrees(angle, center), z[0], uv_per_frame[_frame][0], _color);
+                ).RotateByDegrees(_angle, center), z[0], uv_per_frame[_frame][0], _color);
 			
             v_raw[1] = Vertex(_offset + _pos +
                 Vec2f(frame_points[1].x + add_scale.x,//X
                     frame_points[1].y + (add_scale.y * -1)//Y
-                ).RotateByDegrees(angle, center), z[1], uv_per_frame[_frame][1], _color);//Set the colors yourself.
+                ).RotateByDegrees(_angle, center), z[1], uv_per_frame[_frame][1], _color);//Set the colors yourself.
 			
             v_raw[2] = Vertex(_offset + _pos +
                 (frame_points[2] + add_scale//XY
-                ).RotateByDegrees(angle, center), z[2], uv_per_frame[_frame][2], _color);
+                ).RotateByDegrees(_angle, center), z[2], uv_per_frame[_frame][2], _color);
 			
             v_raw[3] = Vertex(_offset + _pos +
                 Vec2f(frame_points[3].x + (add_scale.x * -1),//X
                     frame_points[3].y + add_scale.y//Y
-                ).RotateByDegrees(angle, center), z[3], uv_per_frame[_frame][3], _color);
+                ).RotateByDegrees(_angle, center), z[3], uv_per_frame[_frame][3], _color);
             return v_raw;
         }
 
@@ -1920,7 +1922,7 @@ namespace Nu
 
         void Render(Vec2f _pos = Vec2f(0,0))
         {
-            getVerticesForFrameAndPos(frame, _pos, color);
+            getVerticesForFrameAndPos(frame, _pos, angle, color);
 
             Render::RawQuads(name, v_raw);
         }
