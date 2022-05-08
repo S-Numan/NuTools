@@ -2035,6 +2035,7 @@ namespace Nu
 //Generally for functions that require constant ticking/rendering or require to be sent to client or server from client or server.
 namespace NuLib
 {
+    //TODO remove every player array if they are 1. Allowed to respawn(not waiting to respawn anymore). 2. Left the server.
     array<u32> respawn_times;
     array<int> player_times;//Corresponds with respawn_times. Holds player usernames hashed.
     array<CPlayer@> player_times_player;
@@ -2114,7 +2115,7 @@ namespace NuLib
                 {
                     if(respawn_times[i] == getGameTime())//If it is time for them to respawn
                     {
-                        if(player_times_player[i] == @null) { respawn_times[i]++; continue; }
+                        if(player_times_player[i] == @null) { continue; }//If the player left, just let them respawn when they rejoin.
 
                         Nu::RespawnPlayer(rules, player_times_player[i]);
                     }
@@ -2139,9 +2140,15 @@ namespace NuLib
             else//player_index still exists
             {
                 @player_times_player[player_index] = @player;//Reset player
-                if(respawn_times[player_index] + SAFE_TIME >= getGameTime())
+                
+                //if(respawn_times[player_index] + SAFE_TIME >= getGameTime())
+                if(respawn_times[player_index] <= getGameTime())//This player is allowed to respawn?
                 {
-                    respawn_times[player_index] = getGameTime() + SAFE_TIME;//Make sure it's still safe.
+                    respawn_times[player_index] = getGameTime();//Allow player to respawn
+                }
+                if(respawn_times[player_index] <= getGameTime() + SAFE_TIME)//If player is allowed to respawn within SAFE_TIME. (as in, player respawning very soon)
+                {
+                    respawn_times[player_index] += SAFE_TIME;//Make sure it is safe. Tick or two wait before spawning, so kag doesn't complain.
                 }
             }
         }
