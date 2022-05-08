@@ -1018,7 +1018,8 @@ namespace Nu
         {
             spawn.x = map.tilesize * 2;//Start two tiles out
             
-            while(spawn.y == 0.0f)//While no ground is found?
+            //Look for ground under point tile by tile going right.
+            while(spawn.y == 0.0f)//While no ground is found
             {
                 if(spawn.x > map.tilemapwidth * map.tilesize)//If we've gone beyond the right of the map.
                 {
