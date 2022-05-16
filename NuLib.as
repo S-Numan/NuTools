@@ -1149,6 +1149,24 @@ namespace Nu
         rules.SendCommand(rules.getCommandID("nunextmap"), params, false);//Send command to only server
     }
 
+    //1: The position of the arrow being spun around the wheel's size. I advise setting this as 0 in init.
+    //2: The amount of time spun. I advise adding 1 to this after every call of SpinTheWheel.
+    //3: The amount of time it takes to complete spinning the wheel (in ticks). When time_spinning reaches this, you should be done spinning the wheel™
+    //4: The starting speed that the arrow is spun around the wheel.
+    //5: Optional, the size of the wheel. By default this is 360, as a wheel only has 360 degreees. Not sure why you'd change this, but here you go. 
+    //Returns arrow_pos. Input quite a few parameters, and this will spin an arrow around the size of a wheel. (usually 360 degrees)
+    shared f32 SpinTheWheel(f32 arrow_pos, f32 time_spinning, u32 ticks_to_complete_spin, f32 starting_spin_speed, f32 wheel_size = 360)
+    {
+        f32 time_spun = time_spinning / ticks_to_complete_spin;//Get value between 0 and 1 for amount of time this has spun.
+
+        f32 spin_speed = Maths::Lerp(starting_spin_speed, 0, time_spun);//Progressivley slow the spin_speed based on time_spun.
+
+        arrow_pos += spin_speed;//Spin the arrow.
+        arrow_pos = arrow_pos % wheel_size;//Loop around from the wheel_size.
+
+        return arrow_pos;
+    }
+
     namespace Rules
     {
         //Sync is for the server only. Sync does nothing for clients
@@ -1231,7 +1249,7 @@ namespace Nu
 
             if(!rules.RemoveScript(script_name))//Attempt to remove the script from rules
             {//Failure?
-                Nu::Error("Script failed to remove? How?"); return false;//???
+                Nu::Error("Script " + script_name + " failed to remove? How?"); return false;//???
             }
             
             rules.set("script_array", script_array);//Set new array
@@ -1742,6 +1760,7 @@ namespace Nu
         //Below goes into rendering
         //
 
+        //TODO, allow CreateImage with an input of ImageData@ .
         //This creates a texture and/or sets up a few things for this image to work with it.
         ImageData@ CreateImage(string render_name, string file_path)
         {
@@ -1844,6 +1863,7 @@ namespace Nu
             return z[0];
         }
 
+        //TODO, option to angle across the top left, or the center.
         private float angle;
         void setAngle(float value)
         {
@@ -1884,7 +1904,7 @@ namespace Nu
             would_crash = false;
             if(frame_points.size() == 0) {          Nu::Error("frame_points.size() was equal to 0");          would_crash = true; }
             if(uv_per_frame.size() == 0) {          Nu::Error("uv_per_frame.size() was equal to 0");          would_crash = true; }
-            if(uv_per_frame.size() <= _frame) {      Nu::Error("uv_per_frame.size() == " + uv_per_frame.size() + " was less than or equal to _frame " + _frame); would_crash = true; return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
+            if(uv_per_frame.size() <= _frame) {      Nu::Error("uv_per_frame.size() == " + uv_per_frame.size() + " was less than or equal to _frame " + _frame + "\nThis might mean that you reached pass the maximum frames in this image."); would_crash = true; return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
             if(uv_per_frame[_frame].size() == 0) {   Nu::Error("uv_per_frame[_frame].size() was equal to 0");   would_crash = true; }
             if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//This will crash instantly if it goes beyond this point, so exit out.
 
@@ -2383,6 +2403,7 @@ Numan_library. Including
 #29. PatchBlobs("BlobName", "ScriptName", remove_script = false);//Same as above but only for blobs with the specified name
 #30. Function to get pi 3.14. Because pie is yummy.
 #31. Does gamemode exist? Run a check for if a gamemode exists, without changing the gamemode.
+#32. Serialize and DeSerialize ImageData to CBitStream.
 
 DrawTextWithWidth(string text, Vec2f pos, SColor color, float width) - Caps width, note this will require an array to save draw text stuff as the calculations should not be done every render call.
 
