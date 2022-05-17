@@ -1687,7 +1687,7 @@ namespace Nu
             v_raw = array<Vertex>(4);
             frame_points = array<Vec2f>(4);
             z = array<float>(4, 0.0f);
-            center_scale = true;
+            center_scale = false;
             scale = Vec2f(1.0f, 1.0f);
             would_crash = false;
             angle = 0.0f;
