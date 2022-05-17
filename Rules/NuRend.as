@@ -89,6 +89,21 @@ shared void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _p
     rend.RenderImage(layer, _image, _pos, is_world_pos, _interpolate);
 }
 
+shared void RenderTestImage(Vec2f _pos, bool is_world_pos = false)
+{
+    if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
+    
+    NuRend@ rend;
+    if(!getRend(@rend)) { return; }
+    
+    Nu::NuImage@ test_image = @Nu::NuImage();
+    test_image.CreateImage("RenderExample.png");
+    test_image.setColor(SColor(255, 255, 0, 0));
+    //test_image.setScale(0.5f);
+
+    rend.RenderImage(Render::layer_posthud, test_image, _pos, is_world_pos, false);
+}
+
 shared class NuRend
 {
     NuRend()
