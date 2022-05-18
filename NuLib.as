@@ -1670,6 +1670,7 @@ namespace Nu
         {
             Setup();
         }
+        //TODO, make constructor that let's you put CreateImage stuff in straight away.
 
         private u16 frame;
         private SColor color;
