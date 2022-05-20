@@ -2183,6 +2183,15 @@ namespace NuLib
             {
                 @player_times_player[player_index] = @null;//Remove player
             }
+
+            if(getPlayerCount() == 1)//Last player disconnect?
+            {
+                if(rules.get_bool("restartmap_onlastplayer_disconnect"))//Restart the map when the last player disconnects?
+                {
+                    print("LAST PLAYER DISCONNECT. RESTARTING MAP");
+                    LoadMap(getMap().getMapName());
+                }
+            }
         }
     }
 

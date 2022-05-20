@@ -79,14 +79,22 @@ shared void AddGamemode(CRules@ rules, string the_gamemode)
     if(cfg.exists("friendlydamage_modifier")){
         rules.friendlydamage_modifier = cfg.read_f32("friendlydamage_modifier");
     }
+    if(cfg.exists("minimap")){
+        rules.minimap = cfg.read_bool("minimap");
+    }
+
+    if(cfg.exists("restartmap_onlastplayer_disconnect")){
+        rules.set_bool("restartmap_onlastplayer_disconnect", cfg.read_bool("restartmap_onlastplayer_disconnect"));
+    } else { rules.set_bool("restartmap_onlastplayer_disconnect", false); }//Default
+
     if(cfg.exists("respawn_as_last_blob")){
         rules.set_bool("respawn_as_last_blob", cfg.read_bool("respawn_as_last_blob"));
     } else { rules.set_bool("respawn_as_last_blob", true); }//Default
-    
+
     if(cfg.exists("default_class")){
         rules.set_string("default class", cfg.read_string("default_class"));
     } else { rules.set_string("default class", "knight"); }//Default
-    
+
     if(cfg.exists("respawn_time")){
         rules.set_u16("nu_respawn_time", cfg.read_u16("respawn_time"));
     } else { rules.set_u16("nu_respawn_time", 0); }//Default
