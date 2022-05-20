@@ -238,7 +238,7 @@ shared string FindGamemode(string the_gamemode)
         }
         if(gamemode_path == "")//Still failed to find the gamemode?
         {
-            error("Failed to find gamemode \"" + the_gamemode + "\". Defaulting to vanilla gamemode finding. Note that any modded gamemode.cfg will replace all vanilla gamemode.cfg's");
+            //error("Failed to find gamemode \"" + the_gamemode + "\". Defaulting to vanilla gamemode finding. Note that any modded gamemode.cfg will replace all vanilla gamemode.cfg's");
             gamemode_path = CFileMatcher("Rules/" + the_gamemode + "/gamemode.cfg").getFirst();
         }
     }
