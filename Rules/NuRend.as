@@ -128,22 +128,22 @@ shared class NuRend
     //
     //Rendering
     //
-    int posthudid;
-    int prehudid;
-    int postworldid;
-    int objectsid;
-    int tilesid;
-    int backgroundid;
+    s32 posthudid;
+    s32 prehudid;
+    s32 postworldid;
+    s32 objectsid;
+    s32 tilesid;
+    s32 backgroundid;
     void SetupRendering()
     {
         if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
         
-        posthudid = Render::addScript(Render::layer_posthud, "NuToolsLogic.as", "MenusPostHud", 0.0f);
-        prehudid = Render::addScript(Render::layer_prehud, "NuToolsLogic.as", "MenusPreHud", 0.0f);
-        postworldid = Render::addScript(Render::layer_postworld, "NuToolsLogic.as", "MenusPostWorld", 0.0f);
-        objectsid = Render::addScript(Render::layer_objects, "NuToolsLogic.as", "MenusObjects", 0.0f);
-        tilesid = Render::addScript(Render::layer_tiles, "NuToolsLogic.as", "MenusTiles", 0.0f);
-        backgroundid = Render::addScript(Render::layer_background, "NuToolsLogic.as", "MenusBackground", 0.0f);
+        posthudid = Nu::s32_max();
+        prehudid = Nu::s32_max();
+        postworldid = Nu::s32_max();
+        objectsid = Nu::s32_max();
+        tilesid = Nu::s32_max();
+        backgroundid = Nu::s32_max();
     }
 
 
@@ -216,12 +216,56 @@ shared class NuRend
     {
         if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
 
-        for(u16 i = 0; i < render_details.size(); i++)
+        for(u8 i = 0; i < render_details.size(); i++)
         {
-            render_filled_spots[i] = 0;
-            for(u16 q = 0; q < render_details[i].size(); q++)
+            if(render_filled_spots.size() > 0)
             {
-                @render_details[i][q] = @null;
+                //Create render script on layer. (this is here to only add a render script if something is being rendered. If it's there and nothing is using it, it's a performance drain.)
+                switch(i)
+                {
+                    case Render::layer_posthud:
+                        if(posthudid == Nu::s32_max())
+                        {
+                            posthudid = Render::addScript(Render::layer_posthud, "NuToolsLogic.as", "MenusPostHud", 0.0f);
+                        }
+                    break;
+                    case Render::layer_prehud:
+                        if(prehudid == Nu::s32_max())
+                        {
+                            prehudid = Render::addScript(Render::layer_prehud, "NuToolsLogic.as", "MenusPreHud", 0.0f);
+                        }
+                    break;
+                    case Render::layer_postworld:
+                        if(postworldid == Nu::s32_max())
+                        {
+                            postworldid = Render::addScript(Render::layer_postworld, "NuToolsLogic.as", "MenusPostWorld", 0.0f);
+                        }
+                    break;
+                    case Render::layer_objects:
+                        if(objectsid == Nu::s32_max())
+                        {
+                            objectsid = Render::addScript(Render::layer_objects, "NuToolsLogic.as", "MenusObjects", 0.0f);
+                        }
+                    break;
+                    case Render::layer_tiles:
+                        if(tilesid == Nu::s32_max())
+                        {
+                            tilesid = Render::addScript(Render::layer_tiles, "NuToolsLogic.as", "MenusTiles", 0.0f);
+                        }
+                    break;
+                    case Render::layer_background:            
+                        if(backgroundid == Nu::s32_max())
+                        {
+                            backgroundid = Render::addScript(Render::layer_background, "NuToolsLogic.as", "MenusBackground", 0.0f);
+                        }
+                    break;
+                }
+
+                render_filled_spots[i] = 0;
+                for(u16 q = 0; q < render_details[i].size(); q++)
+                {
+                    @render_details[i][q] = @null;
+                }
             }
         }
     }
