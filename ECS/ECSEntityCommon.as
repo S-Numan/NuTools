@@ -46,7 +46,7 @@ namespace EType
     }
     
     //struct
-    shared class Entity//Holds Components
+    shared class Entity//Holds Components. Should be nothing more than an array of ids. preferably, ids that point to the component in the pool. 
     {
         u32 id;
         
