@@ -69,13 +69,12 @@ void onInitSystem(CRules@ rules)
     @it_pol = itpol::Pool();
     rules.set("it_pol", @it_pol);
 
-
+    array<GetComByType@>@ get_com_by_type;
     if(!rules.exists("com_by_type"))
     {
-        array<GetComByType@>@ get_com_by_type = array<GetComByType@>@();
+        @get_com_by_type = array<GetComByType@>@();
         rules.set("com_by_type", @get_com_by_type);
     }
-    array<GetComByType@>@ get_com_by_type;
     rules.get("com_by_type", @get_com_by_type);
 
     get_com_by_type.push_back(SType::getStandardComByType);
