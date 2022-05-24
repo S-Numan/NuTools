@@ -28,6 +28,7 @@ namespace CType//Component type
 
         for(u16 q = 0; q < get_com_by_type.size(); q++)
         {
+            if(get_com_by_type == @null) { Nu::Error("get_com_by_type was null."); continue; }
             @com = @get_com_by_type[q](type);
             if(com != @null)//If com was found
             {
