@@ -139,7 +139,7 @@ namespace Nu
         bool single_dot = false;
         for(uint i = 0; i < _string.size(); i++)
         {    
-            if(!single_dot && _string[i] == ".") { single_dot = true; continue; }
+            if(!single_dot && _string[i] == "."[0]) { single_dot = true; continue; }
             if(_string[i] < "0"[0] || _string[i] > "9"[0])
             {
                 return false;
