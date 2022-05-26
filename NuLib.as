@@ -581,6 +581,10 @@ namespace Nu
     shared u16 getFramesInSize(Vec2f image_size, Vec2f frame_size)
     {
         Vec2f output;
+        if(frame_size.x == 0 || frame_size.y == 0)
+        {
+            return 0;
+        }
 
         output.x = image_size.x / frame_size.x;
         output.y = image_size.y / frame_size.y;
@@ -1756,10 +1760,21 @@ namespace Nu
             scale = Vec2f(1.0f, 1.0f);
             would_crash = false;
             angle = 0.0f;
+
+            frame_size = Vec2f(0,0);
+            image_size = Vec2f(0,0);
+            max_frames = 0;
         }
+
+        u16 max_frames;
 
         void setFrame(u16 _frame)//Sets the frame
         {
+            if(_frame >= max_frames)//If the frame goes beyond max_frames.
+            {
+                if(max_frames == 0) { Nu::Error("Max frames was 0 on attempt to setFrame in NuImage to frame " + _frame); return; }
+                _frame = _frame % max_frames;
+            }
             frame = _frame;
         }
         u16 getFrame()//Sets the frame
@@ -1789,6 +1804,8 @@ namespace Nu
             if(image_size != value)
             {
                 image_size = value;
+                max_frames = getFramesInSize(image_size, frame_size);
+
                 if(calculate && is_texture)
                 {
                     RecalculateUV();
@@ -1806,6 +1823,8 @@ namespace Nu
             if(frame_size != value)
             {
                 frame_size = value;
+                max_frames = getFramesInSize(image_size, frame_size);
+
                 if(calculate && is_texture)
                 {
                     RecalculateUV();
