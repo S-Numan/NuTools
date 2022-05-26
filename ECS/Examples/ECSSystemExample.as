@@ -22,6 +22,7 @@ void onInit(CRules@ rules)
 
     //print("remove ent test");
     u32 remove_ent_id = EnT::AddEnemy(rules, it_pol, Vec2f(0,10), Vec2f(1, 0), 30.0f);
+    it_pol.RemoveTag(remove_ent_id, "dieoffscreen".getHash());
     it_pol.RemoveEntity(remove_ent_id);
 
 
@@ -39,7 +40,7 @@ void onInit(CRules@ rules)
     //print("check duplicate adding");
 
     u32 enemy_id3 = EnT::AddEnemy(rules, it_pol, Vec2f(0,400), Vec2f(5, 0), 30.0f);
-    array<u16> com_type_array = 
+    array<u32> com_type_array = 
     {
         SType::POS,
         SType::HEALTH
@@ -60,23 +61,17 @@ void onInit(CRules@ rules)
 
 
 array<SystemFuncs@>@ sys_logic;
-array<u16>@ sys_logic_type;//Starting types for sys_logic. Will loop over every component of this type, and be given as a param.
+array<u32>@ sys_logic_type;//Starting types for sys_logic. Will loop over every component of this type, and be given as a param.
 array<SystemFuncs@>@ sys_render;
-array<u16>@ sys_render_type;
+array<u32>@ sys_render_type;
 
 void onInitSystem(CRules@ rules)
 {
     @it_pol = itpol::Pool();
     rules.set("it_pol", @it_pol);
 
-    array<GetComByType@>@ get_com_by_type;
-    if(!rules.exists("com_by_type"))
-    {
-        @get_com_by_type = array<GetComByType@>@();
-        rules.set("com_by_type", @get_com_by_type);
-    }
-    rules.get("com_by_type", @get_com_by_type);
 
+    array<GetComByType@>@ get_com_by_type = SYS::GetComByTypeArray(rules);
     get_com_by_type.push_back(SType::getStandardComByType);
 
 
@@ -84,16 +79,23 @@ void onInitSystem(CRules@ rules)
     SYS::CreateSystem(rules, sys_logic, sys_logic_type, "sys_logic");
 
     SYS::AddToSystem(rules, "sys_logic", 
-    SType::OldPosIsNewPos, SType::POS);
+    SType::CPos::SystemOldPosIsNewPos, SType::POS);
 
     SYS::AddToSystem(rules, "sys_logic", 
-    SType::ApplyVelocity, SType::VELOCITY);
+    SType::CVelocity::SystemApplyVelocity, SType::VELOCITY);
+
+    SYS::AddToSystem(rules, "sys_logic",
+    SType::SystemTagDieOffScreen, SType::POS);
 
 
     SYS::CreateSystem(rules, sys_render, sys_render_type, "sys_render");
 
     SYS::AddToSystem(rules, "sys_render", 
-    SType::RenderImage, SType::IMAGE);
+    SType::CImage::SystemRenderImage, SType::IMAGE);
+
+
+
+    it_pol.on_entity_die.push_back(onEntDie);
 
 }
 
@@ -126,7 +128,31 @@ void onRender(CRules@ rules)
 
 
 
+void onEntDie(itpol::Pool@ it_pol, EType::Entity@ ent)
+{
+    u16 CPos_pos;
+    u16 CVelocity_pos;
+    if(EType::HasTag(ent, "dieoffscreen".getHash()) && EType::EntityHasType(ent, SType::POS, CPos_pos) && EType::EntityHasType(ent, SType::VELOCITY, CVelocity_pos))
+    {
+        SType::CPos@ CPos = cast<SType::CPos@>(ent[CPos_pos]);
+        SType::CVelocity@ CVelocity = cast<SType::CVelocity@>(ent[CVelocity_pos]);
+        
+        u32 new_ent_id = EnT::AddEnemy(getRules(), it_pol, Vec2f(0.0f, CPos.pos.y), CVelocity.velocity, 9.9f);//extra
+        EType::Entity@ new_ent = it_pol.getEnt(new_ent_id);
 
+        //Iterate from by 1.
+        u16 CImage_pos;
+        u16 new_CImage_pos;
+        if(EType::EntityHasType(ent, SType::IMAGE, CImage_pos)
+        && EType::EntityHasType(new_ent, SType::IMAGE, new_CImage_pos))
+        {
+            SType::CImage@ CImage = cast<SType::CImage@>(ent[CImage_pos]);
+            SType::CImage@ new_CImage = cast<SType::CImage@>(new_ent[new_CImage_pos]);
+
+            new_CImage.image.setFrame(CImage.image.getFrame() + 1);
+        }
+    }
+}
 
 
 
