@@ -44,6 +44,10 @@ namespace EType
 
         return ent_id;
     }
+    u32 CreateEntity(CRules@ rules, itpol::Pool@ it_pol, u32 com_type, bool default_coms = true)
+    {
+        return CreateEntity(rules, it_pol, array<u32>(1, com_type), default_coms);
+    }
     
     //struct
     shared class Entity//Holds Components. Should be nothing more than an array of ids. preferably, ids that point to the component in the pool. 

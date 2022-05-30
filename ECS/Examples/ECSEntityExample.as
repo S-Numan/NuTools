@@ -16,9 +16,6 @@ namespace EnT
         u32 ent_id = EType::CreateEntity(rules, it_pol, com_type_array,//Creates the entity with the specified components. Returns the entity id.
         true);//If this is true, every component will be defaulted. If this is false, components will retain their previous values. Whatever they may be.
 
-        //TODO, add (remove on position outside of screen tag)
-        //TODO, add system that calls AddEnemy when one gets removed.
-
         //Default params.
         EType::Entity@ ent = @it_pol.getEnt(ent_id);
 
