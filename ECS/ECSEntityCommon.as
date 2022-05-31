@@ -19,13 +19,12 @@ namespace EType
     //2. The pool the entity is being created in
     //3. An array of every type of component to be added to this entity.
     //4. Optional, if components are defaulted on adding it to this entity. If false, the components retain their previous values. Whatever they may be.
-    //Creates an entity with the given components and puts it in the given pool. Returns the entity id that was just created in that pool.
-    u32 CreateEntity(CRules@ rules, itpol::Pool@ it_pol, array<u32> com_type_array, bool default_coms = true)
+    //Creates an entity with the given components and puts it in the given pool. Returns the entity that was just created in that pool.
+    Entity@ CreateEntity(CRules@ rules, itpol::Pool@ it_pol, array<u32> com_type_array, bool default_coms = true)
     {
-        u32 ent_id = it_pol.NewEntity();//Create a new entity, and get it's id
-        EType::Entity@ ent = it_pol.getEnt(ent_id);
+        EType::Entity@ ent = it_pol.NewEntity();//Create a new entity, and get it's id
 
-        array<bool> added_array = it_pol.AssignByType(ent_id, com_type_array, default_coms);//Assign components to the entity. Return the components that failed to be assigned.
+        array<bool> added_array = it_pol.AssignByType(ent.id, com_type_array, default_coms);//Assign components to the entity. Return the components that failed to be assigned.
 
         for(u16 i = 0; i < added_array.size(); i++)
         {
@@ -39,14 +38,18 @@ namespace EType
             u32 com_id = it_pol.AddComponent(com);
             u16 com_pos = i; //getFreePosInEntity(ent);
 
-            it_pol.AssignByID(ent_id, com_type_array[i], com_id, com_pos, default_coms);//entity id, component type, component id, position the com is placed in the entity's component array, if this com should be defaulted.
+            it_pol.AssignByID(ent.id, com_type_array[i], com_id, com_pos, default_coms);//entity id, component type, component id, position the com is placed in the entity's component array, if this com should be defaulted.
         }
 
-        return ent_id;
+        return ent;
     }
-    u32 CreateEntity(CRules@ rules, itpol::Pool@ it_pol, u32 com_type, bool default_coms = true)
+    Entity@ CreateEntity(CRules@ rules, itpol::Pool@ it_pol, u32 com_type, bool default_coms = true)
     {
         return CreateEntity(rules, it_pol, array<u32>(1, com_type), default_coms);
+    }
+    Entity@ CreateEntity(CRules@ rules, itpol::Pool@ it_pol)
+    {
+        return it_pol.NewEntity();
     }
     
     //struct

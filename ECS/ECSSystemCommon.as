@@ -117,8 +117,8 @@ namespace itpol//Item Pool
             return ent_array.size();
         }
 
-        //Returns id of existing free entity. If no free entity found, makes new entity and returns id of it.
-        u32 NewEntity()
+        //Returns existing free entity. If no free entity found, makes new entity and returns it.
+        EType::Entity@ NewEntity()
         {
             u32 ent_id = getEntID();//Entity id
             if(ent_id == ent_array.size())//No free position found?
@@ -138,7 +138,7 @@ namespace itpol//Item Pool
                 ent_array[ent_id].open = false;//Entity is now in use.
             }
 
-            return ent_id;
+            return ent_array[ent_id];
         }
 
         void RemoveEntity(u32 ent_id)
@@ -391,6 +391,11 @@ namespace itpol//Item Pool
         bool AssignByID(u32 ent_id, u32 com_type, u32 com_id, bool default_coms = true)
         {
             return AssignByID(ent_id, com_type, com_id, Nu::u16_max(), default_coms);
+        }
+        //Find first free position in ent.
+        bool AssignByID(EType::Entity@ ent, u32 com_type, u32 com_id, bool default_coms = true)
+        {
+            return AssignByID(ent.id, com_type, com_id, Nu::u16_max(), default_coms);
         }
 
         bool AddTag(u32 ent_id, u32 tag, u16 &out tag_pos = void)

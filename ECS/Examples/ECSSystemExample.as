@@ -21,9 +21,9 @@ void onInit(CRules@ rules)
     }//*/
 
     //print("remove ent test");
-    u32 remove_ent_id = EnT::AddEnemy(rules, it_pol, Vec2f(0,10), Vec2f(1, 0), 30.0f);
-    it_pol.RemoveTag(remove_ent_id, "dieoffscreen".getHash());
-    it_pol.RemoveEntity(remove_ent_id);
+    EType::Entity@ remove_ent = EnT::AddEnemy(rules, it_pol, Vec2f(0,10), Vec2f(1, 0), 30.0f);
+    EType::RemoveTag(remove_ent, "dieoffscreen".getHash());
+    it_pol.RemoveEntity(remove_ent);
 
 
     //print("use removed ent components test");
@@ -31,15 +31,15 @@ void onInit(CRules@ rules)
     
     
     //print("remove component from ent test");
-    u32 remove_com_id = EnT::AddEnemy(rules, it_pol, Vec2f(0,200), Vec2f(3, 0), 30.0f);
-    it_pol.UnassignByType(remove_com_id, SType::HEALTH);
+    EType::Entity@ remove_com = EnT::AddEnemy(rules, it_pol, Vec2f(0,200), Vec2f(3, 0), 30.0f);
+    EType::UnassignByType(remove_com, SType::HEALTH);
 
     
     EnT::AddEnemy(rules, it_pol, Vec2f(0,300), Vec2f(4, 0), 30.0f);
 
     //print("check duplicate adding");
 
-    u32 enemy_id3 = EnT::AddEnemy(rules, it_pol, Vec2f(0,400), Vec2f(5, 0), 30.0f);
+    EType::Entity@ enemy3 = EnT::AddEnemy(rules, it_pol, Vec2f(0,400), Vec2f(5, 0), 30.0f);
     array<u32> com_type_array = 
     {
         SType::POS,
@@ -47,12 +47,12 @@ void onInit(CRules@ rules)
     };
 
     //print("ByType duplicate test");
-    it_pol.AssignByType(enemy_id3, com_type_array);
+    it_pol.AssignByType(enemy3.id, com_type_array);
     
     //print("ByID duplicate test");
     CType::IComponent@ com = CType::getComByType(rules, SType::POS);
-    u32 enemy_id3_com_id = it_pol.AddComponent(com);
-    it_pol.AssignByID(enemy_id3, com.getType(), enemy_id3_com_id);
+    u32 enemy3_com_id = it_pol.AddComponent(com);
+    it_pol.AssignByID(enemy3, com.getType(), enemy3_com_id);
 
 
     EnT::AddEnemy(rules, it_pol, Vec2f(0,500), Vec2f(6, 0), 9.0f);//extra
@@ -137,8 +137,7 @@ void onEntDie(itpol::Pool@ it_pol, EType::Entity@ ent)
         SType::CPos@ CPos = cast<SType::CPos@>(ent[CPos_pos]);
         SType::CVelocity@ CVelocity = cast<SType::CVelocity@>(ent[CVelocity_pos]);
         
-        u32 new_ent_id = EnT::AddEnemy(getRules(), it_pol, Vec2f(0.0f, CPos.pos.y), CVelocity.velocity, 9.9f);//extra
-        EType::Entity@ new_ent = it_pol.getEnt(new_ent_id);
+        EType::Entity@ new_ent = EnT::AddEnemy(getRules(), it_pol, Vec2f(0.0f, CPos.pos.y), CVelocity.velocity, 9.9f);//extra
 
         //Iterate from by 1.
         u16 CImage_pos;
