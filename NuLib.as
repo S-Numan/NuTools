@@ -1741,46 +1741,98 @@ namespace Nu
 
 
 
-
-
-
-    shared class NuImage
+    //You should use NuImage instead, unless you know what you're doing.
+    //Not advised for use on things that often change frames, use NuImage instead.
+    shared class NuImageLight
     {
-        NuImage()
+        NuImageLight()
         {
             Setup();
         }
         //TODO, make constructor that let's you put CreateImage stuff in straight away.
 
         private u16 frame;
-        private SColor color;
 
         void Setup()
         {
             if(!isClient()) { Nu::Error("NuImage was created serverside. This should not happen."); }
-            name = "";
-            name_id = 0;
             frame = 0;
-            color = SColor(255, 255, 255, 255);
             Vec2f offset = Vec2f(0,0);
 
             is_texture = false;
             v_raw = array<Vertex>(4);
             frame_points = array<Vec2f>(4);
+            frame_uv = array<Vec2f>(4);
             z = array<float>(4, 0.0f);
             center_scale = false;
             scale = Vec2f(1.0f, 1.0f);
             would_crash = false;
             angle = 0.0f;
+            color = SColor(255, 255, 255, 255);
+
+            recalculate_v_raw = false;
 
             frame_size = Vec2f(0,0);
+            frame_center = Vec2f(0,0);
             image_size = Vec2f(0,0);
             max_frames = 0;
+
+            name = "";
+            name_id = 0;
         }
 
-        u16 max_frames;
+        u16 name_id;//Used for keeping track of what image is what image. For when using several NuImages in one array for example. Loop through the array and compare enums to this.
+        //Todo - replace name_id with a string name and hash?
 
-        void setFrame(u16 _frame)//Sets the frame
+        string name;//Either file name, or texture name.
+
+
+        bool recalculate_v_raw;
+
+        Vec2f frame_center;//Center of frame_points
+
+        private SColor color;
+        void setColor(SColor _color)//Sets the color
+        {
+            color = _color;
+
+            if(!recalculate_v_raw) { recalculate_v_raw = true; }
+        }
+        SColor getColor()
+        {
+            return color;
+        }
+
+        array<Vec2f> frame_uv;//TODO, make this an array of arrays, and only use the first array in NuImageLight. Then make it 4 arrays in NuImage.
+
+        void CalculateFrameUV()//Calculates the UV (4 points in the image) for the current frame.
+        {
+            if(!is_texture) { return; }
+
+            frame_uv = Nu::getUVFrame(
+                image_size,//Image size
+                frame_size,//Frame size
+                frame//Desired frame
+                );
+        }    
+
+        void CalculateVRaw()//Calculates the details needed for rendering.
+        {
+            v_raw = getVertices(would_crash, would_crash, v_raw,
+                frame_uv, frame_points,
+                z, scale, center_scale, frame_center, offset, angle, color);
+        
+            if(recalculate_v_raw) { recalculate_v_raw = false; }
+        }
+
+        private u16 max_frames;
+
+        u16 getMaxFrames()
+        {
+            return max_frames;
+        }
+
+        void setFrame(u16 _frame, bool calculate = true)//Sets the frame
         {
             if(_frame >= max_frames)//If the frame goes beyond max_frames.
             {
@@ -1788,39 +1840,34 @@ namespace Nu
                 _frame = _frame % max_frames;
             }
             frame = _frame;
+            
+            if(calculate)
+            {
+                CalculateFrameUV();
+            
+                if(!recalculate_v_raw) { recalculate_v_raw = true; }
+            }
         }
         u16 getFrame()//Sets the frame
         {
             return frame;
         }
 
-        void setColor(SColor _color)//Sets the color
-        {
-            color = _color;
-        }
-        SColor getColor()
-        {
-            return color;
-        }
-        
-        u16 name_id;//Used for keeping track of what image is what image. For when using several NuImages in one array for example. Loop through the array and compare enums to this.
-        //Todo - replace name_id with a string name and hash?
-
         bool is_texture;//Sets if this is a texture. If this is false, this is not a texture.
-        
-        string name;//Either file name, or texture name.
 
         private Vec2f image_size;//Size of the image given.
-        void setImageSize(Vec2f value, bool calculate = true)
+        void setImageSize(Vec2f &in value, bool calculate = true)
         {
             if(image_size != value)
             {
                 image_size = value;
                 max_frames = getFramesInSize(image_size, frame_size);
 
-                if(calculate && is_texture)
+                if(calculate)
                 {
-                    RecalculateUV();
+                    CalculateFrameUV();
+                
+                    if(!recalculate_v_raw) { recalculate_v_raw = true; }
                 }
             }
         }
@@ -1830,17 +1877,20 @@ namespace Nu
         }
 
         private Vec2f frame_size;//The frame size of the icon. (for choosing different frames);
-        void setFrameSize(Vec2f value, bool calculate = true)//Sets the frame size of the frame in the image.
+        void setFrameSize(Vec2f &in value, bool calculate = true)//Sets the frame size of the frame in the image.
         {
             if(frame_size != value)
             {
                 frame_size = value;
                 max_frames = getFramesInSize(image_size, frame_size);
 
-                if(calculate && is_texture)
+                if(calculate)
                 {
-                    RecalculateUV();
+                    CalculateFrameUV();
                     frame_points = Nu::getFrameSizes(frame_size);
+                    frame_center = (frame_points[2] - frame_points[0]) / 2;
+
+                    if(!recalculate_v_raw) { recalculate_v_raw = true; }
                 }
             }
         }
@@ -1849,16 +1899,21 @@ namespace Nu
             return frame_size;
         }
         
-        Vec2f offset;//Position of image in relation to something else.
+        private Vec2f offset;//Position of image in relation to something else. This is modified by scale. (Bug Numan if you think that's bad)
+        void setOffset(Vec2f &in value)
+        {
+            offset = value;
+
+            if(!recalculate_v_raw) { recalculate_v_raw = true; }
+        }
+        Vec2f getOffset()
+        {
+            return offset;
+        }
 
 
-        //
-        //Below goes into rendering
-        //
-
-        //TODO, allow CreateImage with an input of ImageData@ .
         //This creates a texture and/or sets up a few things for this image to work with it.
-        ImageData@ CreateImage(string render_name, string file_path)
+        ImageData@ CreateImage(string &in render_name, string &in file_path)
         {
             //ensure texture for our use exists
             if(!Texture::exists(render_name))
@@ -1869,17 +1924,37 @@ namespace Nu
                     return @null;
                 }
             }
-
+            
+            return SetImage(render_name);
+        }
+        private ImageData@ SetImage(string &in render_name)
+        {
             ImageData@ _image = Texture::data(render_name);
-            if(_image == @null) { error("image was null for some reason in NuLib::NuImage::CreateImage"); return @null; }
-            if(_image.size() == 0) { warning("Image provided in NuLib::NuImage::CreateImage was 0 in size"); return _image; }
+            if(_image == @null) { error("image was null for some reason in NuLib::NuImage::SetImage"); return @null; }
+            if(_image.size() == 0) { warning("Image provided in NuLib::NuImage::SetImage was 0 in size"); return _image; }
 
             is_texture = true;
             image_size = Vec2f(_image.width(), _image.height());
             setFrameSize(image_size);
-            name = render_name;
 
             return @_image;
+        }
+        void CreateImage(string &in render_name, ImageData@ _image)
+        {
+            if(_image.size() == 0) { warning("Image provided in NuLib::NuImage::CreateImage was 0 in size"); return; }
+
+            if(!Texture::exists(render_name))
+            {
+                if(!Texture::createFromData(render_name, _image))
+                {
+                    warn("texture creation failed");
+                    return;
+                }
+            }
+
+            SetImage(render_name);
+
+            return;
         }
         /*//tex returns null for some reason
         ImageData@ CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
@@ -1893,19 +1968,19 @@ namespace Nu
             Texture::createFromData(render_name, tex);//Create a texture from it.
             return @CreateImage(render_name);//Give this menu the texture.
         }*/
-        ImageData@ CreateImage(string render_name, CSprite@ s)//Takes a sprite instead.
+        ImageData@ CreateImage(string &in render_name, CSprite@ s)//Takes a sprite instead.
         {
             if(s == @null){ Nu::Error("Sprite was equal to null"); return @null; }
 
             ImageData@ tex = @CreateImage(render_name, s.getFilename());//Give this menu the texture.
 
-            setFrameSize(Vec2f(s.getFrameWidth(), s.getFrameHeight()));
+            setFrame(s.getFrame(), false);
 
-            setFrame(s.getFrame());
+            setFrameSize(Vec2f(s.getFrameWidth(), s.getFrameHeight()));
 
             return @tex;
         }
-        ImageData@ CreateImage(string file_path)//Takes just a file path.
+        ImageData@ CreateImage(string &in file_path)//Takes just a file path.
         {
             string file_name = Nu::CutOutFileName(file_path);//Cuts out the file name.
             file_name = "a_" + file_name;//a for auto is placed in the render name, in an attempt to avoid accidently using the render name somebody else is using by accident. 
@@ -1913,46 +1988,45 @@ namespace Nu
         }
 
 
-        array<Vec2f> frame_points;//Top left, top right, bottom left, bottom right of the frame when drawn. Stretches or squishes the frame.
-        void setPointUpperLeft(Vec2f value)
+        private array<Vec2f> frame_points;//Top left, top right, bottom left, bottom right of the frame when drawn. Stretches or squishes the frame.
+        void setPointUpperLeft(Vec2f value, bool calculate = true)
         {
             frame_points[0] = value;//Top left
             frame_points[1].y = value.y;//Top right
             frame_points[3].x = value.x;//Bottom left
+        
+            if(calculate) { frame_center = (frame_points[2] - frame_points[0]) / 2; }
+            
+            if(!recalculate_v_raw) { recalculate_v_raw = true; }
         }
-        void setPointLowerRight(Vec2f value)
+        void setPointLowerRight(Vec2f value, bool calculate = true)
         {
             frame_points[1].x = value.x;//Top right
             frame_points[2] = value;//Bottom right
             frame_points[3].y = value.y;//Bottom left
-        }
 
-        array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
+            if(calculate) { frame_center = (frame_points[2] - frame_points[0]) / 2; }
         
-        void RecalculateUV()//Recalculates UV. Basically sets up all four points of each frame in the image and puts it all into one big array. Fancy stuff, don't touch it if you don't know what it does. I hardly know what it does.
+            if(!recalculate_v_raw) { recalculate_v_raw = true; }
+        }
+        void setFramePoints(array<Vec2f> &in _frame_points, bool calculate = true)
         {
-            array<array<Vec2f>> _uv_per_frame(Nu::getFramesInSize(image_size, frame_size));
-            
-            u16 i;
-            for(i = 0; i < _uv_per_frame.size(); i++)
-            {
-                _uv_per_frame[i] = Nu::getUVFrame(
-                image_size,//Image size
-                frame_size,//Frame size
-                i//Desired frame
-                );
-            }
+            frame_points = _frame_points;
 
-            uv_per_frame = _uv_per_frame;
+            if(calculate) { frame_center = (frame_points[2] - frame_points[0]) / 2; }
+        
+            if(!recalculate_v_raw) { recalculate_v_raw = true; }
         }
 
-        array<float> z;//The z level this is drawn on.
+        private array<float> z;//The z level this is drawn on.
         void setZ(float value)//Set the z level. (Simplified)
         {
             for(u8 i = 0; i < z.size(); i++)
             {
                 z[i] = value;
             }
+
+            if(!recalculate_v_raw) { recalculate_v_raw = true; }
         }
         float getZ()//Get the z level. (Simplified)
         {
@@ -1964,19 +2038,35 @@ namespace Nu
         void setAngle(float value)
         {
             angle = value;
+
+            if(!recalculate_v_raw) { recalculate_v_raw = true; }
         }
         float getAngle()
         {
             return angle;
         }
 
-        bool center_scale;//When this is true, this image scales from the center (expands/shrinks equally from all sides).
+        private bool center_scale;//When this is true, this image scales from the center (expands/shrinks equally from all sides).
         //When this is false, this image scales from the top left. Thus, the top left stays to the top left. (bottom right expands/shrinks outwards)
 
+        void setCenterScale(bool value)
+        {
+            center_scale = value;
+            
+            if(!recalculate_v_raw) { recalculate_v_raw = true; }
+        }
+
+        bool getCenterScale()
+        {
+            return center_scale;
+        }
+
         private Vec2f scale;//Scale of the frame.
-        void setScale(Vec2f _scale)//Sets the scale of the frame.
+        void setScale(Vec2f _scale)//Sets the scale of the frame
         {
             scale = _scale;
+
+            if(!recalculate_v_raw) { recalculate_v_raw = true; }
         }
         void setScale(float _scale)//Sets the scale of the frame.
         {
@@ -1989,63 +2079,204 @@ namespace Nu
 
         bool would_crash;
 
-        //TODO, don't run this every render call. Only recalculate if needed.
         //TODO, figure out if you can render more than 4 Vertices at once.
         //If possible, make it possible to have multiple frames to be drawn at once, with their seperate positions and colors. With only one render call.
         array<Vertex> v_raw;//For rendering.
-        array<Vertex> getVerticesForFrameAndPos(u16 _frame, Vec2f _pos, f32 _angle, SColor _color = SColor(255, 255, 255, 255))//Gets what this should render.
+
+
+
+        void Render(Vec2f &in pos = Vec2f(0,0))
         {
-            if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//Already sent the error log, this could of crashed. So just stop to not spam.
-            if(!is_texture){ Nu::Error("Tried getVerticesForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
-            would_crash = false;
-            if(frame_points.size() == 0) {          Nu::Error("frame_points.size() was equal to 0");          would_crash = true; }
-            if(uv_per_frame.size() == 0) {          Nu::Error("uv_per_frame.size() was equal to 0");          would_crash = true; }
-            if(uv_per_frame.size() <= _frame) {      Nu::Error("uv_per_frame.size() == " + uv_per_frame.size() + " was less than or equal to _frame " + _frame + "\nThis might mean that you reached pass the maximum frames in this image."); would_crash = true; return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
-            if(uv_per_frame[_frame].size() == 0) {   Nu::Error("uv_per_frame[_frame].size() was equal to 0");   would_crash = true; }
-            if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//This will crash instantly if it goes beyond this point, so exit out.
-
-            Vec2f _offset = MultVec(offset, scale);
-
-            Vec2f center = (frame_points[2] - frame_points[0]) / 2;
-
-            Vec2f add_scale = MultVec(center, scale - Vec2f(1.0f, 1.0f));
-
-            if(!center_scale)
+            if(recalculate_v_raw)
             {
-                _pos += add_scale;
+                CalculateVRaw();
             }
-            
-            v_raw[0] = Vertex(_offset + _pos + 
-                (frame_points[0] + (add_scale * -1)//XY
-                ).RotateByDegrees(_angle, center), z[0], uv_per_frame[_frame][0], _color);
-			
-            v_raw[1] = Vertex(_offset + _pos +
-                Vec2f(frame_points[1].x + add_scale.x,//X
-                    frame_points[1].y + (add_scale.y * -1)//Y
-                ).RotateByDegrees(_angle, center), z[1], uv_per_frame[_frame][1], _color);//Set the colors yourself.
-			
-            v_raw[2] = Vertex(_offset + _pos +
-                (frame_points[2] + add_scale//XY
-                ).RotateByDegrees(_angle, center), z[2], uv_per_frame[_frame][2], _color);
-			
-            v_raw[3] = Vertex(_offset + _pos +
-                Vec2f(frame_points[3].x + (add_scale.x * -1),//X
-                    frame_points[3].y + add_scale.y//Y
-                ).RotateByDegrees(_angle, center), z[3], uv_per_frame[_frame][3], _color);
-            return v_raw;
-        }
 
+            u16 v_raw_size = v_raw.size();
+            u16 i;
 
-
-        void Render(Vec2f _pos = Vec2f(0,0))
-        {
-            getVerticesForFrameAndPos(frame, _pos, angle, color);
+            for(i = 0; i < v_raw_size; i++)
+            {
+                v_raw[i].x += pos.x;
+                v_raw[i].y += pos.y;
+            }
 
             Render::RawQuads(name, v_raw);
+        
+            for(i = 0; i < v_raw_size; i++)
+            {
+                v_raw[i].x -= pos.x;
+                v_raw[i].y -= pos.y;
+            }
         }
         
 
     }
+
+
+
+    shared class NuImage : NuImageLight
+    {
+        NuImage()
+        {
+            
+        }
+
+        void Setup()
+        {
+            NuImageLight::Setup();
+
+        }
+
+        //Overrides
+        //
+            void CalculateVRaw() override
+            {
+                v_raw = getVertices(would_crash, would_crash, v_raw,
+                    uv_per_frame[frame], frame_points,
+                    z, scale, center_scale, frame_center, offset, angle, color);
+            
+                if(recalculate_v_raw) { recalculate_v_raw = false; }
+            }
+
+            ImageData@ CreateImage(string &in render_name, string &in file_path) override
+            {
+                ImageData@ data = NuImageLight::CreateImage(render_name, file_path);
+
+                name = render_name;
+
+                return @data;
+            }
+
+            void setFrame(u16 _frame, bool calculate = true) override//Sets the frame
+            {
+                NuImageLight::setFrame(_frame, false);
+
+                if(!recalculate_v_raw) { recalculate_v_raw = true; }
+            }
+
+            void setImageSize(Vec2f &in value, bool calculate = true) override
+            {
+                NuImageLight::setImageSize(value, false);
+
+                if(calculate)
+                {
+                    CalculateAllFrameUV();
+
+                    if(!recalculate_v_raw) { recalculate_v_raw = true; }
+                }
+            }
+
+            void setFrameSize(Vec2f &in value, bool calculate = true) override//Sets the frame size of the frame in the image.
+            {
+                NuImageLight::setFrameSize(value, false);
+
+                if(calculate)
+                {
+                    CalculateAllFrameUV();
+                    frame_points = Nu::getFrameSizes(frame_size);
+                    frame_center = (frame_points[2] - frame_points[0]) / 2;
+                
+                    if(!recalculate_v_raw) { recalculate_v_raw = true; }
+                }
+            }
+
+            void Render(Vec2f &in pos = Vec2f(0,0)) override
+            {
+                if(recalculate_v_raw)
+                {
+                    CalculateVRaw();
+                }
+
+                u16 v_raw_size = v_raw.size();
+                u16 i;
+
+                for(i = 0; i < v_raw_size; i++)
+                {
+                    v_raw[i].x += pos.x;
+                    v_raw[i].y += pos.y;
+                }
+
+                Render::RawQuads(name, v_raw);
+            
+                for(i = 0; i < v_raw_size; i++)
+                {
+                    v_raw[i].x -= pos.x;
+                    v_raw[i].y -= pos.y;
+                }
+            }
+        //
+        //Overrides
+
+        array<array<Vec2f>> uv_per_frame;//The uv's required for each frame in the given image.
+        
+        void CalculateAllFrameUV()//Calculates the UV (4 points in the image) for every frame in the image.
+        {
+            if(!is_texture) { return; }//Only calculate if this is/has a texture.
+
+            array<array<Vec2f>> _uv_per_frame(Nu::getFramesInSize(image_size, frame_size));
+
+            u16 i;
+            for(i = 0; i < _uv_per_frame.size(); i++)
+            {
+                _uv_per_frame[i] = Nu::getUVFrame(
+                image_size,//Image size
+                frame_size,//Frame size
+                i//Desired frame
+                );
+            }
+
+            uv_per_frame = _uv_per_frame;
+        }
+        
+    }
+
+    //Gets vertices to be rendered.
+    shared array<Vertex> getVertices(bool &in stop_if_crash, bool &out would_crash, array<Vertex> &inout v_raw,
+        const array<Vec2f> &in frame_uv, array<Vec2f> &in frame_points,
+        const array<f32> &in z, const Vec2f &in scale, const bool &in center_scale, const Vec2f &in frame_center, const Vec2f &in offset, const f32 &in angle, const SColor &in color = SColor(255, 255, 255, 255))
+    {
+        if(stop_if_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); would_crash = true; }//Already sent the error log, this could of crashed. So just stop to not spam.
+        //if(!is_texture){ Nu::Error("Tried getVerticesForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
+        would_crash = false;
+        if(frame_points.size() == 0) {          Nu::Error("frame_points.size() was equal to 0");          would_crash = true; }
+        if(frame_uv.size() == 0) {          Nu::Error("frame_uv.size() was equal to 0");          would_crash = true; }
+        if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//This will crash instantly if it goes beyond this point, so exit out.
+
+        Vec2f _offset = MultVec(offset, scale);
+
+        Vec2f add_scale = MultVec(frame_center, Vec2f(scale.x - 1.0f, scale.y - 1.0f));
+
+        if(!center_scale)
+        {
+            _offset += add_scale;
+        }
+        
+        v_raw[0] = Vertex(_offset + 
+            (frame_points[0] + (add_scale * -1)//XY
+            ).RotateByDegrees(angle, frame_center), z[0], frame_uv[0], color);
+        
+        v_raw[1] = Vertex(_offset +
+            Vec2f(frame_points[1].x + add_scale.x,//X
+                frame_points[1].y + (add_scale.y * -1)//Y
+            ).RotateByDegrees(angle, frame_center), z[1], frame_uv[1], color);//Set the colors yourself.
+        
+        v_raw[2] = Vertex(_offset +
+            (frame_points[2] + add_scale//XY
+            ).RotateByDegrees(angle, frame_center), z[2], frame_uv[2], color);
+        
+        v_raw[3] = Vertex(_offset +
+            Vec2f(frame_points[3].x + (add_scale.x * -1),//X
+                frame_points[3].y + add_scale.y//Y
+            ).RotateByDegrees(angle, frame_center), z[3], frame_uv[3], color);
+        
+        return v_raw;
+    }
+
+
+
+
+
 
     //TODO delete (or move) this. Could move it into NuMenu.
     shared class NuStateImage : NuImage
@@ -2071,7 +2302,7 @@ namespace Nu
 
         //Overrides
         //
-        void setFrame(u16 _frame) override//Sets the frame
+        void setFrame(u16 _frame, bool calculate = true) override//Sets the frame
         {
             setFrame(_frame, 0);
         }
@@ -2088,7 +2319,7 @@ namespace Nu
             return getColor(0);
         }
 
-        ImageData@ CreateImage(string render_name, CSprite@ s) override//Takes a sprite instead.
+        ImageData@ CreateImage(string &in render_name, CSprite@ s) override//Takes a sprite instead.
         {
             ImageData@ tex = NuImage::CreateImage(render_name, s);
             if(tex == @null) { return @null; }
@@ -2132,17 +2363,19 @@ namespace Nu
             return color_on[i];
         }
 
-        void Render(u16 state, Vec2f _pos = Vec2f(0,0))
+        void Render(u16 state, Vec2f &in pos = Vec2f(0,0))
         {
+            recalculate_v_raw = true;//Cheap fix, because I'm too lazy to fix something I want to remove anyway.
+
             frame = frame_on[state];
             color = color_on[state];
 
-            Render(_pos);
+            Render(pos);
         }
 
-        void Render(Vec2f _pos = Vec2f(0,0)) override
+        void Render(Vec2f &in pos = Vec2f(0,0)) override
         {
-            NuImage::Render(_pos);
+            NuImage::Render(pos);
         }
     }
 
