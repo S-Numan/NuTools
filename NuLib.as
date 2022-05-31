@@ -1180,20 +1180,32 @@ namespace Nu
 
     //1: Min value for random number
     //2: Max value for random number
+    //3. Optional, get the rend previously if you're calling this a lot for performance reasons
     //This gives you a random float between the min and max specified values
-    shared f32 getRandomF32(f32 min, f32 max)
+    shared f32 getRandomF32(f32 min, f32 max, NuRend@ rend = @null)
     {
-        NuRend@ rend;
-        if(!getRend(@rend)) { return 0; }
+        if(rend == @null && !getRend(@rend)) { return 0; }
 
         if (min == max) { return 0; }
 
         //return (rend.rnd.NextRanged(max - min) + min) + rend.rnd.NextFloat();
         return min + rend.rnd.NextFloat() * (max - min);
     }
-    shared f32 getRandomF32(f32 max)
+    shared f32 getRandomF32(f32 max, NuRend@ rend = @null)
     {
-        return getRandomF32(0.0f, max);
+        return getRandomF32(0.0f, max, rend);
+    }
+
+    shared Vec2f getRandomVec2f(Vec2f min, Vec2f max, NuRend@ rend = @null)
+    {
+        if(rend == @null && !getRend(@rend)) { return Vec2f(0,0); }
+
+        Vec2f output = Vec2f();
+
+        output.x = getRandomF32(min.x, max.x, rend);
+        output.y = getRandomF32(min.y, max.y, rend);
+
+        return output;
     }
 
     //TODO, not tested
