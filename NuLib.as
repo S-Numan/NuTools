@@ -2235,7 +2235,7 @@ namespace Nu
     //Gets vertices to be rendered.
     shared array<Vertex> getVertices(bool &in stop_if_crash, bool &out would_crash, array<Vertex> &inout v_raw,
         const array<Vec2f> &in frame_uv, array<Vec2f> &in frame_points,
-        const array<f32> &in z, const Vec2f &in scale, const bool &in center_scale, const Vec2f &in frame_center, const Vec2f &in offset, const f32 &in angle, const SColor &in color = SColor(255, 255, 255, 255))
+        const array<f32> &in z, const Vec2f &in scale, const bool &in center_scale, const Vec2f &in frame_center, const Vec2f &in offset, const f32 &in angle, const SColor &in color)
     {
         if(stop_if_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); would_crash = true; }//Already sent the error log, this could of crashed. So just stop to not spam.
         //if(!is_texture){ Nu::Error("Tried getVerticesForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
