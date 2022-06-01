@@ -1742,7 +1742,8 @@ namespace Nu
 
 
     //You should use NuImage instead, unless you know what you're doing.
-    //Not advised for use on things that often change frames, use NuImage instead.
+    //Not advised for use on things that often change frames.
+    //This finds the uv for the frame every time it changes, NuImage makes an array that contains the uv for every frame.
     shared class NuImageLight
     {
         NuImageLight()
