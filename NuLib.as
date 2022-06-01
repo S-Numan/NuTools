@@ -1769,9 +1769,10 @@ namespace Nu
             scale = Vec2f(1.0f, 1.0f);
             would_crash = false;
             angle = 0.0f;
+            //rotate_around = Vec2f(0,0);
             color = SColor(255, 255, 255, 255);
 
-            recalculate_v_raw = false;
+            recalculate_v_raw = true;
 
             frame_size = Vec2f(0,0);
             frame_center = Vec2f(0,0);
@@ -1819,6 +1820,8 @@ namespace Nu
 
         void CalculateVRaw()//Calculates the details needed for rendering.
         {
+            if(!is_texture) { return; }
+
             v_raw = getVertices(would_crash, would_crash, v_raw,
                 frame_uv, frame_points,
                 z, scale, center_scale, frame_center, offset, angle, color);
@@ -1928,7 +1931,7 @@ namespace Nu
             
             return SetImage(render_name);
         }
-        private ImageData@ SetImage(string &in render_name)
+        ImageData@ SetImage(string &in render_name)
         {
             ImageData@ _image = Texture::data(render_name);
             if(_image == @null) { error("image was null for some reason in NuLib::NuImage::SetImage"); return @null; }
@@ -1987,6 +1990,18 @@ namespace Nu
             file_name = "a_" + file_name;//a for auto is placed in the render name, in an attempt to avoid accidently using the render name somebody else is using by accident. 
             return @CreateImage(file_name, file_path);//Uses the file_name as the render_name, and the file path as is.
         }
+        //Nothing is just a literal white pixel.
+        ImageData@ CreateImage()
+        { 
+            return @CreateImage("white_pixel", "WhitePixel.png");
+            
+            //TODO, do it like this to make it faster
+            //if(!Texture::exists("white_pixel"))
+            //{
+            //  Texture::createBySize("white_pixel", 1, 1);//name, width, height.
+            //}
+            //return SetImage("white_pixel");
+        }
 
 
         private array<Vec2f> frame_points;//Top left, top right, bottom left, bottom right of the frame when drawn. Stretches or squishes the frame.
@@ -2034,18 +2049,26 @@ namespace Nu
             return z[0];
         }
 
-        //TODO, option to angle across the top left, or the center.
+        //private Vec2f rotate_around;//Doesn't work.
         private float angle;
-        void setAngle(float value)
+        void setAngle(float value)//, Vec2f around)
         {
             angle = value;
 
+            //rotate_around = around;
+
             if(!recalculate_v_raw) { recalculate_v_raw = true; }
         }
+        //void setAngle(float value)
+        //{
+        //    setAngle(value, frame_center);
+        //}
         float getAngle()
         {
             return angle;
         }
+
+        
 
         private bool center_scale;//When this is true, this image scales from the center (expands/shrinks equally from all sides).
         //When this is false, this image scales from the top left. Thus, the top left stays to the top left. (bottom right expands/shrinks outwards)
@@ -2088,7 +2111,7 @@ namespace Nu
 
         void Render(Vec2f &in pos = Vec2f(0,0))
         {
-            if(recalculate_v_raw)
+            if(recalculate_v_raw)//Would probably be more optimized to do this check at the end of every Tick instead of onRender(). TODO
             {
                 CalculateVRaw();
             }
@@ -2235,7 +2258,8 @@ namespace Nu
     //Gets vertices to be rendered.
     shared array<Vertex> getVertices(bool &in stop_if_crash, bool &out would_crash, array<Vertex> &inout v_raw,
         const array<Vec2f> &in frame_uv, array<Vec2f> &in frame_points,
-        const array<f32> &in z, const Vec2f &in scale, const bool &in center_scale, const Vec2f &in frame_center, const Vec2f &in offset, const f32 &in angle, const SColor &in color)
+        const array<f32> &in z, const Vec2f &in scale, const bool &in center_scale, const Vec2f &in frame_center,// const Vec2f &in rotate_around,
+        const Vec2f &in offset, const f32 &in angle, const SColor &in color)
     {
         if(stop_if_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); would_crash = true; }//Already sent the error log, this could of crashed. So just stop to not spam.
         //if(!is_texture){ Nu::Error("Tried getVerticesForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
@@ -2248,9 +2272,22 @@ namespace Nu
 
         Vec2f add_scale = MultVec(frame_center, Vec2f(scale.x - 1.0f, scale.y - 1.0f));
 
+        //Vec2f _rotate_around = rotate_around;
+
         if(!center_scale)
         {
             _offset += add_scale;
+            //_rotate_around -= add_scale;
+        }
+        else
+        {
+            //_rotate_around -= add_scale;
+            //add_scale removing from _rotate_around should be 0 if _rotate_around is equal to frame_center. 
+            //It should be as normal when _rotate_around is 0,0 .
+            //Figure out how to math your way through this.
+
+            //?Multiply add_scale here by 0 if _rotate_around is equal to frame_center, and scale up to 1 depending on how far away it is from frame_center.
+            //0,0 would be 1 away from frame center, Thus multiplying add_scale by 1. 
         }
         
         v_raw[0] = Vertex(_offset + 
