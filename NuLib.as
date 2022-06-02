@@ -1800,6 +1800,10 @@ namespace Nu
 
             if(!recalculate_v_raw) { recalculate_v_raw = true; }
         }
+        void setColor(u8 alpha, u8 red, u8 green, u8 blue)//Sets the color
+        {
+            setColor(SColor(alpha, red, green, blue));
+        }
         SColor getColor()
         {
             return color;
@@ -1993,14 +1997,18 @@ namespace Nu
         //Nothing is just a literal white pixel.
         ImageData@ CreateImage()
         { 
-            return @CreateImage("white_pixel", "WhitePixel.png");
+            //return @CreateImage("white_pixel", "WhitePixel.png");
             
-            //TODO, do it like this to make it faster
-            //if(!Texture::exists("white_pixel"))
-            //{
-            //  Texture::createBySize("white_pixel", 1, 1);//name, width, height.
-            //}
-            //return SetImage("white_pixel");
+            if(!Texture::exists("white_pixel"))
+            {
+                ImageData@ white_pixel = @ImageData(1,1);//Make 1,1 sized image.
+                white_pixel.put(0, 0, SColor(255, 255, 255, 255));//Make the pixel white
+                if(!Texture::createFromData("white_pixel", white_pixel))//Make the white pixel a texture.
+                {
+                    warn("texture creation failure");
+                }
+            }
+            return SetImage("white_pixel");
         }
 
 
@@ -2053,7 +2061,11 @@ namespace Nu
         private float angle;
         void setAngle(float value)//, Vec2f around)
         {
-            angle = value;
+            while(value < 0)//While the value is negative
+            {
+                value += 360;//Add a full circle
+            }
+            angle = value % 360;//Angle equals value and the values stays within 360
 
             //rotate_around = around;
 
@@ -2307,6 +2319,34 @@ namespace Nu
             Vec2f(frame_points[3].x + (add_scale.x * -1),//X
                 frame_points[3].y + add_scale.y//Y
             ).RotateByDegrees(angle, frame_center), z[3], frame_uv[3], color);
+        
+        return v_raw;
+    }
+
+    //Gets vertices to be rendered.
+    shared array<Vertex> getVertices(bool &in stop_if_crash, bool &out would_crash, array<Vertex> &inout v_raw,
+        const array<Vec2f> &in frame_uv, array<Vec2f> &in frame_points,
+        const array<f32> &in z,
+        Vec2f &in offset, const SColor &in color)
+    {
+        if(stop_if_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); would_crash = true; }//Already sent the error log, this could of crashed. So just stop to not spam.
+        //if(!is_texture){ Nu::Error("Tried getVerticesForFrameAndPos from NuImage when it was not a texture. Did you forget to use the method CreateImage?"); return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }
+        would_crash = false;
+        if(frame_points.size() == 0) {          Nu::Error("frame_points.size() was equal to 0");          would_crash = true; }
+        if(frame_uv.size() == 0) {          Nu::Error("frame_uv.size() was equal to 0");          would_crash = true; }
+        if(would_crash){ return array<Vertex>(4, Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)); }//This will crash instantly if it goes beyond this point, so exit out.
+        
+        v_raw[0] = Vertex(offset + frame_points[0]
+            , z[0], frame_uv[0], color);
+        
+        v_raw[1] = Vertex(offset + frame_points[1]
+            , z[1], frame_uv[1], color);//Set the colors yourself.
+        
+        v_raw[2] = Vertex(offset + frame_points[2]
+            , z[2], frame_uv[2], color);
+        
+        v_raw[3] = Vertex(offset + frame_points[3]
+            , z[3], frame_uv[3], color);
         
         return v_raw;
     }
