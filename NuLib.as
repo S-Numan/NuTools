@@ -432,6 +432,12 @@ namespace Nu
         }
         return 0.0f;
     }
+    //TODO, optimize
+    //1.    getDistanceFromGround()
+    //2.    isBelowLand(Vec2f pos)
+    //3.    getLandHeightAtX(int x)
+    //4     getLandYAtX(int x)
+    //If the pos is below the land, do what is currently there from pos. If the pos is above the land, we done.
 
     //Enum list of positions within 2 vec2fs.
     shared enum POSPositions//Stores all positions that stuff can be in.
@@ -1245,6 +1251,46 @@ namespace Nu
         arrow_pos = arrow_pos % wheel_size;//Loop around from the wheel_size.
 
         return arrow_pos;
+    }
+
+    //1. Camera
+    //2. Top left pos.
+    //3. Optional size.
+    //Returns true if is on screen. World pos variant.
+    shared bool isOnScreen(CCamera@ cam, Vec2f &in pos, Vec2f &in size = Vec2f_zero)
+    {
+        const Vec2f campos = cam.getPosition();
+        
+        const f32 screen_width = getScreenWidth();
+        const f32 screen_height = getScreenHeight();
+
+        if(campos.y - screen_height / 4.0 / cam.targetDistance > pos.y + size.y//Top of screen
+        || campos.y + screen_height / 4.0 / cam.targetDistance < pos.y//Bottom of screen
+        || campos.x - screen_width / 4.0 / cam.targetDistance > pos.x + size.x //Left of screen
+        || campos.x + screen_width / 4.0 / cam.targetDistance < pos.x)//Right of screen
+        {
+            return false;
+        }
+
+        return true;
+    }
+    //1. Top left pos.
+    //2. Optional size.
+    //Returns true if is on screen, Screen pos variant.
+    shared bool isOnScreen(Vec2f &in pos, Vec2f &in size = Vec2f_zero)
+    {
+        const f32 screen_width = getScreenWidth();
+        const f32 screen_height = getScreenHeight();
+
+        if(0.0f > pos.y + size.y//Top of screen
+        || screen_height < pos.y//Bottom of screen
+        || 0.0f > pos.x + size.x //Left of screen
+        || screen_width < pos.x)//Right of screen
+        {
+            return false;
+        }
+
+        return true;
     }
 
     namespace Rules
