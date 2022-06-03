@@ -4,13 +4,22 @@ void RunServer()
 {
 	if (getNet().CreateServer())
 	{
-        if(sv_contact_info == "0")
+        if(sv_contact_info == "0")//If custom gamemode loading is disabled
         {
             LoadRules("Rules/" + sv_gamemode + "/gamemode.cfg");
             CRules@ rules = getRules();
             if(@rules == @null)
             {
                 error("Rules failed to load."); return;
+            }
+            
+            if (sv_mapcycle.size() > 0)
+            {
+                LoadMapCycle(sv_mapcycle);
+            }
+            else
+            {
+                LoadMapCycle("Rules/" + sv_gamemode + "/mapcycle.cfg");
             }
         }
         else
@@ -30,15 +39,6 @@ void RunServer()
         
             rules.set_bool("custom_gamemode_loading", true);
         }
-        
-        if (sv_mapcycle.size() > 0)
-		{
-			LoadMapCycle(sv_mapcycle);
-		}
-		else
-		{
-			LoadMapCycle("Rules/" + sv_gamemode + "/mapcycle.cfg");
-		}
 
 		LoadNextMap();
 	}
@@ -81,6 +81,19 @@ shared void AddGamemode(CRules@ rules, string the_gamemode)
     }
     if(cfg.exists("minimap")){
         rules.minimap = cfg.read_bool("minimap");
+    }
+    
+    if (sv_mapcycle.size() > 0)//If sv_mapcycle is a thing.
+    {
+        LoadMapCycle(sv_mapcycle);//Load this map cycle.
+    }
+    else if(cfg.exists("map_cycle"))//sv_mapcycle is not a thing, check if the gamemode has a map_cycle.
+    {
+        LoadMapCycle(cfg.read_string("map_cycle"));//Load this map cycle
+    }
+    else//No specified map cycle found.
+    {
+        LoadMapCycle("Rules/" + sv_gamemode + "/mapcycle.cfg");
     }
 
     if(cfg.exists("restartmap_onlastplayer_disconnect")){
