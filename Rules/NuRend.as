@@ -201,6 +201,8 @@ shared class NuRend
 
         if(layer > render_details.size()) { Nu::Error("Layer beyond max layer"); return; }
 
+        _image.Tick();
+
         if(render_details[layer].size() == render_filled_spots[layer])//render_details not large enough?
         {
             render_details[layer].push_back(@RenderDetails(_image, _pos, is_world_pos, _interpolate));//Make more space and put it in
