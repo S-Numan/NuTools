@@ -2066,6 +2066,7 @@ namespace Nu
         void setFrameUV(array<Vec2f> &in _frame_uv)
         {
             frame_uv = _frame_uv;
+            frame_uv_c = false;
         }
 
         bool max_frames_c;
@@ -2349,6 +2350,7 @@ namespace Nu
         void setFrameUVs(array<array<Vec2f>>& _uv_per_frame)
         {
             uv_per_frame = _uv_per_frame;
+            frame_uv_c = false;
         }
 
         //Overrides
