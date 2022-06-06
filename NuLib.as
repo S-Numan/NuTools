@@ -2038,7 +2038,7 @@ namespace Nu
         {
             color = _color;
 
-            if(!v_raw_c) { v_raw_c = true; }
+            v_raw_c = true;
         }
         void setColor(u8 alpha, u8 red, u8 green, u8 blue)//Sets the color
         {
@@ -2058,8 +2058,6 @@ namespace Nu
             if(frame_uv_c)
             {
                 frame_uv = Nu::getUVFrame(getImageSize(), getFrameSize(), getFrame());
-
-                v_raw_c = true;
 
                 frame_uv_c = false;
             }
@@ -2084,7 +2082,7 @@ namespace Nu
         }
 
         private u16 frame;
-        void setFrame(u16 value)//Sets the frame
+        void setFrame(u16 value, bool get_uv = true)//Sets the frame
         {
             if(value >= getMaxFrames() && is_texture)//If the frame goes beyond max_frames.
             {
@@ -2093,7 +2091,11 @@ namespace Nu
             }
             frame = value;
             
-            frame_uv_c = true;
+            if(get_uv)
+            {
+                frame_uv_c = true;
+            }
+            v_raw_c = true;
         }
         u16 getFrame()//Sets the frame
         {
@@ -2351,6 +2353,11 @@ namespace Nu
 
         //Overrides
         //
+            void setFrame(u16 value, bool get_uv = true) override
+            {
+                NuImage::setFrame(value, false);//Don't touch the uv
+            }
+
             const array<Vec2f>& getFrameUV() override
             {
                 Nu::Error("array<Vec2f> getFrameUV() is not for use in the inherited class NuImage");
@@ -2512,7 +2519,7 @@ namespace Nu
 
         //Overrides
         //
-        void setFrame(u16 _frame) override//Sets the frame
+        void setFrame(u16 _frame, bool get_uv = true) override//Sets the frame
         {
             setFrame(_frame, 0);
         }

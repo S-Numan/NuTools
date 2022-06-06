@@ -172,7 +172,7 @@ namespace SType//Standard type.
                 {
                     render_pos = CPos.pos;
                 }
-                CImage.image.CalculateVRaw(); CImage.image.v_raw_c = false;//Terribly optimized, don't do this.
+                if(CImage.image.v_raw_c) { CImage.image.CalculateVRaw(); CImage.image.v_raw_c = false; }//Terribly unoptimized, don't do this.
                 
                 CImage.image.Render(render_pos);
                 //print("x = " + CPos.pos.x + " y = " + CPos.pos.y + " image_ent is " + image_ent + " CPos_pos is " + CPos_pos + " ");
