@@ -1170,10 +1170,9 @@ namespace Nu
     //1: Min value for random number
     //2: Max value for random number (- 1)
     //This gives you a random integer between the min and max specified values
-    shared s32 getRandomInt(s32 min, s32 max)
+    shared s32 getRandomInt(s32 min, s32 max, NuRend@ rend = @null)
     {
-        NuRend@ rend;
-        if(!getRend(@rend)) { return 0; }
+        if(rend == @null && !getRend(@rend)) { return 0; }
 
         if (min == max) { return 0; }
 
@@ -1837,7 +1836,7 @@ namespace Nu
             frame_points[3].x = value.x;//Bottom left
         
             if(!frame_center_c) { frame_center_c = true; }
-            if(!v_raw_c) { v_raw_c = true; }
+            v_raw_c = true;
         }
         void setPointLowerRight(Vec2f value)
         {
@@ -1846,14 +1845,14 @@ namespace Nu
             frame_points[3].y = value.y;//Bottom left
 
             if(!frame_center_c) { frame_center_c = true; }
-            if(!v_raw_c) { v_raw_c = true; }
+            v_raw_c = true;
         }
         void setFramePoints(array<Vec2f> &in _frame_points, bool calculate = true)
         {
             frame_points = _frame_points;
 
             if(!frame_center_c) { frame_center_c = true; }
-            if(!v_raw_c) { v_raw_c = true; }
+            v_raw_c = true;
         }
 
         //This creates a texture and/or sets up a few things for this image to work with it.
@@ -2269,7 +2268,7 @@ namespace Nu
         }
 
         //This should be done as soon to before Render() as possible. Anything changed in NuImage after this will not be applied until the next tick.
-        void Tick()
+        void Tick()//Maybe rename to update?
         {
             if(v_raw_c)
             {
