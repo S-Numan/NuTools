@@ -23,7 +23,7 @@ shared class RenderDetails
 
     RenderDetails(Nu::NuImage@ _image, Vec2f _pos, bool _world_pos = false, bool _interpolate = true, Vec2f _old_pos = Vec2f(-1.0f, -1.0f))
     {
-        func = @null;
+        @func = @null;
 
         @image = @_image;
         pos = _pos;
