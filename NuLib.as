@@ -817,6 +817,15 @@ namespace Nu
         float dis = Maths::Abs(value1 - value2);
         return dis;
     }
+    
+    //1:
+    //2:
+    //3:
+    //Returns a fraction based on a value between a and b.
+    shared f32 InvLerp(f32 a, f32 b, f32 v)
+    {
+        return (v - a) / ( b - a );
+    }
 
     //1: Array of floats to pick between.
     //Returns the chance selected.
