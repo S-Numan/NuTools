@@ -149,6 +149,20 @@ namespace Nu
         return true;
     }//Thanks jammer312
 
+    //See IsNumeric
+    shared bool IsNumericNoDots(string _string)
+    {
+        for(uint i = 0; i < _string.size(); i++)
+        {
+            if(_string[i] < "0"[0] || _string[i] > "9"[0])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     //1: Input string paramter.
     //2: Output bool value. If true, the string contained true. If false, the string contained false.
     //Returns a bool value of if the input_string is true or false. If the returned value happens to be false, it was neither true or false.
@@ -222,19 +236,21 @@ namespace Nu
     }
 
     //1: A string. The shortened/first half version of a player's username. Case sensitive.
-    //See getPlayersByShortUsername. This is more of an example of how to use than something you should use. Returns a single player if there was only one player, otherwise returns null.
-    /*shared CPlayer@ getPlayerByShortUsername(string shortname)
+    //2: Optional .An output of every player name with a " : " in between each. Empty if zero or only one player was found.
+    //See getPlayersByShortUsername. Returns a single player, if no players were found returns null.
+    shared CPlayer@ getPlayerByShortUsername(string shortname, string &out player_names = void)
     {
+        player_names = "";
         array<CPlayer@> target_players = getPlayersByShortUsername(shortname);//Get a list of players that have this as the start of their username
+        
         if(target_players.size() > 1)//If there is more than 1 player in the list
         {
-            string playernames = "";
             for(int i = 0; i < target_players.size(); i++)//for every player in that list
             {
-                playernames += " : " + target_players[i].getUsername();//put their name in a string
+                player_names += " : " + target_players[i].getUsername();//put their name in a string
             }
-            print("There is more than one possible player for the player param" + playernames);//tell the client that these players in the string were found
-            return @null;//don't send the message to chat, don't do anything else
+            //print("There is more than one possible player for the player param" + playernames);//tell the client that these players in the string were found
+            return @target_players[0];//don't send the message to chat, don't do anything else
         }
         else if(target_players == @null || target_players.size() == 0)
         {
@@ -242,7 +258,7 @@ namespace Nu
             return @null;
         }
         return target_players[0];
-    }*/ //Use the one that returns an array
+    }
 
 
     //Parameters
@@ -2061,7 +2077,7 @@ namespace Nu
         private array<Vec2f> frame_uv;//TODO, make this an array of arrays, and only use the first array in NuImageLight. Then make it 4 arrays in NuImage.
         const array<Vec2f>& getFrameUV()
         {
-            if(!is_texture) { Nu::Error("texture not initialized in NuImage. Have you tried calling CreateImage?"); }
+            if(!is_texture) { Nu::Error("texture not initialized in NuImage. Have you tried calling CreateImage?"); frame_uv_c = false; }
 
             if(frame_uv_c)
             {
@@ -2254,7 +2270,7 @@ namespace Nu
         private array<Vertex> v_raw;//For rendering.
         const array<Vertex>& getVRaw()
         {
-            if(!is_texture) { Nu::Error("texture not initialized in NuImage. Have you tried calling CreateImage?"); }
+            if(!is_texture) { Nu::Error("texture not initialized in NuImage. Have you tried calling CreateImage?"); v_raw_c = false; }
 
             if(v_raw_c)
             {
@@ -2640,6 +2656,7 @@ namespace NuLib
     {
         if(!rules.hasCommandID("clientmessage")){ rules.addCommandID("clientmessage"); }//Just for testing purposes
         rules.addCommandID("clienttoclient");
+        rules.addCommandID("createblob");
         rules.addCommandID("teleport");
         rules.addCommandID("enginemessage");
         rules.addCommandID("announcement");
@@ -2783,6 +2800,23 @@ namespace NuLib
                 rules.SendCommand(command_id, _params, player);
             }
         }
+        else if(cmd == rules.getCommandID("createblob"))
+        {
+            if(!isServer()) { Nu::Warning("createblob is a server only command, please only use it on the server."); return; }
+
+            string blob_name;
+            u8 team;
+            Vec2f pos;
+            if(!params.saferead_string(blob_name)) { Nu::Error("failed to read blob_name param on createblob command"); return; }
+            params.saferead_u8(team);
+            params.saferead_Vec2f(pos);
+            
+            CBlob@ created_blob = server_CreateBlob(blob_name, team, pos);
+            if(created_blob.getName() == "")
+            {
+                Nu::Warning("Failed to spawn " + blob_name + ". In the createblob command");
+            }
+        }
         else if(cmd == rules.getCommandID("switchfrominventory"))
         {
             if(!isServer()) { return; }
@@ -2861,16 +2895,18 @@ namespace NuLib
                 client_AddToChat(text, SColor(alpha, red, green, blue));//Color of the text
             }
         }
-        else if(cmd == rules.getCommandID("teleport") )//teleports player to position
+        else if(cmd == rules.getCommandID("teleport") )//teleports blob to position
         {
-            CPlayer@ target_player = getPlayerByNetworkId(params.read_u16());//Player 1
+            u16 netid;
+            if(!params.saferead_u16(netid)) { Nu::Error("saferead failure"); return; }
             
-            if(target_player == @null) { return; }
+            CBlob@ target_blob = getBlobByNetworkID(netid);
+            if(target_blob == @null) { return; }
 
-            CBlob@ target_blob = target_player.getBlob();
             if(target_blob != @null)
             {
-                Vec2f pos = params.read_Vec2f();
+                Vec2f pos;
+                if(!params.saferead_Vec2f(pos)) { Nu::Error("saferead failure"); return; }
                 target_blob.setPosition(pos);
                 ParticleZombieLightning(pos);
             }	
