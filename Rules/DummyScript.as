@@ -1,5 +1,6 @@
 #include "DefaultStart.as";
-#include "NuLib.as";
+#include "NuLibCore.as";
+#include "NuLibRules.as";
 
 bool player_tick_init;
 

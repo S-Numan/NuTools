@@ -3,7 +3,7 @@
 //!rebuild                                                  // To rebuild
 //!rrs NuImageExample.as                                    // To remove
 
-#include "NuLib.as";//For NuImage and other misc.
+#include "NuLibCore.as";//For NuImage and other misc.
 #include "NuRend.as";//For the easy rendering.
 
 Nu::NuImage@ image;

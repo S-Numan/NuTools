@@ -1,6 +1,7 @@
 //This file contains a class called NuRend, which has the purpose of TODO
 
-#include "NuLib.as";
+#include "NuLibCore.as";
+#include "NuLibRendering.as";
 
 
 funcdef bool RENDER_CALLBACK();
