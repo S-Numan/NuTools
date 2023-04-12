@@ -24,20 +24,20 @@ void onInit(CRules@ rules)
 
     image.setFrameSize(Vec2f(32, 32));//Frame size in the image
 
-    image.setFrame(2);//Frame drawn in the image
+    image.setFrame(3);//Frame drawn in the image
 
-    image.setColor(SColor(255, 255, 0, 0));//Colors drawn image (currently red)
+    image.setColor(SColor(255, 0, 0, 255));//Colors drawn image
 
     image.setZ(1.0f);//Sets the z
 
     image.setAngle(45.0f);//Angles the image
 
-    image.setScale(0.5f);//Scales the image
+    //image.setScale(0.5f);//Scales the image
 
     //image.setCenterScale(true);//When true, scales from the center. When false, scales from the upper left.
 
-    //Proper rendering.
-    Render::addScript(Render::layer_posthud, "NuImageExample.as", "RenderAnImage", 0.0f);
+
+    ProperIniting();//If you want to render images with more performance.
 }
 
 void onTick(CRules@ rules)
@@ -53,14 +53,30 @@ void onTick(CRules@ rules)
     //^ Seperate from "Proper rendering". E.G RenderAnImage.
 
 
-    //Proper rendering.
+    ProperTicking();//If you want to render images with more performance.
+}
+
+//That's all folks. ¯\_(ツ)_/¯
+//All you need it above.
+
+
+
+
+
+
+
+
+
+void ProperIniting()
+{
+    Render::addScript(Render::layer_posthud, "NuImageExample.as", "RenderAnImage", 0.0f);
+}
+void ProperTicking()
+{
     image.Tick();//For proper rendering, remember to tick the image onTick. Otherwise the image wont update properly.
 
     FRAME_TIME = 0;//Reset frame time to 0 on tick.
 }
-
-
-
 
 
 f32 FRAME_TIME = 0;
@@ -78,8 +94,6 @@ void RenderAnImage(int id)
 
     image.Render(Vec2f(0, 0));//Draw on pos.
 }
-
-//That's all folks. ¯\_(ツ)_/¯
 
 
 
