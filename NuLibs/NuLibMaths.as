@@ -69,6 +69,17 @@ namespace Nu
         value1.y = value1.y * value2.y;
         return value1;
     }
+
+    //1: The first vector.
+    //2: The second Vector
+    //Returns a vector of the first vector's x and y divided by the second vector's x and y. 
+    shared Vec2f DivVec(Vec2f value1, Vec2f value2)
+    {
+        if(value2.x == 0 || value2.y == 0) { return Vec2f(0,0); }
+        value1.x = value1.x / value2.x;
+        value1.y = value1.y / value2.y;
+        return value1;
+    }
     
     //1: Vec2f 1.
     //2: Vec2f 2.

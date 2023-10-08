@@ -20,7 +20,14 @@ namespace Nu
 
         shared void ClearScripts(bool sync = false, array<string> skip_these = array<string>(1, "NuToolsLogic.as"))
         {
+            
             CRules@ rules = getRules();
+
+            if(!rules.get_bool("custom_gamemode_loading"))
+            {
+                warning("Tried clearing scripts when custom_gamemode_loading was false. This would not work.");
+                return;
+            }
 
             array<string> script_array;
             if(!rules.get("script_array", script_array))

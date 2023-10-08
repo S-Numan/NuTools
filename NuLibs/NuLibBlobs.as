@@ -55,7 +55,7 @@ namespace Nu
         return point.getOccupied();
     }
 
-     //Parameters
+    //Parameters
     //1: A point.
     //2: The radius around that point to get the blobs from. Any blob outside the radius will not be put in the array.
     //3: The array of blobs that are sorted.

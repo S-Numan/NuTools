@@ -1,4 +1,6 @@
 #include "NuLibCore.as";
+#include "NuLibMaths.as";
+#include "NuLibMisc.as";
 
 namespace Nu
 {
@@ -143,6 +145,14 @@ namespace Nu
         {
             return getFramePoints()[value];
         }
+        Vec2f getPointUpperLeft()
+        {
+            return getFramePoints()[0];
+        }
+        Vec2f getPointLowerRight()
+        {
+            return getFramePoints()[2];
+        }
         
         void setPointUpperLeft(Vec2f value)
         {
@@ -151,6 +161,7 @@ namespace Nu
             frame_points[3].x = value.x;//Bottom left
         
             if(!frame_center_c) { frame_center_c = true; }
+            if(frame_points_c) { frame_points_c = false;}
             v_raw_c = true;
         }
         void setPointLowerRight(Vec2f value)
@@ -160,13 +171,38 @@ namespace Nu
             frame_points[3].y = value.y;//Bottom left
 
             if(!frame_center_c) { frame_center_c = true; }
+            if(frame_points_c) { frame_points_c = false;}
             v_raw_c = true;
         }
+        /*void addToAllPoints(Vec2f value)
+        {
+            frame_points[0] += value;
+            frame_points[1] = value;
+            frame_points[2] = value;
+            frame_points[3] = value;
+
+            if(!frame_center_c) { frame_center_c = true; }
+            v_raw_c = true;
+        }*/
+        /*void setPointPos(Vec2f value)
+        {
+            Vec2f frame_size = (getFramePoint(2) - getFramePoint(0));
+            
+            setPointUpperLeft(value);
+            setPointLowerRight(value + frame_size);
+        }
+        void setPointSize(Vec2f value)
+        {
+            Vec2f frame_size = (getFramePoint(2) - getFramePoint(0));
+            
+            setPointLowerRight(getPointUpperLeft() + frame_size);
+        }*///Use offset?
         void setFramePoints(array<Vec2f> &in _frame_points, bool calculate = true)
         {
             frame_points = _frame_points;
 
             if(!frame_center_c) { frame_center_c = true; }
+            if(frame_points_c) { frame_points_c = false;}
             v_raw_c = true;
         }
 
@@ -178,7 +214,7 @@ namespace Nu
             {
                 if(!Texture::createFromFile(render_name, file_path))
                 {
-                    warn("texture creation failed");
+                    warn("texture creation failed. Tried to make texture with file path " + file_path );
                     return;
                 }
             }
@@ -257,6 +293,10 @@ namespace Nu
             angle = 0.0f;
             //rotate_around = Vec2f(0,0);
             color = SColor(255, 255, 255, 255);
+
+            clipping_enabled = false;
+            clipping_topleft = Vec2f(0,0);
+            clipping_lowright = Vec2f(0,0);
 
             frame_size = Vec2f(0,0);
             image_size = Vec2f(0,0);
@@ -362,6 +402,10 @@ namespace Nu
         {
             return color;
         }
+
+        bool clipping_enabled;//Should this be called. Clamping, instead
+        Vec2f clipping_topleft;
+        Vec2f clipping_lowright;
 
         bool frame_uv_c;
         private array<Vec2f> frame_uv;//TODO, make this an array of arrays, and only use the first array in NuImageLight. Then make it 4 arrays in NuImage.
@@ -540,7 +584,8 @@ namespace Nu
         private Vec2f scale;//Scale of the frame.
         void setScale(Vec2f _scale)//Sets the scale of the frame
         {
-            scale = _scale;
+            //scale = _scale;//TODO, bad
+            //This should actually scale the frame points, and not just make it more complicated
 
             if(!v_raw_c) { v_raw_c = true; }
             //TODO, implement.
@@ -574,13 +619,29 @@ namespace Nu
 
         void CalculateVRaw()
         {
-            if(!getVertices(
-                getFrameUV(), getFramePoints(),
-                getZ(), getFrameCenter(), getOffset(), getAngle(), getColor()
-                , v_raw, would_crash))
+            if(!clipping_enabled)
             {
-                would_crash = true;
+                if(!getVertices(
+                    getFrameUV(), getFramePoints(),
+                    getZ(), getOffset(), getPointLowerRight() - getFrameCenter(), getAngle(), getColor()
+                    , v_raw, would_crash))
+                {
+                    would_crash = true;
+                }
             }
+            else
+            {
+                if(!getVerticesClipped(
+                    getFrameUV(), getFramePoints(),
+                    getZ(), getOffset(), getPointLowerRight() - getFrameCenter(), getAngle(),
+                    clipping_topleft, clipping_lowright,
+                    getColor()
+                    , v_raw, would_crash))
+                {
+                    would_crash = true;
+                }
+            }
+
         }
 
         //This should be done as soon to before Render() as possible. Anything changed in NuImage after this will not be applied until the next tick.
@@ -685,7 +746,7 @@ namespace Nu
             {
                 if(!getVertices(
                     getFrameUVs()[getFrame()], getFramePoints(),
-                    getZ(), getFrameCenter(), getOffset(), getAngle(), getColor()
+                    getZ(), getOffset(), getPointLowerRight() - getFrameCenter(), getAngle(), getColor()
                     , v_raw, would_crash))
                 {
                     would_crash = true;
@@ -695,38 +756,37 @@ namespace Nu
         //Overrides
     }
 
-    //Gets vertices to be rendered.
-    shared bool getVertices(
-        const array<Vec2f> &in frame_uv, array<Vec2f> &in frame_points,
+    shared bool getVerticesClipped(
+        array<Vec2f> &in frame_uv, array<Vec2f> &in frame_points,
         const array<f32> &in z,
-        const Vec2f &in frame_center,// const Vec2f &in rotate_around,
-        const Vec2f &in offset, const f32 &in angle, const SColor &in color,
+        Vec2f &in offset,
+        const Vec2f &in frame_center,//Note that this should be the position between frame_points 0 and 2. the "center". Half the frame size is only valid if frame_points[0] is 0,0
+        const f32 &in angle,
+        const Vec2f &in clamp_top_left,
+        const Vec2f &in clamp_lower_right,
+        const SColor &in color,
         array<Vertex> &inout v_raw, bool &in stop_if_crash = false)
     {
         if(stop_if_crash){ return false; }//Already sent the error log, this could of crashed. So just stop to not spam.
         if(frame_points.size() == 0) { return false; Nu::Error("frame_points.size() was equal to 0"); }
         if(frame_uv.size() == 0) { return false; Nu::Error("frame_uv.size() was equal to 0"); }
-        
-        Vec2f _offset = offset;
+        if(frame_points.size() != frame_uv.size()) { return false; Nu::Error("frame_points and frame_uv must have the same size"); }
 
-        v_raw[0] = Vertex(_offset + 
-            (frame_points[0]//XY
-            ).RotateByDegrees(angle, frame_center), z[0], frame_uv[0], color);
-        
-        v_raw[1] = Vertex(_offset +
-            Vec2f(frame_points[1].x,//X
-                frame_points[1].y//Y
-            ).RotateByDegrees(angle, frame_center), z[1], frame_uv[1], color);//Set the colors yourself.
-        
-        v_raw[2] = Vertex(_offset +
-            (frame_points[2]//XY
-            ).RotateByDegrees(angle, frame_center), z[2], frame_uv[2], color);
-        
-        v_raw[3] = Vertex(_offset +
-            Vec2f(frame_points[3].x,//X
-                frame_points[3].y//Y
-            ).RotateByDegrees(angle, frame_center), z[3], frame_uv[3], color);
+        Vec2f uv_frame_size = frame_uv[2] - frame_uv[0];
+        Vec2f frame_size = Vec2f(frame_center.x * 2, frame_center.y * 2);
 
+        for (u8 i = 0; i < frame_points.size(); ++i)
+        {
+            Vec2f transformed_point = offset + frame_points[i].RotateByDegrees(angle, frame_center);
+            Vec2f clamped_point = transformed_point;
+            clamped_point.x = Maths::Clamp(clamped_point.x, clamp_top_left.x, clamp_lower_right.x);
+            clamped_point.y = Maths::Clamp(clamped_point.y, clamp_top_left.y, clamp_lower_right.y);
+
+            Vec2f uv_shift = Nu::DivVec((transformed_point - clamped_point), frame_size) / 2;
+            Vec2f clamped_uv = frame_uv[i] - uv_shift;
+
+            v_raw[i] = Vertex(clamped_point, z[i], clamped_uv, color);
+        }
         return true;
     }
 
@@ -734,24 +794,43 @@ namespace Nu
     shared bool getVertices(
         const array<Vec2f> &in frame_uv, array<Vec2f> &in frame_points,
         const array<f32> &in z,
-        Vec2f &in offset, const SColor &in color,
+        Vec2f &in offset,
+        const Vec2f &in frame_center,
+        const f32 &in angle,
+        const SColor &in color,
         array<Vertex> &inout v_raw, bool &in stop_if_crash = false)
     {
         if(stop_if_crash){ return false; }//Already sent the error log, this could of crashed. So just stop to not spam.
         if(frame_points.size() == 0) { return false; Nu::Error("frame_points.size() was equal to 0"); }
         if(frame_uv.size() == 0) { return false; Nu::Error("frame_uv.size() was equal to 0"); }
+        if(frame_points.size() != frame_uv.size()) { return false; Nu::Error("frame_points and frame_uv must have the same size"); }
 
-        v_raw[0] = Vertex(offset + frame_points[0]
-            , z[0], frame_uv[0], color);
-        
-        v_raw[1] = Vertex(offset + frame_points[1]
-            , z[1], frame_uv[1], color);//Set the colors yourself.
-        
-        v_raw[2] = Vertex(offset + frame_points[2]
-            , z[2], frame_uv[2], color);
-        
-        v_raw[3] = Vertex(offset + frame_points[3]
-            , z[3], frame_uv[3], color);
+        for (u8 i = 0; i < frame_points.size(); ++i)
+        {
+            Vec2f transformed_point = offset + frame_points[i].RotateByDegrees(angle, frame_center);
+
+            v_raw[i] = Vertex(transformed_point, z[i], frame_uv[i], color);
+        }
+        return true;
+    }
+
+    //Gets vertices to be rendered.
+    shared bool getVertices(
+        const array<Vec2f> &in frame_uv, array<Vec2f> &in frame_points,
+        const array<f32> &in z,
+        Vec2f &in offset,
+        const SColor &in color,
+        array<Vertex> &inout v_raw, bool &in stop_if_crash = false)
+    {
+        if(stop_if_crash){ return false; }//Already sent the error log, this could of crashed. So just stop to not spam.
+        if(frame_points.size() == 0) { return false; Nu::Error("frame_points.size() was equal to 0"); }
+        if(frame_uv.size() == 0) { return false; Nu::Error("frame_uv.size() was equal to 0"); }
+        if(frame_points.size() != frame_uv.size()) { return false; Nu::Error("frame_points and frame_uv must have the same size"); }
+
+        for (u8 i = 0; i < frame_points.size(); ++i)
+        {
+            v_raw[i] = Vertex(offset + frame_points[i], z[i], frame_uv[i], color);
+        }
 
         return true;
     }
@@ -788,3 +867,111 @@ namespace Nu
         return true;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//OLD
+//How clamping was initially done, before zable with chatgpt came along and just did it better.
+        /*
+        Vec2f uv_frame_size = frame_uv[2] - frame_uv[0];
+        Vec2f frame_size = Vec2f(frame_center.x * 2, frame_center.y * 2);
+
+
+        //0
+        Vec2f top_left = offset + 
+            (frame_points[0]//XY
+            ).RotateByDegrees(angle, frame_center);
+
+        if(top_left.x < clamp_top_left.x) {//Clamp from left
+            frame_uv[0].x -= ((top_left.x - clamp_top_left.x) / frame_size.x) / 2;
+            top_left.x = clamp_top_left.x;
+        }
+
+        if(top_left.y < clamp_top_left.y) {//Clamp from top
+            frame_uv[0].y -= ((top_left.y - clamp_top_left.y) / frame_size.y) / 2;
+            top_left.y = clamp_top_left.y;
+        }
+        
+        //1
+        Vec2f top_right = offset +
+            Vec2f(frame_points[1].x,//X
+                frame_points[1].y//Y
+            ).RotateByDegrees(angle, frame_center);
+
+        if(top_right.x > clamp_lower_right.x) {//Clamp from right
+            frame_uv[1].x -= ((top_right.x - clamp_lower_right.x) / frame_size.x) / 2;
+            top_right.x = clamp_lower_right.x;
+        }
+
+        if(top_right.y < clamp_top_left.y) {//Clamp from top
+            frame_uv[1].y -= ((top_right.y - clamp_top_left.y) / frame_size.y) / 2;
+            top_right.y = clamp_top_left.y;
+        }
+
+        //2
+        Vec2f lower_right = offset +
+            (frame_points[2]//XY
+            ).RotateByDegrees(angle, frame_center);
+        
+        if(lower_right.x > clamp_lower_right.x) {//Clamp from right
+            frame_uv[2].x -= ((lower_right.x - clamp_lower_right.x) / frame_size.x) / 2;
+            lower_right.x = clamp_lower_right.x;
+        }
+        if(lower_right.y > clamp_lower_right.y) {//Clamp from bottom
+            frame_uv[2].y -= ((lower_right.y - clamp_lower_right.y) / frame_size.y) / 2;
+            lower_right.y = clamp_lower_right.y;
+        }
+
+
+        //3
+        Vec2f lower_left = offset +
+            Vec2f(frame_points[3].x,//X
+                frame_points[3].y//Y
+            ).RotateByDegrees(angle, frame_center);
+
+        if(lower_left.x < clamp_top_left.x) {//Clamp from left
+            frame_uv[3].x -= ((lower_left.x - clamp_top_left.x) / frame_size.x) / 2;
+            lower_left.x = clamp_top_left.x;
+        }
+
+        if(lower_left.y > clamp_lower_right.y) {//Clamp from bottom
+            frame_uv[3].y -= ((lower_left.y - clamp_lower_right.y) / frame_size.y) / 2;
+            lower_left.y = clamp_lower_right.y;
+        }
+
+        //Maths::Max returns the larger of the two variables
+        
+        //Make sure they don't invert.
+        top_right.x = Maths::Max(top_right.x, top_left.x);
+        lower_right.x = Maths::Max(lower_right.x, top_left.x);
+
+        lower_left.y = Maths::Max(lower_left.y, top_left.y);
+        lower_right.y = Maths::Max(lower_right.y, top_left.y);
+
+        v_raw[0] = Vertex(top_left, z[0], frame_uv[0], color);
+        
+        v_raw[1] = Vertex(top_right, z[1], frame_uv[1], color);//Set the colors yourself.
+        
+        v_raw[2] = Vertex(lower_right, z[2], frame_uv[2], color);
+        
+        v_raw[3] = Vertex(lower_left, z[3], frame_uv[3], color);
+*/
+//OLD

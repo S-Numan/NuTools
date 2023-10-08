@@ -1,6 +1,6 @@
 //This file handles misc rendering.
 
-#include "NuLib.as";
+#include "NuLibCore.as";
 #include "NuRend.as";
 
 namespace NuRender

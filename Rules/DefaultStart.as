@@ -4,10 +4,12 @@ void RunServer()
 {
 	if (getNet().CreateServer())
 	{
+        CRules@ rules;
+
         if(sv_contact_info == "0")//If custom gamemode loading is disabled
         {
             LoadRules("Rules/" + sv_gamemode + "/gamemode.cfg");
-            CRules@ rules = getRules();
+            @rules = @getRules();
             if(@rules == @null)
             {
                 error("Rules failed to load."); return;
@@ -26,7 +28,7 @@ void RunServer()
         {
             LoadRules("Rules/" + "DummyGamemode.cfg");//Load dummy gamemode before loading the rules the new way.
 
-            CRules@ rules = getRules();
+            @rules = @getRules();
             if(@rules == @null)
             {
                 error("Dummy Rules failed to load"); return;
@@ -39,6 +41,8 @@ void RunServer()
         
             rules.set_bool("custom_gamemode_loading", true);
         }
+
+        //GetModList(rules);
 
 		LoadNextMap();
 	}
@@ -188,10 +192,11 @@ shared void AddGamemode(CRules@ rules, string the_gamemode)
 shared string FindGamemode(string the_gamemode)
 {
     string gamemode_path;
+    ConfigFile@ cfg;    
+    CFileMatcher@ files;
 
-    ConfigFile@ cfg = ConfigFile();
-    
-    CFileMatcher@ files = CFileMatcher(the_gamemode + ".cfg");
+    @files = @CFileMatcher(the_gamemode + ".cfg");//Look elsewhere afterwards
+
     if(files.hasMatch())
     {
         //files.printMatches();
@@ -220,7 +225,8 @@ shared string FindGamemode(string the_gamemode)
             q++;
         }
     }
-    if(gamemode_path == "")
+
+    if(gamemode_path.isEmpty())
     {
         //Search every gamemode.cfg file for their gamemode_name, and compare it to the_gamemode. If they are the same, the gamemode has been found. 
 
@@ -257,7 +263,7 @@ shared string FindGamemode(string the_gamemode)
                 break;
             }
         }
-        if(gamemode_path == "")//Still failed to find the gamemode?
+        if(gamemode_path.isEmpty())//Still failed to find the gamemode?
         {
             //error("Failed to find gamemode \"" + the_gamemode + "\". Defaulting to vanilla gamemode finding. Note that any modded gamemode.cfg will replace all vanilla gamemode.cfg's");
             gamemode_path = CFileMatcher("Rules/" + the_gamemode + "/gamemode.cfg").getFirst();
@@ -291,3 +297,18 @@ void LoadDefaultMenuMusic()
 		}
 	}
 }
+
+
+
+
+
+/*
+void GetModList(CRules@ rules)
+{
+    ConfigFile@ cfg = ConfigFile("../mods.cfg");
+
+    if(cfg.exists("PutAlwaysFirst"))
+    {
+        print("read = " + cfg.read_string("PutAlwaysFirst"));
+    }
+}*/

@@ -3,8 +3,8 @@ Hub for many things for KAG modders to use.
 
 ## Primarily including
 
-### NuLib.as
-This file contains a library of various useful functions where all(most) have comments about how they work.
+### The NuLib folder
+This folder contains a library of various useful functions sorted into seperate files where all(most) have comments about how they work.
 
 ### Custom gamemode loading
 A system that loads gamemode.cfg files with all their scripts in a custom manner.

@@ -13,8 +13,8 @@ NuRend@ rend;
 
 void onInit( CRules@ rules )//First time start only.
 {
-    @rend = @LoadStuff(rules);
-    
+    LoadStuff(rules);
+
     if(isClient())
     {
         rend.SetupRendering();
@@ -25,22 +25,29 @@ void onInit( CRules@ rules )//First time start only.
     onRestart(rules);
 }
 
-NuRend@ LoadStuff( CRules@ rules )//Every reload and restart
+void LoadStuff( CRules@ rules )
 {
-    NuRend@ _rend = NuRend();
-
-    rules.set("NuRend", @_rend);
-    
-    print("NuRend Loaded");
+    if(rules.exists("NuRend"))
+    {
+        rules.get("NuRend", @rend);    
+    }
+    else
+    {
+        @rend = @NuRend();
+        rules.set("NuRend", @rend);
+    }
 
     if(isClient())
     {
-        NuRender::onInit(rules, _rend);
+        NuRender::onInit(rules, rend);
     }
 
-    init = true;
+     
 
-    return @_rend;
+    print("NuRend Loaded");
+    
+
+    init = true;
 }
 
 void onReload( CRules@ rules )

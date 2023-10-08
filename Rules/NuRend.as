@@ -81,7 +81,7 @@ shared void RenderImage(Render::ScriptLayer layer, RENDER_CALLBACK@ _func, bool 
     if(!getRend(@rend)) { return; }
     rend.RenderImage(layer, _func, is_world_pos);
 }
-shared void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = true)
+shared void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = false)
 {
     if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
 
@@ -98,8 +98,8 @@ shared void RenderTestImage(Vec2f _pos, bool is_world_pos = false)
     if(!getRend(@rend)) { return; }
     
     Nu::NuImage@ test_image = @Nu::NuImage();
-    test_image.CreateImage("RenderExample.png");
-    test_image.setColor(SColor(255, 255, 0, 0));
+    test_image.CreateImage("ExampleImage.png");
+    //test_image.setColor(SColor(255, 255, 0, 0));
     //test_image.setScale(0.5f);
 
     rend.RenderImage(Render::layer_posthud, test_image, _pos, is_world_pos, false);
@@ -196,7 +196,7 @@ shared class NuRend
 
         render_filled_spots[layer]++;
     }
-    void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = true)
+    void RenderImage(Render::ScriptLayer layer, Nu::NuImage@ _image, Vec2f _pos, bool is_world_pos = false, bool _interpolate = false)
     {
         if(!isClient()) { Nu::Error("This should not be run serverside"); return; }
 

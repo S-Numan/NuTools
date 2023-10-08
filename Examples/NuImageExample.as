@@ -32,7 +32,7 @@ void onInit(CRules@ rules)
 
     image.setAngle(45.0f);//Angles the image
 
-    //image.setScale(0.5f);//Scales the image
+    //image.setScale(0.5f);//Scales the image//Does not do anything atm
 
     //image.setCenterScale(true);//When true, scales from the center. When false, scales from the upper left.
 

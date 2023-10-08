@@ -1,5 +1,6 @@
 #include "NuLibCore.as"; 
 #include "NuLibTiles.as";
+#include "NuLibBlobs.as";
 
 namespace Nu
 {
